@@ -1,10 +1,10 @@
-package com.fypgrading.monolith;
+package com.fypgrading.adminservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class MonolithApplicationTests {
+class AdminServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
