@@ -19,3 +19,15 @@ spring:
       queue: "notification-queue"
       exchange: "notification-exchange"
       routing-key: "notification-key"
+
+    retry-notification:
+      queue: "retry-notification-queue"
+      exchange: "retry-notification-exchange"
+      routing-key: "retry-notification-key"
+      ttl: 2000
+      max-count: 3
+
+    dead-letter:
+      queue: "dead-queue"
+      exchange: "dead-exchange"
+      routing-key: "dead-key"
