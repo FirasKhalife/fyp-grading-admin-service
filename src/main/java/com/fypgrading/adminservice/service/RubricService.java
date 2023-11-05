@@ -5,6 +5,7 @@ import com.fypgrading.adminservice.entity.Rubric;
 import com.fypgrading.adminservice.service.mapper.RubricMapper;
 import com.fypgrading.adminservice.repository.RubricRepository;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,9 @@ public class RubricService {
         this.rubricMapper = rubricMapper;
     }
 
-    @HystrixCommand(fallbackMethod = "handleGetRubricsFallback")
+    @HystrixCommand(fallbackMethod = "handleGetRubricsFallback", commandProperties = {
+            @HystrixProperty(name = "execution.isolation.strategy", value = "SEMAPHORE")
+    })
     public List<RubricDTO> getRubrics() {
         List<Rubric> rubrics = rubricRepository.findAll();
         return rubricMapper.toDTOList(rubrics);
@@ -61,15 +64,15 @@ public class RubricService {
         return List.of();
     }
 
-    public RubricDTO handleCreateRubricFallback(RubricDTO rubricDTO) {
-        return new RubricDTO();
+    public String handleCreateRubricFallback(RubricDTO rubricDTO) {
+        return "Rubric not created"";
     }
 
-    public RubricDTO handleUpdateRubricFallback(Integer id, RubricDTO rubricDTO) {
-        return rubricDTO;
+    public String handleUpdateRubricFallback(Integer id, RubricDTO rubricDTO) {
+        return "Rubric not updated";
     }
 
-    public RubricDTO handleDeleteRubricFallback(Integer id) {
-        return new RubricDTO();
+    public String handleDeleteRubricFallback(Integer id) {
+        return "Rubric not deleted";
     }
 }
