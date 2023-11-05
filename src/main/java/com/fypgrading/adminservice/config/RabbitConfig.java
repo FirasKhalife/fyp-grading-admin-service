@@ -1,6 +1,6 @@
 package com.fypgrading.adminservice.config;
 
-import com.fypgrading.adminservice.service.RabbitService;
+import com.fypgrading.adminservice.service.EventHandler;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -156,9 +156,9 @@ public class RabbitConfig {
      * RabbitMQ Listener
      */
     @Bean
-    MessageListenerAdapter messageListenerAdapter(RabbitService rabbitService) {
+    MessageListenerAdapter messageListenerAdapter(EventHandler eventHandler) {
         MessageListenerAdapter messageListenerAdapter =
-                new MessageListenerAdapter(rabbitService, "onMessage");
+                new MessageListenerAdapter(eventHandler, "onMessage");
         messageListenerAdapter.setMessageConverter(jackson2JsonMessageConverter());
         return messageListenerAdapter;
     }

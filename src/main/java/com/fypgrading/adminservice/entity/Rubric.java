@@ -23,5 +23,5 @@ public class Rubric {
     private String name;
 
     @NotNull
-    private int percentage;
+    private Integer percentage;
 }

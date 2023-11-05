@@ -1,7 +1,7 @@
 package com.fypgrading.adminservice.service;
 
 import com.fypgrading.adminservice.config.RabbitConfig;
-import com.fypgrading.adminservice.exceptions.NotificationException;
+import com.fypgrading.adminservice.exceptions.RabbitException;
 import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,12 +16,12 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class RabbitService implements ChannelAwareMessageListener {
+public class EventHandler implements ChannelAwareMessageListener {
 
-    private final Logger logger = LoggerFactory.getLogger(RabbitService.class);
+    private final Logger logger = LoggerFactory.getLogger(EventHandler.class);
     private final RabbitTemplate rabbitTemplate;
 
-    public RabbitService(RabbitTemplate rabbitTemplate) {
+    public EventHandler(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
     }
 
@@ -30,13 +30,13 @@ public class RabbitService implements ChannelAwareMessageListener {
         try {
             logger.info("Received message: " + message);
 
-            throw new NotificationException("Exception raised!", message, channel);
-        } catch (NotificationException ex) {
+            throw new RabbitException("Exception raised!", message, channel);
+        } catch (RabbitException ex) {
             sendNack(ex);
         }
     }
 
-    private void sendNack(NotificationException ex) {
+    private void sendNack(RabbitException ex) {
         Message message = ex.getQueueMessage();
         MessageProperties props = message.getMessageProperties();
         List<Map<String, ?>> xDeathHeader = props.getXDeathHeader();

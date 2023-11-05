@@ -11,5 +11,5 @@ public class RubricDTO {
 
     private String name;
 
-    private int percentage;
+    private Integer percentage;
 }
