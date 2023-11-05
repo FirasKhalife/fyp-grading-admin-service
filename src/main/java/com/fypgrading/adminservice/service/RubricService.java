@@ -65,7 +65,7 @@ public class RubricService {
     }
 
     public String handleCreateRubricFallback(RubricDTO rubricDTO) {
-        return "Rubric not created"";
+        return "Rubric not created";
     }
 
     public String handleUpdateRubricFallback(Integer id, RubricDTO rubricDTO) {
