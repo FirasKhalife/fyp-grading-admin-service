@@ -1,10 +1,10 @@
 package com.fypgrading.adminservice.controller;
 
+import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.service.AuthService;
 import com.fypgrading.adminservice.service.dto.AuthDTO;
-import com.fypgrading.adminservice.service.enums.Role;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,9 +19,9 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @GetMapping("/login")
-    public ResponseEntity<Role> login(@RequestBody AuthDTO authDTO) {
-        Role role = authService.login(authDTO);
+    @PostMapping("/login")
+    public ResponseEntity<Reviewer> login(@RequestBody AuthDTO authDTO) {
+        Reviewer role = authService.login(authDTO);
         return ResponseEntity.ok().body(role);
     }
 }

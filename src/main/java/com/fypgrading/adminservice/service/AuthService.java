@@ -16,9 +16,8 @@ public class AuthService {
         this.reviewerRepository = reviewerRepository;
     }
 
-    public Role login(AuthDTO authDTO) {
+    public Reviewer login(AuthDTO authDTO) {
         return reviewerRepository.findByEmailAndPassword(authDTO.getEmail(), authDTO.getPassword())
-                .map(Reviewer::getRole)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
     }
 }
