@@ -18,7 +18,7 @@ public class ReviewerTeam {
     @ManyToOne
     @MapsId("reviewerId")
     @JoinColumn(name = "reviewer_id")
-    private Reviewer jury;
+    private Reviewer reviewer;
 
     @ManyToOne
     @MapsId("teamId")

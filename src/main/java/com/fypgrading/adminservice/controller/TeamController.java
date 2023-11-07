@@ -1,6 +1,9 @@
 package com.fypgrading.adminservice.controller;
 
+import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.service.TeamService;
+import com.fypgrading.adminservice.service.dto.CountDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +24,12 @@ public class TeamController {
     public ResponseEntity<List<TeamDTO>> getTeams() {
         List<TeamDTO> teams = teamService.getTeams();
         return ResponseEntity.ok().body(teams);
+    }
+
+    @GetMapping("/teamds/{id}/reviewers")
+    public ResponseEntity<CountDTO> getTeamReviewers(@PathVariable Integer id) {
+        CountDTO reviewersCount = teamService.getTeamReviewers(id);
+        return ResponseEntity.ok().body(reviewersCount);
     }
 
     @PostMapping("/")

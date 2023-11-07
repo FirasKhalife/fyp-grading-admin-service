@@ -1,7 +1,11 @@
 package com.fypgrading.adminservice.service;
 
+import com.fypgrading.adminservice.entity.Reviewer;
+import com.fypgrading.adminservice.entity.ReviewerTeam;
 import com.fypgrading.adminservice.entity.Team;
 import com.fypgrading.adminservice.repository.TeamRepository;
+import com.fypgrading.adminservice.service.dto.CountDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import jakarta.persistence.EntityNotFoundException;
@@ -47,5 +51,10 @@ public class TeamService {
     private Team getTeamById(Integer id) {
         return teamRepository.findById(id).orElseThrow(() ->
                         new EntityNotFoundException("Team not found"));
+    }
+
+    public CountDTO getTeamReviewers(Integer id) {
+        int reviewersCount = getTeamById(id).getReviewerTeams().size();
+        return new CountDTO(Integer.toUnsignedLong(reviewersCount));
     }
 }
