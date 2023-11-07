@@ -2,6 +2,7 @@ package com.fypgrading.adminservice.controller;
 
 import com.fypgrading.adminservice.service.ReviewerService;
 import com.fypgrading.adminservice.service.dto.ReviewerDTO;
+import com.fypgrading.adminservice.service.dto.TeamDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +28,18 @@ public class ReviewerController {
     public ResponseEntity<ReviewerDTO> createReviewer(@RequestBody ReviewerDTO rubricDTO) {
         ReviewerDTO createdReviewer = reviewerService.createReviewer(rubricDTO);
         return ResponseEntity.ok().body(createdReviewer);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ReviewerDTO> getReviewer(@PathVariable Integer id) {
+        ReviewerDTO rubrics = reviewerService.getReviewer(id);
+        return ResponseEntity.ok().body(rubrics);
+    }
+
+    @GetMapping("/{id}/teams")
+    public ResponseEntity<List<TeamDTO>> getReviewerTeams(@PathVariable Integer id) {
+        List<TeamDTO> teams = reviewerService.getReviewerTeams(id);
+        return ResponseEntity.ok().body(teams);
     }
 
     @PutMapping("/{id}")

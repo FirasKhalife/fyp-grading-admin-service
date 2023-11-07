@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.service.dto;
 
-import com.fypgrading.adminservice.service.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,5 +17,7 @@ public class ReviewerDTO {
 
     private String email;
 
-    private Role role;
+    private String password;
+
+    private RoleDTO role;
 }

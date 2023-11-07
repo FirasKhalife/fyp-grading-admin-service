@@ -3,6 +3,7 @@ package com.fypgrading.adminservice.controller;
 import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.service.AuthService;
 import com.fypgrading.adminservice.service.dto.AuthDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,8 +21,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Reviewer> login(@RequestBody AuthDTO authDTO) {
-        Reviewer role = authService.login(authDTO);
-        return ResponseEntity.ok().body(role);
+    public ResponseEntity<ReviewerDTO> login(@RequestBody AuthDTO authDTO) {
+        ReviewerDTO reviewer = authService.login(authDTO);
+        return ResponseEntity.ok().body(reviewer);
     }
 }
