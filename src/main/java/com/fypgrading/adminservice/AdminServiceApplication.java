@@ -6,7 +6,7 @@ import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 
 @SpringBootApplication
-@EnableCircuitBreaker
+//@EnableCircuitBreaker
 @EnableEurekaClient
 public class AdminServiceApplication {
 

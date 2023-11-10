@@ -42,12 +42,6 @@ public class ReviewerController {
         return ResponseEntity.ok().body(teams);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ReviewerDTO> updateReviewer(@PathVariable Integer id, @RequestBody ReviewerDTO rubricDTO) {
-        ReviewerDTO rubrics = reviewerService.updateReviewer(id, rubricDTO);
-        return ResponseEntity.ok().body(rubrics);
-    }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<ReviewerDTO> deleteReviewer(@PathVariable Integer id) {
         ReviewerDTO rubrics = reviewerService.deleteReviewer(id);

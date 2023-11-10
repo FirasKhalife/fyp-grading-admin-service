@@ -1,8 +1,12 @@
 package com.fypgrading.adminservice.service.enums;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public enum Role {
+@Getter
+@NoArgsConstructor
+public enum RoleEnum {
     @JsonProperty("admin")
     ADMIN,
     @JsonProperty("jury_member")

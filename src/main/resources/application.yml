@@ -1,9 +1,9 @@
 spring:
   datasource:
+    driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/fyp-grading
     username: admin
     password: admin
-    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -31,3 +31,6 @@ spring:
       queue: "dead-queue"
       exchange: "dead-exchange"
       routing-key: "dead-key"
+
+server:
+  port: 8081

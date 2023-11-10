@@ -19,7 +19,4 @@ public class Team {
 
     @OneToMany
     private List<ReviewerTeam> reviewerTeams;
-
-    @OneToMany
-    private List<Student> students;
 }

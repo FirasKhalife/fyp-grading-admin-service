@@ -2,7 +2,7 @@ package com.fypgrading.adminservice.config;
 
 import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.repository.ReviewerRepository;
-import com.fypgrading.adminservice.service.enums.Role;
+import com.fypgrading.adminservice.service.enums.RoleEnum;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -36,7 +36,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         }
 
         Reviewer reviewer = reviewerOpt.get();
-        if (!Objects.equals(request.getMethod(), "GET") && reviewer.getRole() != Role.ADMIN) {
+        if (!Objects.equals(request.getMethod(), "GET") && reviewer.getRole() != RoleEnum.ADMIN) {
             return false;
         }
 

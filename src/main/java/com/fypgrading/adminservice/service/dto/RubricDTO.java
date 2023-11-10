@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RubricDTO {
 
+    private Integer id;
+
     private String name;
 
     private Integer percentage;

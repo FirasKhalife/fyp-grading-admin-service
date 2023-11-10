@@ -1,6 +1,6 @@
 package com.fypgrading.adminservice.entity;
 
-import com.fypgrading.adminservice.service.enums.Role;
+import com.fypgrading.adminservice.service.enums.RoleEnum;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -33,7 +33,7 @@ public class Reviewer {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private RoleEnum role;
 
     @OneToMany
     private List<Team> teams;
