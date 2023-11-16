@@ -2,12 +2,15 @@ package com.fypgrading.adminservice.controller;
 
 import com.fypgrading.adminservice.service.TeamService;
 import com.fypgrading.adminservice.service.dto.CountDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/teams")
 public class TeamController {
@@ -24,10 +27,16 @@ public class TeamController {
         return ResponseEntity.ok().body(teams);
     }
 
-    @GetMapping("/teamds/{id}/reviewers")
-    public ResponseEntity<CountDTO> getTeamReviewers(@PathVariable Integer id) {
-        CountDTO reviewersCount = teamService.getTeamReviewers(id);
+    @GetMapping("/{id}/reviewers/count")
+    public ResponseEntity<CountDTO> getTeamReviewersCount(@PathVariable Integer id) {
+        CountDTO reviewersCount = teamService.getTeamReviewersCount(id);
         return ResponseEntity.ok().body(reviewersCount);
+    }
+
+    @GetMapping("/{id}/reviewers")
+    public ResponseEntity<List<ReviewerViewDTO>> getTeamReviewers(@PathVariable Integer id) {
+        List<ReviewerViewDTO> reviewers = teamService.getTeamReviewers(id);
+        return ResponseEntity.ok().body(reviewers);
     }
 
     @PostMapping("/")

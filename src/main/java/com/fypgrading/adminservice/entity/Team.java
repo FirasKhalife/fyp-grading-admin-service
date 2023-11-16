@@ -17,6 +17,6 @@ public class Team {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @OneToMany
-    private List<ReviewerTeam> reviewerTeams;
+    @OneToMany(mappedBy = "team")
+    private List<ReviewerTeam> teamReviewers;
 }

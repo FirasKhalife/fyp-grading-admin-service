@@ -1,4 +1,4 @@
-package com.fypgrading.adminservice.service.dto;
+package com.fypgrading.adminservice.entity;
 
 import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import lombok.AllArgsConstructor;
@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RubricDTO {
+public class EvaluationSubmissionDTO {
 
-    private Integer id;
+    private Integer teamId;
 
-    private String name;
-
-    private Integer percentage;
+    private Integer reviewerId;
 
     private AssessmentEnum assessment;
+
+    private Float grade;
 }

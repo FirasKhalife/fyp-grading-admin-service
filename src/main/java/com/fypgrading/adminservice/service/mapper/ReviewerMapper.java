@@ -2,6 +2,7 @@ package com.fypgrading.adminservice.service.mapper;
 
 import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.service.dto.ReviewerDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
 import org.mapstruct.Mapper;
 
 import java.util.List;
@@ -9,11 +10,12 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface ReviewerMapper {
 
-    ReviewerDTO toDTO(Reviewer rubric);
+    List<ReviewerViewDTO> toViewDTOList(List<Reviewer> reviewers);
 
-    Reviewer toEntity(ReviewerDTO rubricDTO);
+    List<Reviewer> toEntityList(List<ReviewerDTO> reviewerDTOs);
 
-    List<ReviewerDTO> toDTOList(List<Reviewer> rubrics);
+    ReviewerViewDTO toViewDTO(Reviewer reviewer);
 
-    List<Reviewer> toEntityList(List<ReviewerDTO> rubricDTOs);
+    Reviewer toEntity(ReviewerDTO reviewerDTO);
+
 }

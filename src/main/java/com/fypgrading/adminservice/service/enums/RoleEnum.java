@@ -2,15 +2,26 @@ package com.fypgrading.adminservice.service.enums;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
 
 @Getter
-@NoArgsConstructor
-public enum RoleEnum {
-    @JsonProperty("admin")
+public enum RoleEnum implements GrantedAuthority {
+
+    @JsonProperty("ADMIN")
     ADMIN,
-    @JsonProperty("jury_member")
+
+    @JsonProperty("JURY_MEMBER")
     JURY_MEMBER,
-    @JsonProperty("advisor")
-    ADVISOR;
+
+    @JsonProperty("ADVISOR")
+    ADVISOR,
+
+    @JsonProperty("ALL")
+    ALL;
+
+    @Override
+    public String getAuthority() {
+        return name();
+    }
+
 }

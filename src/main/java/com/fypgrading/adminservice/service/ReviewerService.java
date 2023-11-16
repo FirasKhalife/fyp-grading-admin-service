@@ -1,9 +1,11 @@
 package com.fypgrading.adminservice.service;
 
 import com.fypgrading.adminservice.entity.Reviewer;
+import com.fypgrading.adminservice.entity.ReviewerTeam;
 import com.fypgrading.adminservice.entity.Team;
 import com.fypgrading.adminservice.repository.ReviewerRepository;
 import com.fypgrading.adminservice.service.dto.ReviewerDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
@@ -26,29 +28,29 @@ public class ReviewerService {
         this.teamMapper = teamMapper;
     }
 
-    public List<ReviewerDTO> getReviewers() {
+    public List<ReviewerViewDTO> getReviewers() {
         List<Reviewer> reviewers = reviewerRepository.findAll();
-        return reviewerMapper.toDTOList(reviewers);
+        return reviewerMapper.toViewDTOList(reviewers);
     }
 
-    public ReviewerDTO createReviewer(ReviewerDTO reviewerDTO) {
+    public ReviewerViewDTO createReviewer(ReviewerDTO reviewerDTO) {
         Reviewer reviewer = reviewerMapper.toEntity(reviewerDTO);
         Reviewer createdEntity = reviewerRepository.save(reviewer);
-        return reviewerMapper.toDTO(createdEntity);
+        return reviewerMapper.toViewDTO(createdEntity);
     }
 
-    public ReviewerDTO updateReviewer(Integer id, ReviewerDTO reviewerDTO) {
+    public ReviewerViewDTO updateReviewer(Integer id, ReviewerDTO reviewerDTO) {
         getReviewerById(id);
         Reviewer reviewer = reviewerMapper.toEntity(reviewerDTO);
         reviewer.setId(id);
         Reviewer updatedEntity = reviewerRepository.save(reviewer);
-        return reviewerMapper.toDTO(updatedEntity);
+        return reviewerMapper.toViewDTO(updatedEntity);
     }
 
-    public ReviewerDTO deleteReviewer(Integer id) {
+    public ReviewerViewDTO deleteReviewer(Integer id) {
         Reviewer reviewer = getReviewerById(id);
         reviewerRepository.delete(reviewer);
-        return reviewerMapper.toDTO(reviewer);
+        return reviewerMapper.toViewDTO(reviewer);
     }
 
     private Reviewer getReviewerById(Integer id) {
@@ -56,13 +58,16 @@ public class ReviewerService {
                 new EntityNotFoundException("Reviewer not found"));
     }
 
-    public ReviewerDTO getReviewer(Integer id) {
+    public ReviewerViewDTO getReviewer(Integer id) {
         Reviewer reviewer = getReviewerById(id);
-        return reviewerMapper.toDTO(reviewer);
+        return reviewerMapper.toViewDTO(reviewer);
     }
 
     public List<TeamDTO> getReviewerTeams(Integer id) {
-        List<Team> teams = getReviewerById(id).getTeams();
-        return teamMapper.toDTOList(teams);
+        List<Team> reviewerTeams =
+                getReviewerById(id).getReviewerTeams().parallelStream()
+                        .map(ReviewerTeam::getTeam)
+                        .toList();
+        return teamMapper.toDTOList(reviewerTeams);
     }
 }

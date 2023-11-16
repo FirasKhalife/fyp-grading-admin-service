@@ -5,11 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Entity
+@Entity(name = "reviewer_team")
 public class ReviewerTeam {
 
     @EmbeddedId
@@ -25,5 +25,19 @@ public class ReviewerTeam {
     @JoinColumn(name = "team_id")
     private Team team;
 
-    private Integer grade;
+    @OneToMany(mappedBy = "reviewerTeam")
+    private List<AssessmentGrade> assessmentGrades;
+
+    public ReviewerTeam(Integer reviewerId, Integer teamId) {
+        this.id.setReviewerId(reviewerId);
+        this.id.setTeamId(teamId);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ReviewerTeam reviewerTeam)) return false;
+        return this.id.getReviewerId().equals(reviewerTeam.getId().getReviewerId())
+                && this.id.getTeamId().equals(reviewerTeam.getId().getTeamId());
+    }
+
 }

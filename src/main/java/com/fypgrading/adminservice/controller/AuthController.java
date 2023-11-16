@@ -1,15 +1,15 @@
 package com.fypgrading.adminservice.controller;
 
-import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.service.AuthService;
-import com.fypgrading.adminservice.service.dto.AuthDTO;
+import com.fypgrading.adminservice.service.dto.JwtResponse;
+import com.fypgrading.adminservice.service.dto.LoginDTO;
 import com.fypgrading.adminservice.service.dto.ReviewerDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -21,8 +21,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ReviewerDTO> login(@RequestBody AuthDTO authDTO) {
-        ReviewerDTO reviewer = authService.login(authDTO);
+    public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody LoginDTO auth) {
+        JwtResponse response = authService.login(auth);
+        return ResponseEntity.ok().body(response);
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<ReviewerViewDTO> registerUser(@Valid @RequestBody ReviewerDTO reviewerDTO) {
+        ReviewerViewDTO reviewer = authService.signup(reviewerDTO);
         return ResponseEntity.ok().body(reviewer);
     }
+
 }

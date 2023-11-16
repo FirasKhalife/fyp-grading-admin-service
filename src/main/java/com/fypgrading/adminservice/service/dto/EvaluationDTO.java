@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.service.dto;
 
-import com.fypgrading.adminservice.entity.Team;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,12 +9,11 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeamDTO {
+public class EvaluationDTO {
 
-    private Integer id;
+    private Integer reviewerId;
 
-    public TeamDTO(Team team) {
-        this.id = team.getId();
-    }
+    private Integer teamId;
 
+    private List<GradedRubricDTO> gradedRubrics;
 }

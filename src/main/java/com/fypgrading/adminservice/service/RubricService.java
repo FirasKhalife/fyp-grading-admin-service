@@ -2,6 +2,7 @@ package com.fypgrading.adminservice.service;
 
 import com.fypgrading.adminservice.service.dto.RubricDTO;
 import com.fypgrading.adminservice.entity.Rubric;
+import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import com.fypgrading.adminservice.service.mapper.RubricMapper;
 import com.fypgrading.adminservice.repository.RubricRepository;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
@@ -60,19 +61,16 @@ public class RubricService {
                         new EntityNotFoundException("Rubric not found"));
     }
 
-    public List<RubricDTO> handleGetRubricsFallback() {
-        return List.of();
+    public List<RubricDTO> getRubricsByAssessment(String assessmentStr) {
+        AssessmentEnum assessment = AssessmentEnum.valueOf(assessmentStr.toUpperCase());
+        List<Rubric> rubrics = rubricRepository.findByAssessment(assessment);
+        return rubricMapper.toDTOList(rubrics);
     }
 
-    public String handleCreateRubricFallback(RubricDTO rubricDTO) {
-        return "Rubric not created";
-    }
-
-    public String handleUpdateRubricFallback(Integer id, RubricDTO rubricDTO) {
-        return "Rubric not updated";
-    }
-
-    public String handleDeleteRubricFallback(Integer id) {
-        return "Rubric not deleted";
+    public List<RubricDTO> updateRubricsByAssessment(AssessmentEnum assessment, List<RubricDTO> rubricDTOList) {
+        List<Rubric> rubrics = rubricMapper.toEntityList(rubricDTOList);
+        rubricRepository.deleteAllByAssessment(assessment);
+        List<Rubric> updatedEntities = rubricRepository.saveAll(rubrics);
+        return rubricMapper.toDTOList(updatedEntities);
     }
 }

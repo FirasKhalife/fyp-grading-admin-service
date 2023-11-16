@@ -6,7 +6,9 @@ import com.fypgrading.adminservice.entity.Team;
 import com.fypgrading.adminservice.repository.TeamRepository;
 import com.fypgrading.adminservice.service.dto.CountDTO;
 import com.fypgrading.adminservice.service.dto.ReviewerDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
+import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -18,10 +20,12 @@ public class TeamService {
 
     private final TeamRepository teamRepository;
     private final TeamMapper teamMapper;
+    private final ReviewerMapper reviewerMapper;
 
-    public TeamService(TeamRepository teamRepository, TeamMapper teamMapper) {
+    public TeamService(TeamRepository teamRepository, TeamMapper teamMapper, ReviewerMapper reviewerMapper) {
         this.teamRepository = teamRepository;
         this.teamMapper = teamMapper;
+        this.reviewerMapper = reviewerMapper;
     }
 
     public List<TeamDTO> getTeams() {
@@ -53,8 +57,16 @@ public class TeamService {
                         new EntityNotFoundException("Team not found"));
     }
 
-    public CountDTO getTeamReviewers(Integer id) {
-        int reviewersCount = getTeamById(id).getReviewerTeams().size();
+    public CountDTO getTeamReviewersCount(Integer id) {
+        int reviewersCount = getTeamById(id).getTeamReviewers().size();
         return new CountDTO(Integer.toUnsignedLong(reviewersCount));
+    }
+
+    public List<ReviewerViewDTO> getTeamReviewers(Integer id) {
+        List<Reviewer> reviewers =
+                getTeamById(id).getTeamReviewers().parallelStream()
+                        .map(ReviewerTeam::getReviewer)
+                        .toList();
+        return reviewerMapper.toViewDTOList(reviewers);
     }
 }

@@ -1,9 +1,7 @@
 package com.fypgrading.adminservice.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fypgrading.adminservice.service.enums.AssessmentEnum;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,4 +22,8 @@ public class Rubric {
 
     @NotNull
     private Integer percentage;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private AssessmentEnum assessment;
 }

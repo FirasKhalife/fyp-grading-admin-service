@@ -8,13 +8,16 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RubricDTO {
+public class AssessmentGradeDTO {
 
     private Integer id;
 
-    private String name;
-
-    private Integer percentage;
-
     private AssessmentEnum assessment;
+
+    private Float grade;
+
+    private Integer reviewerId;
+
+    private Integer teamId;
 }
+
