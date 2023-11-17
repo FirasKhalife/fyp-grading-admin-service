@@ -2,10 +2,9 @@ package com.fypgrading.adminservice.service.enums;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import org.springframework.security.core.GrantedAuthority;
 
 @Getter
-public enum RoleEnum implements GrantedAuthority {
+public enum RoleEnum {
 
     @JsonProperty("ADMIN")
     ADMIN,
@@ -18,10 +17,5 @@ public enum RoleEnum implements GrantedAuthority {
 
     @JsonProperty("ALL")
     ALL;
-
-    @Override
-    public String getAuthority() {
-        return name();
-    }
 
 }
