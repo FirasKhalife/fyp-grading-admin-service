@@ -1,12 +1,9 @@
 package com.fypgrading.adminservice.config;
 
-import com.fypgrading.adminservice.service.EventHandler;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -152,26 +149,26 @@ public class RabbitConfig {
         return BindingBuilder.bind(queue).to(exchange).with(DEAD_ROUTING_KEY);
     }
 
-    /**
-     * RabbitMQ Listener
-     */
-    @Bean
-    MessageListenerAdapter messageListenerAdapter(EventHandler eventHandler) {
-        MessageListenerAdapter messageListenerAdapter =
-                new MessageListenerAdapter(eventHandler, "onMessage");
-        messageListenerAdapter.setMessageConverter(jackson2JsonMessageConverter());
-        return messageListenerAdapter;
-    }
-
-    @Bean
-    SimpleMessageListenerContainer simpleMessageListenerContainer(ConnectionFactory connectionFactory,
-                                                                  MessageListenerAdapter messageListenerAdapter) {
-        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
-        simpleMessageListenerContainer.setConnectionFactory(connectionFactory);
-        simpleMessageListenerContainer.setQueueNames(NOTIFICATION_QUEUE_NAME);
-        simpleMessageListenerContainer.setMessageListener(messageListenerAdapter);
-        return simpleMessageListenerContainer;
-    }
+//    /**
+//     * RabbitMQ Listener
+//     */
+//    @Bean
+//    MessageListenerAdapter messageListenerAdapter(EventHandler eventHandler) {
+//        MessageListenerAdapter messageListenerAdapter =
+//                new MessageListenerAdapter(eventHandler, "onMessage");
+//        messageListenerAdapter.setMessageConverter(jackson2JsonMessageConverter());
+//        return messageListenerAdapter;
+//    }
+//
+//    @Bean
+//    SimpleMessageListenerContainer simpleMessageListenerContainer(ConnectionFactory connectionFactory,
+//                                                                  MessageListenerAdapter messageListenerAdapter) {
+//        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
+//        simpleMessageListenerContainer.setConnectionFactory(connectionFactory);
+//        simpleMessageListenerContainer.setQueueNames(NOTIFICATION_QUEUE_NAME);
+//        simpleMessageListenerContainer.setMessageListener(messageListenerAdapter);
+//        return simpleMessageListenerContainer;
+//    }
 
     /**
      * RabbitMQ Config

@@ -21,9 +21,9 @@ public class AssessmentGrade {
     private Float grade;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    private ReviewerTeam reviewerTeam;
+    private com.fypgrading.adminservice.entity.ReviewerTeam reviewerTeam;
 
-    public AssessmentGrade(AssessmentEnum assessment, Float grade, ReviewerTeam reviewerTeam) {
+    public AssessmentGrade(AssessmentEnum assessment, Float grade, com.fypgrading.adminservice.entity.ReviewerTeam reviewerTeam) {
         this.assessment = assessment;
         this.grade = grade;
         this.reviewerTeam = reviewerTeam;

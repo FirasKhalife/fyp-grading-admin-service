@@ -6,11 +6,8 @@ import com.fypgrading.adminservice.service.dto.ReviewerDTO;
 import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
 import jakarta.annotation.security.RolesAllowed;
-import org.springframework.context.annotation.Role;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

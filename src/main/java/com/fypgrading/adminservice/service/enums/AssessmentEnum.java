@@ -19,5 +19,5 @@ public enum AssessmentEnum {
     FINAL_REPORT,
 
     @JsonProperty("FINAL_PRESENTATION")
-    FINAL_PRESENTATION;
+    FINAL_PRESENTATION
 }

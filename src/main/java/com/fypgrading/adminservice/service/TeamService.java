@@ -5,7 +5,6 @@ import com.fypgrading.adminservice.entity.ReviewerTeam;
 import com.fypgrading.adminservice.entity.Team;
 import com.fypgrading.adminservice.repository.TeamRepository;
 import com.fypgrading.adminservice.service.dto.CountDTO;
-import com.fypgrading.adminservice.service.dto.ReviewerDTO;
 import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;

@@ -1,7 +1,6 @@
 package com.fypgrading.adminservice.config.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fypgrading.adminservice.exceptions.AuthException;
 import com.fypgrading.adminservice.exceptions.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -11,14 +11,14 @@ import com.fypgrading.adminservice.service.dto.EvaluationDTO;
 import com.fypgrading.adminservice.service.dto.TeamGradeDTO;
 import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import com.fypgrading.adminservice.service.mapper.ReviewerTeamMapper;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class GradeService {
@@ -27,14 +27,18 @@ public class GradeService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ReviewerTeamRepository reviewerTeamRepository;
     private final ReviewerRepository reviewerRepository;
+    private final com.fypgrading.adminservice.service.EventDispatcher eventDispatcher;
     private final ReviewerTeamMapper gradeMapper;
+    private final RabbitTemplate rabbitTemplate;
     private final TeamRepository teamRepository;
 
-    public GradeService(ReviewerTeamMapper gradeMapper, AssessmentGradeRepository assessmentGradeRepository, ReviewerTeamRepository reviewerTeamRepository, TeamRepository teamRepository, ReviewerRepository reviewerRepository) {
+    public GradeService(ReviewerTeamMapper gradeMapper, AssessmentGradeRepository assessmentGradeRepository, ReviewerTeamRepository reviewerTeamRepository, RabbitTemplate rabbitTemplate, TeamRepository teamRepository, ReviewerRepository reviewerRepository, com.fypgrading.adminservice.service.EventDispatcher eventDispatcher) {
         this.assessmentGradeRepository = assessmentGradeRepository;
         this.reviewerTeamRepository = reviewerTeamRepository;
         this.reviewerRepository = reviewerRepository;
+        this.eventDispatcher = eventDispatcher;
         this.teamRepository = teamRepository;
+        this.rabbitTemplate = rabbitTemplate;
         this.gradeMapper = gradeMapper;
     }
 
@@ -75,21 +79,21 @@ public class GradeService {
 
         assessmentGradeRepository.save(assessmentGrade);
 
-        {
-            long teamReviewersCount = reviewerTeamRepository.countByTeamId(evalSub.getTeamId());
-            long submittedAssessmentTeamReviewsCount =
-                    assessmentGradeRepository.countByAssessmentAndReviewerTeam_TeamId(
-                            evalSub.getAssessment(), evalSub.getTeamId()
-                    );
-            if (teamReviewersCount != submittedAssessmentTeamReviewsCount)
-                return;
+        long teamReviewersCount = reviewerTeamRepository.countByTeamId(evalSub.getTeamId());
+        long submittedAssessmentTeamReviewsCount =
+                assessmentGradeRepository.countByAssessmentAndReviewerTeam_TeamId(
+                        evalSub.getAssessment(), evalSub.getTeamId()
+                );
+        if (teamReviewersCount != submittedAssessmentTeamReviewsCount)
+            return;
 
-            long allSubmittedTeamReviewsCount =
-                    assessmentGradeRepository.countByReviewerTeam_TeamId(evalSub.getTeamId());
+        eventDispatcher.sendAdminNotification(evalSub.getTeamId(), evalSub.getAssessment());
 
-            if (allSubmittedTeamReviewsCount != teamReviewersCount * AssessmentEnum.values().length) {
-//                eventDispatcher.sendAdminNotification(teamId, );
-            }
+        long allSubmittedTeamReviewsCount =
+                assessmentGradeRepository.countByReviewerTeam_TeamId(evalSub.getTeamId());
+
+        if (allSubmittedTeamReviewsCount != teamReviewersCount * AssessmentEnum.values().length) {
+            eventDispatcher.sendAdminNotification(evalSub.getTeamId(), null);
         }
     }
 }

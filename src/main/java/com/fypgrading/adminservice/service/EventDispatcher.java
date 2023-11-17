@@ -1,11 +1,10 @@
 package com.fypgrading.adminservice.service;
 
-import com.fypgrading.reviewservice.config.RabbitConfig;
-import com.fypgrading.reviewservice.service.event.EvaluationSubmissionDTO;
+import com.fypgrading.adminservice.config.RabbitConfig;
+import com.fypgrading.adminservice.service.enums.AssessmentEnum;
+import com.fypgrading.adminservice.service.event.AllReviewersSubmittedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.stereotype.Service;
@@ -21,25 +20,17 @@ public class EventDispatcher {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void sendEvaluationSubmitted(EvaluationSubmissionDTO event) {
-        Message message = converter.toMessage(event, new MessageProperties());
+    public void sendAdminNotification(int teamId, AssessmentEnum assessment) {
+        AllReviewersSubmittedEvent event = new AllReviewersSubmittedEvent(teamId, assessment);
+//        Message message = converter.toMessage(event, new MessageProperties());
 
-        logger.info("Sending EvaluationSubmittedEvent to " + RabbitConfig.GRADES_QUEUE_NAME + ": " + message);
+        logger.info("Sending EvaluationSubmittedEvent to " + RabbitConfig.NOTIFICATION_QUEUE_NAME + ": " + event);
 
-        rabbitTemplate.send(
-                "",
-                RabbitConfig.GRADES_QUEUE_NAME,
-                message);
-    }
+        rabbitTemplate.convertAndSend(RabbitConfig.NOTIFICATION_ROUTING_KEY, event);
 
-    public void sendNotification(Integer teamId) {
-        Message message = converter.toMessage(teamId, new MessageProperties());
-
-        logger.info("Sending NotificationEvent to " + RabbitConfig.NOTIFICATION_QUEUE_NAME + ": " + message);
-
-        rabbitTemplate.send(
-                "",
-                RabbitConfig.NOTIFICATION_QUEUE_NAME,
-                message);
+//        rabbitTemplate.send(
+//                "",
+//                RabbitConfig.NOTIFICATION_ROUTING_KEY,
+//                message);
     }
 }
