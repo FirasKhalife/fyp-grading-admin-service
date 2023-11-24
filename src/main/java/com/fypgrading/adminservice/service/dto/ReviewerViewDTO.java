@@ -1,7 +1,6 @@
 package com.fypgrading.adminservice.service.dto;
 
 import com.fypgrading.adminservice.entity.Reviewer;
-import com.fypgrading.adminservice.service.enums.RoleEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,14 +20,14 @@ public class ReviewerViewDTO {
 
     private String email;
 
-    private RoleEnum role;
+    private Boolean isAdmin;
 
     public ReviewerViewDTO(Reviewer reviewer) {
         this.id = reviewer.getId();
         this.firstName = reviewer.getFirstName();
         this.lastName = reviewer.getLastName();
         this.email = reviewer.getEmail();
-        this.role = reviewer.getRole();
+        this.isAdmin = reviewer.getIsAdmin();
     }
 
     @Override

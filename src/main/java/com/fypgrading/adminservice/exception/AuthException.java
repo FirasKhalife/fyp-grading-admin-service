@@ -1,4 +1,4 @@
-package com.fypgrading.adminservice.exceptions;
+package com.fypgrading.adminservice.exception;
 
 public class AuthException extends RuntimeException {
 

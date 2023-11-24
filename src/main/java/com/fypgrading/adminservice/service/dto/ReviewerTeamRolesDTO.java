@@ -10,16 +10,11 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReviewerDTO {
+public class ReviewerTeamRolesDTO {
 
-    private String firstName;
+    private Integer reviewerId;
 
-    private String lastName;
-
-    private String email;
-
-    private String password;
+    private Integer teamId;
 
     private List<RoleEnum> roles;
-
 }

@@ -13,9 +13,6 @@ public enum RoleEnum {
     JURY_MEMBER,
 
     @JsonProperty("ADVISOR")
-    ADVISOR,
-
-    @JsonProperty("ALL")
-    ALL;
+    ADVISOR
 
 }

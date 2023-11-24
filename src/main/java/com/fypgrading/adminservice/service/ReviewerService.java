@@ -4,9 +4,9 @@ import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.entity.ReviewerTeam;
 import com.fypgrading.adminservice.entity.Team;
 import com.fypgrading.adminservice.repository.ReviewerRepository;
-import com.fypgrading.adminservice.service.dto.ReviewerDTO;
-import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
-import com.fypgrading.adminservice.service.dto.TeamDTO;
+import com.fypgrading.adminservice.repository.ReviewerTeamRepository;
+import com.fypgrading.adminservice.repository.TeamRepository;
+import com.fypgrading.adminservice.service.dto.*;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,13 +17,16 @@ import java.util.List;
 @Service
 public class ReviewerService {
 
+    private final ReviewerTeamRepository reviewerTeamRepository;
     private final ReviewerRepository reviewerRepository;
     private final ReviewerMapper reviewerMapper;
-
+    private final TeamRepository teamRepository;
     private final TeamMapper teamMapper;
 
-    public ReviewerService(ReviewerRepository reviewerRepository, ReviewerMapper reviewerMapper, TeamMapper teamMapper) {
+    public ReviewerService(ReviewerTeamRepository reviewerTeamRepository, ReviewerRepository reviewerRepository, ReviewerMapper reviewerMapper, TeamRepository teamRepository, TeamMapper teamMapper) {
+        this.reviewerTeamRepository = reviewerTeamRepository;
         this.reviewerRepository = reviewerRepository;
+        this.teamRepository = teamRepository;
         this.reviewerMapper = reviewerMapper;
         this.teamMapper = teamMapper;
     }
@@ -53,21 +56,26 @@ public class ReviewerService {
         return reviewerMapper.toViewDTO(reviewer);
     }
 
-    private Reviewer getReviewerById(Integer id) {
+    public Reviewer getReviewerById(Integer id) {
         return reviewerRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Reviewer not found"));
     }
 
-    public ReviewerViewDTO getReviewer(Integer id) {
+    public ReviewerViewDTO getReviewerViewById(Integer id) {
         Reviewer reviewer = getReviewerById(id);
         return reviewerMapper.toViewDTO(reviewer);
     }
 
     public List<TeamDTO> getReviewerTeams(Integer id) {
         List<Team> reviewerTeams =
-                getReviewerById(id).getReviewerTeams().parallelStream()
+                getReviewerById(id).getReviewerTeams()
+                        .parallelStream()
                         .map(ReviewerTeam::getTeam)
                         .toList();
         return teamMapper.toDTOList(reviewerTeams);
+    }
+
+    public long countReviewersByTeamIdAndRoleName(Integer teamId, String roleName) {
+        return reviewerRepository.countReviewersByTeamIdAndRoleName(teamId, roleName);
     }
 }

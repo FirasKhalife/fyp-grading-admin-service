@@ -10,23 +10,35 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class AssessmentGrade {
+public class Grade {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Enumerated(EnumType.STRING)
     private AssessmentEnum assessment;
 
     private Float grade;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    private com.fypgrading.adminservice.entity.ReviewerTeam reviewerTeam;
+    @ManyToOne
+    private ReviewerTeam reviewerTeam;
 
-    public AssessmentGrade(AssessmentEnum assessment, Float grade, com.fypgrading.adminservice.entity.ReviewerTeam reviewerTeam) {
+    public Grade(AssessmentEnum assessment, Float grade, com.fypgrading.adminservice.entity.ReviewerTeam reviewerTeam) {
+        this.reviewerTeam = reviewerTeam;
         this.assessment = assessment;
         this.grade = grade;
-        this.reviewerTeam = reviewerTeam;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Grade g)) return false;
+        return id.equals(g.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 }
 

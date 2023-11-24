@@ -1,9 +1,8 @@
 package com.fypgrading.adminservice.controller;
 
 import com.fypgrading.adminservice.service.ReviewerService;
-import com.fypgrading.adminservice.service.dto.ReviewerDTO;
-import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
-import com.fypgrading.adminservice.service.dto.TeamDTO;
+import com.fypgrading.adminservice.service.ReviewerTeamService;
+import com.fypgrading.adminservice.service.dto.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +14,24 @@ import java.util.List;
 public class ReviewerController {
 
     private final ReviewerService reviewerService;
+    private final ReviewerTeamService reviewerTeamService;
 
-    public ReviewerController(ReviewerService reviewerService) {
+    public ReviewerController(ReviewerService reviewerService, ReviewerTeamService reviewerTeamService) {
+        this.reviewerTeamService = reviewerTeamService;
         this.reviewerService = reviewerService;
+    }
+
+    @GetMapping("/{reviewerId}/teams/{teamId}/roles")
+    public ResponseEntity<ReviewerTeamRolesDTO> getReviewerTeamRoles(@PathVariable Integer reviewerId,
+                                                                     @PathVariable Integer teamId) {
+        ReviewerTeamRolesDTO roles = reviewerTeamService.getReviewerTeamRoles(reviewerId, teamId);
+        return ResponseEntity.ok().body(roles);
+    }
+
+    @GetMapping("/{reviewerId}/roles")
+    public ResponseEntity<ReviewerRolesDTO> getReviewerRoles(@PathVariable Integer reviewerId) {
+        ReviewerRolesDTO roles = reviewerTeamService.getReviewerRoles(reviewerId);
+        return ResponseEntity.ok().body(roles);
     }
 
     @GetMapping("/")
@@ -34,7 +48,7 @@ public class ReviewerController {
 
     @GetMapping("/{id: [0-9]+}")
     public ResponseEntity<ReviewerViewDTO> getReviewer(@PathVariable Integer id) {
-        ReviewerViewDTO rubrics = reviewerService.getReviewer(id);
+        ReviewerViewDTO rubrics = reviewerService.getReviewerViewById(id);
         return ResponseEntity.ok().body(rubrics);
     }
 

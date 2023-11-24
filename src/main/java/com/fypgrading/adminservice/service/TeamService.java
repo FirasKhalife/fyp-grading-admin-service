@@ -18,13 +18,16 @@ import java.util.List;
 public class TeamService {
 
     private final TeamRepository teamRepository;
-    private final TeamMapper teamMapper;
     private final ReviewerMapper reviewerMapper;
+    private final TeamMapper teamMapper;
 
-    public TeamService(TeamRepository teamRepository, TeamMapper teamMapper, ReviewerMapper reviewerMapper) {
+    public TeamService(TeamRepository teamRepository,
+                       ReviewerMapper reviewerMapper,
+                       TeamMapper teamMapper
+    ) {
         this.teamRepository = teamRepository;
-        this.teamMapper = teamMapper;
         this.reviewerMapper = reviewerMapper;
+        this.teamMapper = teamMapper;
     }
 
     public List<TeamDTO> getTeams() {
@@ -45,13 +48,18 @@ public class TeamService {
         return teamMapper.toDTO(updatedEntity);
     }
 
+    public void saveFinalGrade(Team team, float grade) {
+        team.setFinalGrade(grade);
+        teamRepository.save(team);
+    }
+
     public TeamDTO deleteTeam(Integer id) {
         Team team = getTeamById(id);
         teamRepository.delete(team);
         return teamMapper.toDTO(team);
     }
 
-    private Team getTeamById(Integer id) {
+    public Team getTeamById(Integer id) {
         return teamRepository.findById(id).orElseThrow(() ->
                         new EntityNotFoundException("Team not found"));
     }
@@ -63,7 +71,8 @@ public class TeamService {
 
     public List<ReviewerViewDTO> getTeamReviewers(Integer id) {
         List<Reviewer> reviewers =
-                getTeamById(id).getTeamReviewers().parallelStream()
+                getTeamById(id).getTeamReviewers()
+                        .parallelStream()
                         .map(ReviewerTeam::getReviewer)
                         .toList();
         return reviewerMapper.toViewDTOList(reviewers);

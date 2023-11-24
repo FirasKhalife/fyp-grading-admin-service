@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/fyp-grading
+    url: jdbc:postgresql://localhost:5432/admin-db
     username: admin
     password: admin
   jpa:
@@ -15,6 +15,23 @@ spring:
     username: admin
     password: admin
 
+    retry-queues-ttl: 2000
+    retry-max-count: 3
+
+    listener:
+      simple:
+        acknowledge-mode: manual
+
+    check-notification:
+      queue: "check-notification-queue"
+      exchange: "check-notification-exchange"
+      routing-key: "check-notification-key"
+
+    retry-check-notification:
+      queue: "retry-check-notification-queue"
+      exchange: "retry-check-notification-exchange"
+      routing-key: "retry-check-notification-key"
+
     notification:
       queue: "notification-queue"
       exchange: "notification-exchange"
@@ -24,8 +41,6 @@ spring:
       queue: "retry-notification-queue"
       exchange: "retry-notification-exchange"
       routing-key: "retry-notification-key"
-      ttl: 2000
-      max-count: 3
 
     dead-letter:
       queue: "dead-queue"

@@ -1,4 +1,4 @@
-package com.fypgrading.adminservice.exceptions;
+package com.fypgrading.adminservice.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

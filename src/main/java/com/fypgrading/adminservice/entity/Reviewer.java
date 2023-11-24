@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.entity;
 
-import com.fypgrading.adminservice.service.enums.RoleEnum;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -31,19 +30,35 @@ public class Reviewer {
     @NotNull
     private String password;
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private RoleEnum role;
+    private Boolean isAdmin = false;
 
     @OneToMany(mappedBy = "reviewer")
     private List<ReviewerTeam> reviewerTeams;
 
-    public Reviewer(String firstName, String lastName, String email, String password, RoleEnum role) {
+    public Reviewer(String firstName, String lastName, String email, String password, Boolean isAdmin) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.password = password;
-        this.role = role;
+        this.isAdmin = isAdmin;
+    }
+
+    public Reviewer(String firstName, String lastName, String email, String password) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.password = password;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Reviewer reviewer)) return false;
+        return id.equals(reviewer.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 
 }

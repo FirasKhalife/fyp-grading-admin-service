@@ -1,8 +1,8 @@
 package com.fypgrading.adminservice.controller;
 
-import com.fypgrading.adminservice.service.dto.JwtResponse;
+import com.fypgrading.adminservice.service.ReviewerTeamService;
+import com.fypgrading.adminservice.service.dto.JwtResponseDTO;
 import com.fypgrading.adminservice.service.dto.LoginDTO;
-import com.fypgrading.adminservice.service.enums.RoleEnum;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,11 +12,37 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private final ReviewerTeamService reviewerTeamService;
+
+    public AuthController(ReviewerTeamService reviewerTeamService) {
+        this.reviewerTeamService = reviewerTeamService;
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody LoginDTO auth) {
-        JwtResponse response =
-                new JwtResponse(1, "firas.khalife@net.usj.edu.lb",
-                        "Rima", "Kilany", "accessToken", RoleEnum.ADMIN);
+    public ResponseEntity<JwtResponseDTO> authenticateUser(@Valid @RequestBody LoginDTO auth) {
+        JwtResponseDTO response =
+                auth.getPassword().equals("admin") ?
+                        JwtResponseDTO.builder()
+                                .id(1).email("rima.kilany@net.usj.edu.lb")
+                                .firstName("Rima").lastName("Kilany")
+                                .accessToken("accessToken").isAdmin(true)
+                                .build()
+                        :
+                        auth.getPassword().equals("fifo") ?
+                                JwtResponseDTO.builder()
+                                        .id(2).email("firas.khalife@net.usj.edu.lb")
+                                        .firstName("Firas").lastName("Khalife")
+                                        .accessToken("accessToken")
+                                        .build()
+                                :
+                                JwtResponseDTO.builder()
+                                        .id(3).email("gaelle.said@net.usj.edu.lb")
+                                        .firstName("Gaelle").lastName("Said")
+                                        .accessToken("accessToken")
+                                        .build();
+
+        response.setRoles(reviewerTeamService.getReviewerRoles(response.getId()).getRoles());
+
         return ResponseEntity.ok().body(response);
     }
 

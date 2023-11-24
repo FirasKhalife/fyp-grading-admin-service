@@ -1,9 +1,12 @@
 package com.fypgrading.adminservice.config;
 
+import com.fypgrading.adminservice.service.EventHandler;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +15,130 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitConfig {
+
+    /**
+     * Retry Queues Configuration
+     */
+    public static Integer MAX_RETRY_COUNT;
+    public static Integer RETRY_QUEUES_TTL;
+
+    @Value("${spring.rabbitmq.retry-max-count}")
+    public void setRetryCheckNotificationMaxCount(Integer retryCheckNotificationMaxCount) {
+        MAX_RETRY_COUNT = retryCheckNotificationMaxCount;
+    }
+
+    @Value("${spring.rabbitmq.retry-queues-ttl}")
+    public void setRetryCheckNotificationTTL(Integer retryCheckNotificationTTL) {
+        RETRY_QUEUES_TTL = retryCheckNotificationTTL;
+    }
+
+    /**
+     * Check Notification Queue
+     */
+    public static String CHECK_NOTIFICATION_QUEUE_NAME;
+    public static String CHECK_NOTIFICATION_EXCHANGE_NAME;
+    public static String CHECK_NOTIFICATION_ROUTING_KEY;
+
+    @Value("${spring.rabbitmq.check-notification.queue}")
+    public void setCheckNotificationQueueName(String checkNotificationQueueName) {
+        CHECK_NOTIFICATION_QUEUE_NAME = checkNotificationQueueName;
+    }
+
+    @Value("${spring.rabbitmq.check-notification.exchange}")
+    public void setCheckNotificationExchangeName(String checkNotificationExchangeName) {
+        CHECK_NOTIFICATION_EXCHANGE_NAME = checkNotificationExchangeName;
+    }
+
+    @Value("${spring.rabbitmq.check-notification.routing-key}")
+    public void setCheckNotificationRoutingKey(String checkNotificationRoutingKey) {
+        CHECK_NOTIFICATION_ROUTING_KEY = checkNotificationRoutingKey;
+    }
+
+    @Bean
+    public Queue checkNotificationQueue() {
+        return QueueBuilder.durable(CHECK_NOTIFICATION_QUEUE_NAME)
+                .withArgument("x-dead-letter-exchange", RETRY_CHECK_NOTIFICATION_EXCHANGE_NAME)
+                .withArgument("x-dead-letter-routing-key", RETRY_CHECK_NOTIFICATION_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public TopicExchange checkNotificationExchange() {
+        return new TopicExchange(CHECK_NOTIFICATION_EXCHANGE_NAME);
+    }
+
+    @Bean
+    public Binding bindingCheckNotification(@Qualifier("checkNotificationQueue") Queue queue,
+                                            @Qualifier("checkNotificationExchange") TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(CHECK_NOTIFICATION_ROUTING_KEY);
+    }
+
+    /**
+     * Retry Check Notification Queue
+     * In case of processing failure in the Check Notification Queue,
+     * the message will be sent to the Retry Check Notification Queue
+     * where it will stay for a certain amount of time (RETRY_CHECK_NOTIFICATION_TTL)
+     * before being sent back to the CheckNotification Queue.
+     */
+    public static String RETRY_CHECK_NOTIFICATION_QUEUE_NAME;
+    public static String RETRY_CHECK_NOTIFICATION_EXCHANGE_NAME;
+    public static String RETRY_CHECK_NOTIFICATION_ROUTING_KEY;
+
+    @Value("${spring.rabbitmq.retry-check-notification.queue}")
+    public void setRetryCheckNotificationQueueName(String retryCheckNotificationQueueName) {
+        RETRY_CHECK_NOTIFICATION_QUEUE_NAME = retryCheckNotificationQueueName;
+    }
+
+    @Value("${spring.rabbitmq.retry-check-notification.exchange}")
+    public void setRetryCheckNotificationExchangeName(String retryCheckNotificationExchangeName) {
+        RETRY_CHECK_NOTIFICATION_EXCHANGE_NAME = retryCheckNotificationExchangeName;
+    }
+
+    @Value("${spring.rabbitmq.retry-check-notification.routing-key}")
+    public void setRetryCheckNotificationRoutingKey(String retryCheckNotificationRoutingKey) {
+        RETRY_CHECK_NOTIFICATION_ROUTING_KEY = retryCheckNotificationRoutingKey;
+    }
+
+    @Bean
+    public Queue retryCheckNotificationQueue() {
+        return QueueBuilder.durable(RETRY_CHECK_NOTIFICATION_QUEUE_NAME)
+                .withArgument("x-message-ttl", RETRY_QUEUES_TTL)
+                .withArgument("x-dead-letter-exchange", CHECK_NOTIFICATION_EXCHANGE_NAME)
+                .withArgument("x-dead-letter-routing-key", CHECK_NOTIFICATION_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public TopicExchange retryCheckNotificationExchange() {
+        return new TopicExchange(RETRY_CHECK_NOTIFICATION_EXCHANGE_NAME);
+    }
+
+    @Bean
+    public Binding bindingRetryCheckNotification(@Qualifier("retryCheckNotificationQueue") Queue queue,
+                                                 @Qualifier("retryCheckNotificationExchange") TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(RETRY_CHECK_NOTIFICATION_ROUTING_KEY);
+    }
+
+    /**
+     * Check Notification Listener
+     */
+    @Bean
+    MessageListenerAdapter messageListenerAdapter(EventHandler eventHandler) {
+        MessageListenerAdapter messageListenerAdapter =
+                new MessageListenerAdapter(eventHandler, "onMessage");
+        messageListenerAdapter.setMessageConverter(jackson2JsonMessageConverter());
+        return messageListenerAdapter;
+    }
+
+    @Bean
+    SimpleMessageListenerContainer simpleMessageListenerContainer(ConnectionFactory connectionFactory,
+                                                                  MessageListenerAdapter messageListenerAdapter) {
+        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
+        simpleMessageListenerContainer.setConnectionFactory(connectionFactory);
+        simpleMessageListenerContainer.setQueueNames(CHECK_NOTIFICATION_QUEUE_NAME);
+        simpleMessageListenerContainer.setMessageListener(messageListenerAdapter);
+        return simpleMessageListenerContainer;
+    }
 
     /**
      * Notification Queue
@@ -61,8 +188,6 @@ public class RabbitConfig {
     public static String RETRY_NOTIFICATION_QUEUE_NAME;
     public static String RETRY_NOTIFICATION_EXCHANGE_NAME;
     public static String RETRY_NOTIFICATION_ROUTING_KEY;
-    public static Integer RETRY_NOTIFICATION_TTL;
-    public static Integer RETRY_NOTIFICATION_MAX_COUNT;
 
     @Value("${spring.rabbitmq.retry-notification.queue}")
     public void setRetryNotificationQueueName(String retryNotificationQueueName) {
@@ -79,20 +204,10 @@ public class RabbitConfig {
         RETRY_NOTIFICATION_ROUTING_KEY = retryNotificationRoutingKey;
     }
 
-    @Value("${spring.rabbitmq.retry-notification.ttl}")
-    public void setRetryNotificationTTL(Integer retryNotificationTTL) {
-        RETRY_NOTIFICATION_TTL = retryNotificationTTL;
-    }
-
-    @Value("${spring.rabbitmq.retry-notification.max-count}")
-    public void setRetryNotificationMaxCount(Integer retryNotificationMaxCount) {
-        RETRY_NOTIFICATION_MAX_COUNT = retryNotificationMaxCount;
-    }
-
     @Bean
-    Queue retryNotificationQueue() {
+    public Queue retryNotificationQueue() {
         return QueueBuilder.durable(RETRY_NOTIFICATION_QUEUE_NAME)
-                .withArgument("x-message-ttl", RETRY_NOTIFICATION_TTL)
+                .withArgument("x-message-ttl", RETRY_QUEUES_TTL)
                 .withArgument("x-dead-letter-exchange", NOTIFICATION_EXCHANGE_NAME)
                 .withArgument("x-dead-letter-routing-key", NOTIFICATION_ROUTING_KEY)
                 .build();
@@ -134,7 +249,7 @@ public class RabbitConfig {
     }
 
     @Bean
-    Queue deadLetterQueue() {
+    public Queue deadLetterQueue() {
         return QueueBuilder.durable(DEAD_QUEUE_NAME).build();
     }
 
@@ -148,27 +263,6 @@ public class RabbitConfig {
                                      @Qualifier("deadLetterExchange") TopicExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(DEAD_ROUTING_KEY);
     }
-
-//    /**
-//     * RabbitMQ Listener
-//     */
-//    @Bean
-//    MessageListenerAdapter messageListenerAdapter(EventHandler eventHandler) {
-//        MessageListenerAdapter messageListenerAdapter =
-//                new MessageListenerAdapter(eventHandler, "onMessage");
-//        messageListenerAdapter.setMessageConverter(jackson2JsonMessageConverter());
-//        return messageListenerAdapter;
-//    }
-//
-//    @Bean
-//    SimpleMessageListenerContainer simpleMessageListenerContainer(ConnectionFactory connectionFactory,
-//                                                                  MessageListenerAdapter messageListenerAdapter) {
-//        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
-//        simpleMessageListenerContainer.setConnectionFactory(connectionFactory);
-//        simpleMessageListenerContainer.setQueueNames(NOTIFICATION_QUEUE_NAME);
-//        simpleMessageListenerContainer.setMessageListener(messageListenerAdapter);
-//        return simpleMessageListenerContainer;
-//    }
 
     /**
      * RabbitMQ Config

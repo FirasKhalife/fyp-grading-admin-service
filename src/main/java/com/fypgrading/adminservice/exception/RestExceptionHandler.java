@@ -1,4 +1,4 @@
-package com.fypgrading.adminservice.exceptions;
+package com.fypgrading.adminservice.exception;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -28,9 +28,9 @@ public class RestExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    @ExceptionHandler
-    protected ResponseEntity<ExceptionResponse> handleRuntimeException(RuntimeException ex, WebRequest request) {
-        ExceptionResponse response = new ExceptionResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
+//    @ExceptionHandler
+//    protected ResponseEntity<ExceptionResponse> handleRuntimeException(RuntimeException ex, WebRequest request) {
+//        ExceptionResponse response = new ExceptionResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+//    }
 }

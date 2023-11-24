@@ -5,32 +5,28 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class TeamGradeDTO {
 
+    private Integer teamId;
+
+    private Integer reviewerId;
+
     private AssessmentEnum assessment;
 
-    private TeamDTO team;
-
-    private List<ReviewerTeamGradeDTO> teamReviewersGrades;
-
-    public void addReviewerGrade(ReviewerTeamGradeDTO teamReviewersGrade) {
-        this.teamReviewersGrades.add(teamReviewersGrade);
-    }
+    private Float grade;
 
     @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof TeamGradeDTO teamGrade)) return false;
-        return team.getId().equals(teamGrade.team.getId());
+    public boolean equals(Object obj) {
+        if (!(obj instanceof TeamGradeDTO teamGrade)) return false;
+        return teamGrade.getTeamId().equals(this.getTeamId())
+                && teamGrade.getReviewerId().equals(this.getReviewerId());
     }
 
     @Override
     public int hashCode() {
-        return team.getId();
+        return this.getTeamId() + this.getReviewerId();
     }
-
 }

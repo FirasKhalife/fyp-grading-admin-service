@@ -1,51 +1,58 @@
 package com.fypgrading.adminservice.service;
 
-import com.fypgrading.adminservice.entity.AssessmentGrade;
-import com.fypgrading.adminservice.entity.EvaluationSubmissionDTO;
-import com.fypgrading.adminservice.entity.ReviewerTeam;
-import com.fypgrading.adminservice.repository.AssessmentGradeRepository;
-import com.fypgrading.adminservice.repository.ReviewerRepository;
+import com.fypgrading.adminservice.entity.*;
+import com.fypgrading.adminservice.entity.idClass.ReviewerTeamId;
+import com.fypgrading.adminservice.repository.GradeRepository;
 import com.fypgrading.adminservice.repository.ReviewerTeamRepository;
-import com.fypgrading.adminservice.repository.TeamRepository;
 import com.fypgrading.adminservice.service.dto.EvaluationDTO;
+import com.fypgrading.adminservice.service.dto.TeamDTO;
 import com.fypgrading.adminservice.service.dto.TeamGradeDTO;
 import com.fypgrading.adminservice.service.enums.AssessmentEnum;
-import com.fypgrading.adminservice.service.mapper.ReviewerTeamMapper;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.fypgrading.adminservice.service.event.EvaluationSubmittedEvent;
+import com.fypgrading.adminservice.service.mapper.GradeMapper;
+import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
+import java.util.List;
 
 @Service
 public class GradeService {
 
-    private final AssessmentGradeRepository assessmentGradeRepository;
+    private final com.fypgrading.adminservice.service.EventDispatcher eventDispatcher;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ReviewerTeamRepository reviewerTeamRepository;
-    private final ReviewerRepository reviewerRepository;
-    private final com.fypgrading.adminservice.service.EventDispatcher eventDispatcher;
-    private final ReviewerTeamMapper gradeMapper;
-    private final RabbitTemplate rabbitTemplate;
-    private final TeamRepository teamRepository;
+    private final ReviewerService reviewerService;
+    private final GradeRepository gradeRepository;
+    private final TeamService teamService;
+    private final GradeMapper gradeMapper;
+    private final TeamMapper teamMapper;
 
-    public GradeService(ReviewerTeamMapper gradeMapper, AssessmentGradeRepository assessmentGradeRepository, ReviewerTeamRepository reviewerTeamRepository, RabbitTemplate rabbitTemplate, TeamRepository teamRepository, ReviewerRepository reviewerRepository, com.fypgrading.adminservice.service.EventDispatcher eventDispatcher) {
-        this.assessmentGradeRepository = assessmentGradeRepository;
+    public GradeService(
+            ReviewerTeamRepository reviewerTeamRepository,
+            GradeRepository gradeRepository,
+            EventDispatcher eventDispatcher,
+            ReviewerService reviewerService,
+            GradeMapper gradeMapper,
+            TeamService teamService,
+            TeamMapper teamMapper
+    ) {
         this.reviewerTeamRepository = reviewerTeamRepository;
-        this.reviewerRepository = reviewerRepository;
+        this.gradeRepository = gradeRepository;
         this.eventDispatcher = eventDispatcher;
-        this.teamRepository = teamRepository;
-        this.rabbitTemplate = rabbitTemplate;
+        this.reviewerService = reviewerService;
         this.gradeMapper = gradeMapper;
+        this.teamService = teamService;
+        this.teamMapper = teamMapper;
     }
 
     public List<TeamGradeDTO> getGradesByAssessment(String assessmentStr) {
         AssessmentEnum assessment = AssessmentEnum.valueOf(assessmentStr.toUpperCase());
-        List<AssessmentGrade> reviewerTeamGrades = assessmentGradeRepository.findAllByAssessment(assessment);
-        return gradeMapper.toTeamGradeDTO(reviewerTeamGrades);
+        List<Grade> reviewerTeamGrades = gradeRepository.findAllByAssessment(assessment);
+        return gradeMapper.toTeamGradeDTOList(reviewerTeamGrades);
     }
 
     public List<EvaluationDTO> getTeamEvaluationsByAssessment(String assessment, Integer teamId) {
@@ -57,43 +64,39 @@ public class GradeService {
         return teamEvaluations.getBody();
     }
 
-    public void submitGrade(EvaluationSubmissionDTO evalSub) {
-        if (!teamRepository.existsById(evalSub.getTeamId())
-            || !reviewerRepository.existsById((evalSub.getReviewerId()))) {
-            throw new IllegalArgumentException("Arguments not found in DB");
-        }
+    public TeamGradeDTO submitGrade(TeamGradeDTO teamGrade) {
 
-        Optional<AssessmentGrade> assessmentGradeOpt = assessmentGradeRepository
-                .findByAssessmentAndReviewerTeam_ReviewerIdAndReviewerTeam_TeamId(
-                        evalSub.getAssessment(), evalSub.getReviewerId(), evalSub.getTeamId()
-                );
+        Reviewer reviewer = reviewerService.getReviewerById(teamGrade.getReviewerId());
+        Team team = teamService.getTeamById(teamGrade.getTeamId());
+        TeamDTO teamDTO = teamMapper.toDTO(team);
 
-        if (assessmentGradeOpt.isPresent()) {
+        ReviewerTeam reviewerTeam =
+                reviewerTeamRepository.findById(new ReviewerTeamId(reviewer, team))
+                        .orElseThrow(() -> new IllegalArgumentException("Reviewer and Team are not linked!"));
+
+        gradeRepository.findByAssessmentAndReviewerTeam_ReviewerIdAndReviewerTeam_TeamId(
+                teamGrade.getAssessment(), teamGrade.getReviewerId(), teamGrade.getTeamId()
+        ).ifPresent(grade -> {
             throw new IllegalStateException("Reviewer already submitted evaluation for this team assessment!");
-        }
+        });
 
-        ReviewerTeam reviewerTeam = new ReviewerTeam(evalSub.getReviewerId(), evalSub.getTeamId());
-        AssessmentGrade assessmentGrade = new AssessmentGrade(
-                evalSub.getAssessment(), evalSub.getGrade(), reviewerTeam
+        Grade grade = new Grade(teamGrade.getAssessment(), teamGrade.getGrade(), reviewerTeam);
+
+        Grade createdGrade = gradeRepository.save(grade);
+
+        EvaluationSubmittedEvent event = new EvaluationSubmittedEvent(teamDTO, teamGrade.getAssessment());
+        eventDispatcher.checkForAdminNotification(event);
+
+        return gradeMapper.toTeamGradeDTO(createdGrade);
+    }
+
+    public List<TeamGradeDTO> getGrades(Integer reviewerId, Integer teamId) {
+        List<Grade> grades =
+                gradeRepository
+                        .findAllByReviewerTeam_ReviewerIdAndReviewerTeam_TeamId(
+                reviewerId, teamId
         );
 
-        assessmentGradeRepository.save(assessmentGrade);
-
-        long teamReviewersCount = reviewerTeamRepository.countByTeamId(evalSub.getTeamId());
-        long submittedAssessmentTeamReviewsCount =
-                assessmentGradeRepository.countByAssessmentAndReviewerTeam_TeamId(
-                        evalSub.getAssessment(), evalSub.getTeamId()
-                );
-        if (teamReviewersCount != submittedAssessmentTeamReviewsCount)
-            return;
-
-        eventDispatcher.sendAdminNotification(evalSub.getTeamId(), evalSub.getAssessment());
-
-        long allSubmittedTeamReviewsCount =
-                assessmentGradeRepository.countByReviewerTeam_TeamId(evalSub.getTeamId());
-
-        if (allSubmittedTeamReviewsCount != teamReviewersCount * AssessmentEnum.values().length) {
-            eventDispatcher.sendAdminNotification(evalSub.getTeamId(), null);
-        }
+        return gradeMapper.toTeamGradeDTOList(grades);
     }
 }
