@@ -13,6 +13,10 @@ public enum RoleEnum {
     JURY_MEMBER,
 
     @JsonProperty("ADVISOR")
-    ADVISOR
+    ADVISOR;
+
+    public Integer getInstanceId() {
+        return ordinal() + 1;
+    }
 
 }

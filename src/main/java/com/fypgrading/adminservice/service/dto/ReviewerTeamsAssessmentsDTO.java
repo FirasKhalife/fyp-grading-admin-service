@@ -4,13 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReviewerTeamGradeDTO {
+public class ReviewerTeamsAssessmentsDTO {
 
-    private ReviewerViewDTO reviewer;
+    private List<AssessmentDTO> reviewerAssessments;
 
-    private Float grade;
-
+    private List<ReviewerTeamViewDTO> reviewerTeams;
 }

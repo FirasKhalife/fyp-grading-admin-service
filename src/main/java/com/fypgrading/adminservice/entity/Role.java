@@ -6,6 +6,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -21,8 +24,13 @@ public class Role {
     @Enumerated(EnumType.STRING)
     private RoleEnum name;
 
-    public Role(RoleEnum name) {
-        this.name = name;
+    @ToString.Exclude
+    @OneToMany(mappedBy = "role", fetch = FetchType.EAGER)
+    private List<Assessment> assessments;
+
+    public Role(RoleEnum roleEnum) {
+        this.id = roleEnum.getInstanceId();
+        this.name = roleEnum;
     }
 
     @Override

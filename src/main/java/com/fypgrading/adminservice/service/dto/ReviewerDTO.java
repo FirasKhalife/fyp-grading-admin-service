@@ -1,16 +1,18 @@
 package com.fypgrading.adminservice.service.dto;
 
-import com.fypgrading.adminservice.service.enums.RoleEnum;
+import com.fypgrading.adminservice.entity.Reviewer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.Objects;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReviewerDTO {
+
+    private Integer id;
 
     private String firstName;
 
@@ -18,8 +20,26 @@ public class ReviewerDTO {
 
     private String email;
 
-    private String password;
+    private Boolean isAdmin;
 
-    private List<RoleEnum> roles;
+    public ReviewerDTO(Reviewer reviewer) {
+        this.id = reviewer.getId();
+        this.firstName = reviewer.getFirstName();
+        this.lastName = reviewer.getLastName();
+        this.email = reviewer.getEmail();
+        this.isAdmin = reviewer.getIsAdmin();
+    }
 
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof Reviewer reviewer))
+            return false;
+
+        return Objects.equals(id, reviewer.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

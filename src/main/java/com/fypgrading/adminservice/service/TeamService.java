@@ -1,30 +1,36 @@
 package com.fypgrading.adminservice.service;
 
-import com.fypgrading.adminservice.entity.Reviewer;
-import com.fypgrading.adminservice.entity.ReviewerTeam;
-import com.fypgrading.adminservice.entity.Team;
+import com.fypgrading.adminservice.entity.*;
+import com.fypgrading.adminservice.repository.AssessmentRepository;
+import com.fypgrading.adminservice.repository.TeamAssessmentRepository;
 import com.fypgrading.adminservice.repository.TeamRepository;
-import com.fypgrading.adminservice.service.dto.CountDTO;
-import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
-import com.fypgrading.adminservice.service.dto.TeamDTO;
+import com.fypgrading.adminservice.service.dto.*;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class TeamService {
 
+    private final TeamAssessmentRepository teamAssessmentRepository;
+    private final AssessmentRepository assessmentRepository;
     private final TeamRepository teamRepository;
     private final ReviewerMapper reviewerMapper;
     private final TeamMapper teamMapper;
 
-    public TeamService(TeamRepository teamRepository,
+    public TeamService(TeamAssessmentRepository teamAssessmentRepository,
+                       AssessmentRepository assessmentRepository,
+                       TeamRepository teamRepository,
                        ReviewerMapper reviewerMapper,
                        TeamMapper teamMapper
     ) {
+        this.teamAssessmentRepository = teamAssessmentRepository;
+        this.assessmentRepository = assessmentRepository;
         this.teamRepository = teamRepository;
         this.reviewerMapper = reviewerMapper;
         this.teamMapper = teamMapper;
@@ -65,16 +71,39 @@ public class TeamService {
     }
 
     public CountDTO getTeamReviewersCount(Integer id) {
-        int reviewersCount = getTeamById(id).getTeamReviewers().size();
+        int reviewersCount = getTeamById(id).getReviewers().size();
         return new CountDTO(Integer.toUnsignedLong(reviewersCount));
     }
 
-    public List<ReviewerViewDTO> getTeamReviewers(Integer id) {
+    public List<ReviewerDTO> getTeamReviewers(Integer id) {
         List<Reviewer> reviewers =
-                getTeamById(id).getTeamReviewers()
+                getTeamById(id).getReviewers()
                         .parallelStream()
                         .map(ReviewerTeam::getReviewer)
                         .toList();
-        return reviewerMapper.toViewDTOList(reviewers);
+        return reviewerMapper.toDTOList(reviewers);
+    }
+
+    public List<TeamGradesDTO> getAllGrades() {
+        List<Team> teams = teamRepository.findAllByOrderByIdAsc();
+
+        List<Assessment> assessments = assessmentRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+
+        return teams.stream().map(team -> {
+            List<TeamAssessment> grades = teamAssessmentRepository.findAllByTeamId(team.getId());
+
+            List<TeamAssessmentDTO> gradesDTO = new ArrayList<>();
+            assessments.forEach(assessment -> {
+                TeamAssessment grade = new TeamAssessment(team, assessment, null);
+                int index;
+                if ((index = grades.indexOf(grade)) != -1) {
+                    grade = grades.get(index);
+                }
+
+                gradesDTO.add(new TeamAssessmentDTO(grade));
+            });
+
+            return new TeamGradesDTO(teamMapper.toDTO(team), gradesDTO);
+        }).toList();
     }
 }

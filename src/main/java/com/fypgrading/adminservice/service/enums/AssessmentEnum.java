@@ -9,19 +9,21 @@ import lombok.Getter;
 public enum AssessmentEnum {
 
     @JsonProperty("ORAL_PROPOSAL")
-    ORAL_PROPOSAL(RoleEnum.JURY_MEMBER),
+    ORAL_PROPOSAL,
 
     @JsonProperty("PROGRESS")
-    PROGRESS(RoleEnum.JURY_MEMBER),
+    PROGRESS,
 
-    @JsonProperty("PROGRESS_REPORT")
-    ADVISOR(RoleEnum.ADVISOR),
+    @JsonProperty("ADVISOR")
+    ADVISOR,
 
     @JsonProperty("FINAL_REPORT")
-    FINAL_REPORT(RoleEnum.JURY_MEMBER),
+    FINAL_REPORT,
 
     @JsonProperty("FINAL_PRESENTATION")
-    FINAL_PRESENTATION(RoleEnum.JURY_MEMBER);
+    FINAL_PRESENTATION;
 
-    private final RoleEnum responsibleRole;
+    public Integer getEnumId() {
+        return ordinal() + 1;
+    }
 }

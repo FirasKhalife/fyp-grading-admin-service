@@ -1,5 +1,6 @@
 package com.fypgrading.adminservice.service.event;
 
+import com.fypgrading.adminservice.service.dto.AssessmentDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
 import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import lombok.AllArgsConstructor;
@@ -13,6 +14,6 @@ public class EvaluationSubmittedEvent {
 
     private TeamDTO team;
 
-    private AssessmentEnum assessment;
+    private AssessmentDTO assessment;
 
 }

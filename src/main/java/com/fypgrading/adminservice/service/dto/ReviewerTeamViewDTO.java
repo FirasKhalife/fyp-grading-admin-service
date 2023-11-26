@@ -4,11 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MessageResponse {
+public class ReviewerTeamViewDTO {
 
-    private String message;
+    private TeamDTO team;
+
+    private List<TeamReviewerAssessmentDTO> teamAssessments;
 
 }

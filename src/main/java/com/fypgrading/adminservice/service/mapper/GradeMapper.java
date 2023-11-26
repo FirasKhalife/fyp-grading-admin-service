@@ -1,7 +1,7 @@
 package com.fypgrading.adminservice.service.mapper;
 
 import com.fypgrading.adminservice.entity.Grade;
-import com.fypgrading.adminservice.service.dto.TeamGradeDTO;
+import com.fypgrading.adminservice.service.dto.GradeDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -11,16 +11,17 @@ import java.util.List;
         componentModel = "spring",
         uses = {
                 TeamMapper.class,
-                ReviewerMapper.class
+                ReviewerMapper.class,
+                AssessmentMapper.class
         }
 )
 public interface GradeMapper {
 
-    @Mapping(source = "reviewerTeam.reviewer.id", target = "reviewerId")
-    @Mapping(source = "reviewerTeam.team.id", target = "teamId")
-    TeamGradeDTO toTeamGradeDTO(Grade grade);
+    @Mapping(source = "reviewerTeam.reviewer", target = "reviewer")
+    @Mapping(source = "reviewerTeam.team", target = "team")
+    GradeDTO toTeamGradeDTO(Grade grade);
 
-    List<TeamGradeDTO> toTeamGradeDTOList(List<Grade> gradeList);
+    List<GradeDTO> toTeamGradeDTOList(List<Grade> gradeList);
 
 
 }

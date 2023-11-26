@@ -9,8 +9,8 @@ import com.fypgrading.adminservice.repository.ReviewerTeamRepository;
 import com.fypgrading.adminservice.repository.RoleRepository;
 import com.fypgrading.adminservice.repository.TeamRepository;
 import com.fypgrading.adminservice.service.dto.ReviewerRolesDTO;
-import com.fypgrading.adminservice.service.dto.ReviewerTeamRolesDTO;
-import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
+import com.fypgrading.adminservice.service.dto.TeamReviewerRolesDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.RoleMapper;
@@ -47,15 +47,19 @@ public class ReviewerTeamService {
         this.roleMapper = roleMapper;
     }
 
-    public ReviewerTeamRolesDTO getReviewerTeamRoles(Integer reviewerId, Integer teamId) {
+    public TeamReviewerRolesDTO getReviewerTeamRoles(Integer reviewerId, Integer teamId) {
         List<Role> reviewerRoles = roleRepository.getReviewerTeamRoles(reviewerId, teamId);
 
-        return new ReviewerTeamRolesDTO(reviewerId, teamId, roleMapper.toEnumList(reviewerRoles));
+        return new TeamReviewerRolesDTO(reviewerId, teamId, roleMapper.toEnumList(reviewerRoles));
     }
 
     public ReviewerTeam getReviewerTeamById(Integer reviewerId, Integer teamId) {
         return reviewerTeamRepository.findByReviewerIdAndTeamId(reviewerId, teamId)
                 .orElseThrow(() -> new RuntimeException("ReviewerTeam not found"));
+    }
+
+    public List<ReviewerTeam> getReviewerTeamListByReviewerId(Integer reviewerId) {
+        return reviewerTeamRepository.findByReviewerId(reviewerId);
     }
 
     public List<TeamDTO> getReviewerTeams(Integer reviewerId) {
@@ -64,10 +68,10 @@ public class ReviewerTeamService {
         return teamMapper.toDTOList(teams);
     }
 
-    public List<ReviewerViewDTO> getTeamReviewers(Integer teamId) {
+    public List<ReviewerDTO> getTeamReviewers(Integer teamId) {
         List<Reviewer> reviewers = reviewerRepository.findAllTeamReviewers(teamId);
 
-        return reviewerMapper.toViewDTOList(reviewers);
+        return reviewerMapper.toDTOList(reviewers);
     }
 
     public ReviewerRolesDTO getReviewerRoles(Integer reviewerId) {

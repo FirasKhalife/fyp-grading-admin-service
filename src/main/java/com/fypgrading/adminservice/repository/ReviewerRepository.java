@@ -19,7 +19,7 @@ public interface ReviewerRepository extends JpaRepository<Reviewer, Integer> {
     @Query(
             value = "SELECT reviewer.* " +
                     "FROM team_reviewer_role trr " +
-                    "JOIN reviewer ON trr.reviewer_id = reviewer.id " +
+                        "JOIN reviewer ON trr.reviewer_id = reviewer.id " +
                     "WHERE trr.team_id = :teamId",
             nativeQuery = true
     )
@@ -28,11 +28,12 @@ public interface ReviewerRepository extends JpaRepository<Reviewer, Integer> {
     @Query(
             value = "SELECT COUNT(trr.reviewer_id) " +
                     "FROM team_reviewer_role AS trr " +
-                    "   JOIN role ON trr.role_id = role.id " +
-                    "WHERE trr.team_id = :teamId AND role.name = :roleName",
+                        "JOIN role ON trr.role_id = role.id " +
+                        "JOIN assessment ON assessment.role_id = role.id " +
+                    "WHERE trr.team_id = :teamId AND assessment.id = :assessmentId",
             nativeQuery = true
     )
-    long countReviewersByTeamIdAndRoleName(@QueryParam("teamId") Integer teamId,
-                                           @QueryParam("roleName") String roleName);
+    long countReviewersByTeamIdAndAssessmentId(@QueryParam("teamId") Integer teamId,
+                                               @QueryParam("assessmentId") Integer assessmentId);
 
 }

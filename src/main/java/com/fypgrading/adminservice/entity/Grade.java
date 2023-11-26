@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.entity;
 
-import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,15 +15,15 @@ public class Grade {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Enumerated(EnumType.STRING)
-    private AssessmentEnum assessment;
+    @ManyToOne
+    private Assessment assessment;
 
     private Float grade;
 
     @ManyToOne
     private ReviewerTeam reviewerTeam;
 
-    public Grade(AssessmentEnum assessment, Float grade, com.fypgrading.adminservice.entity.ReviewerTeam reviewerTeam) {
+    public Grade(Assessment assessment, Float grade, ReviewerTeam reviewerTeam) {
         this.reviewerTeam = reviewerTeam;
         this.assessment = assessment;
         this.grade = grade;
@@ -39,6 +38,15 @@ public class Grade {
     @Override
     public int hashCode() {
         return id.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Grade{" +
+                "id=" + id +
+                ", assessment=" + assessment +
+                ", grade=" + grade +
+                '}';
     }
 }
 

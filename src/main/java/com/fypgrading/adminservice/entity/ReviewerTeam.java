@@ -21,7 +21,7 @@ public class ReviewerTeam {
     @ManyToOne
     private Team team;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
     @JoinTable(
             name = "team_reviewer_role",
             joinColumns = {

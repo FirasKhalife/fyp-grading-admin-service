@@ -16,4 +16,16 @@ public class EvaluationDTO {
     private Integer teamId;
 
     private List<GradedRubricDTO> gradedRubrics;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof EvaluationDTO evaluation)) return false;
+        return evaluation.getReviewerId().equals(this.getReviewerId())
+                && evaluation.getTeamId().equals(this.getTeamId());
+    }
+
+    @Override
+    public int hashCode() {
+        return this.getReviewerId() + this.getTeamId();
+    }
 }

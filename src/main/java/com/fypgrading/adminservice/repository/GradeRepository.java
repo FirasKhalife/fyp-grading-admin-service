@@ -1,7 +1,6 @@
 package com.fypgrading.adminservice.repository;
 
 import com.fypgrading.adminservice.entity.Grade;
-import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,17 +10,15 @@ import java.util.Optional;
 @Repository
 public interface GradeRepository extends JpaRepository<Grade, Integer> {
 
-    List<Grade> findAllByAssessment(AssessmentEnum assessment);
+    List<Grade> findAllByAssessmentId(Integer assessmentId);
 
-    Optional<Grade> findByAssessmentAndReviewerTeam_ReviewerIdAndReviewerTeam_TeamId(
-            AssessmentEnum assessmentEnum, Integer reviewerId, Integer teamId
+    Optional<Grade> findByReviewerTeam_ReviewerIdAndReviewerTeam_TeamIdAndAssessmentId(
+            Integer reviewerId, Integer teamId, Integer assessmentId
     );
 
-    Long countByAssessmentAndReviewerTeam_TeamId(AssessmentEnum assessment, Integer teamId);
-
-    Long countByReviewerTeam_TeamId(Integer teamId);
+    Long countByReviewerTeam_TeamIdAndAssessmentId(Integer teamId, Integer assessmentId);
 
     List<Grade> findAllByReviewerTeam_ReviewerIdAndReviewerTeam_TeamId(Integer reviewerId, Integer teamId);
 
-    List<Grade> findALlByReviewerTeam_TeamIdAndAssessment(Integer teamId, AssessmentEnum assessment);
+    List<Grade> findAllByReviewerTeam_TeamIdAndAssessmentId(Integer teamId, Integer assessmentId);
 }

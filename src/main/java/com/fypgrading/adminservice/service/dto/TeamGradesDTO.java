@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.service.dto;
 
-import com.fypgrading.adminservice.service.enums.RoleEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,11 +9,10 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReviewerTeamRolesDTO {
+public class TeamGradesDTO {
 
-    private Integer reviewerId;
+    private TeamDTO team;
 
-    private Integer teamId;
+    private List<TeamAssessmentDTO> assessmentGradeList;
 
-    private List<RoleEnum> roles;
 }

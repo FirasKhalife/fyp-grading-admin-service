@@ -2,9 +2,8 @@ package com.fypgrading.adminservice.service.mapper;
 
 import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.service.dto.ReviewerDTO;
-import com.fypgrading.adminservice.service.dto.ReviewerViewDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerLoginDTO;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import java.util.List;
 
@@ -14,12 +13,12 @@ import java.util.List;
 )
 public interface ReviewerMapper {
 
-    List<ReviewerViewDTO> toViewDTOList(List<Reviewer> reviewers);
+    List<ReviewerDTO> toDTOList(List<Reviewer> reviewers);
 
-    List<Reviewer> toEntityList(List<ReviewerDTO> reviewerDTOs);
+    List<Reviewer> toEntityList(List<ReviewerLoginDTO> reviewerLoginDTOS);
 
-    ReviewerViewDTO toViewDTO(Reviewer reviewer);
+    ReviewerDTO toDTO(Reviewer reviewer);
 
-    Reviewer toEntity(ReviewerDTO reviewerDTO);
+    Reviewer toEntity(ReviewerLoginDTO reviewerLoginDTO);
 
 }

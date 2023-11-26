@@ -20,7 +20,7 @@ public class Team {
     private Float finalGrade;
 
     @OneToMany(mappedBy = "team")
-    private List<ReviewerTeam> teamReviewers;
+    private List<ReviewerTeam> reviewers;
 
     public Team(Integer id) {
         this.id = id;
@@ -35,5 +35,13 @@ public class Team {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Team{" +
+                "id=" + id +
+                ", finalGrade=" + finalGrade +
+                '}';
     }
 }

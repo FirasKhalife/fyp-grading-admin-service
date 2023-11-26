@@ -18,4 +18,6 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
             nativeQuery = true)
     List<Team> getAllReviewerTeams(Integer reviewerId);
 
+    List<Team> findAllByOrderByIdAsc();
+
 }

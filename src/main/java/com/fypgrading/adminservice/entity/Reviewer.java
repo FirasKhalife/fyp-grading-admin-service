@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -32,8 +33,9 @@ public class Reviewer {
 
     private Boolean isAdmin = false;
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "reviewer")
-    private List<ReviewerTeam> reviewerTeams;
+    private List<ReviewerTeam> teams;
 
     public Reviewer(String firstName, String lastName, String email, String password, Boolean isAdmin) {
         this.firstName = firstName;
