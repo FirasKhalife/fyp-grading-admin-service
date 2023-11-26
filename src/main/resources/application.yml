@@ -9,6 +9,9 @@ spring:
       ddl-auto: update
     show-sql: true
 
+  application:
+    name: admin-service
+
   rabbitmq:
     host: localhost
     port: 5672
@@ -46,6 +49,16 @@ spring:
       queue: "dead-queue"
       exchange: "dead-exchange"
       routing-key: "dead-key"
+
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka/
+    healthcheck:
+      enabled: true
+  instance:
+    lease-expiration-duration-in-seconds: 2
+    lease-renewal-interval-in-seconds: 1
 
 server:
   port: 8081
