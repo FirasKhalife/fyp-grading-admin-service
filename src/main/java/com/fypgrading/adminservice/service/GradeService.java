@@ -57,7 +57,7 @@ public class GradeService {
 
     public List<EvaluationDTO> getTeamEvaluationsByAssessment(String assessment, Integer teamId) {
         ResponseEntity<List<EvaluationDTO>> teamEvaluations = restTemplate.exchange(
-                "http://localhost:8082/api/evaluations/" + assessment + "/" + teamId,
+                "http://localhost:9191/api/evaluations/" + assessment + "/" + teamId,
                 HttpMethod.GET, null, new ParameterizedTypeReference<>() {}
         );
 
