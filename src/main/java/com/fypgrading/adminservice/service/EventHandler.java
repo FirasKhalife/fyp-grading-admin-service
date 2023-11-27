@@ -7,6 +7,7 @@ import com.fypgrading.adminservice.entity.TeamAssessment;
 import com.fypgrading.adminservice.repository.GradeRepository;
 import com.fypgrading.adminservice.repository.TeamAssessmentRepository;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
+import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import com.fypgrading.adminservice.service.event.EvaluationSubmittedEvent;
 import com.fypgrading.adminservice.service.event.GradeFinalizedEvent;
 import com.fypgrading.adminservice.service.mapper.AssessmentMapper;
@@ -109,10 +110,7 @@ public class EventHandler implements ChannelAwareMessageListener {
 
             List<TeamAssessment> gradedAssessments = teamAssessmentRepository.findAllByTeamId(teamDTO.getId());
 
-            if (gradedAssessments.size() !=
-//                    AssessmentEnum.values().length
-                    2
-            ) {
+            if (gradedAssessments.size() != AssessmentEnum.values().length) {
                 return;
             }
 
