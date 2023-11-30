@@ -21,22 +21,22 @@ public class ReviewerController {
         this.reviewerService = reviewerService;
     }
 
-    @GetMapping("/{reviewerId}/home")
-    public ResponseEntity<ReviewerHomeDTO> getReviewerHome(@PathVariable Integer reviewerId) {
-        ReviewerHomeDTO reviewerHome = reviewerService.getReviewerHome(reviewerId);
+    @GetMapping("/{id}/home")
+    public ResponseEntity<ReviewerHomeDTO> getReviewerHome(@PathVariable Integer id) {
+        ReviewerHomeDTO reviewerHome = reviewerService.getReviewerHome(id);
         return ResponseEntity.ok().body(reviewerHome);
     }
 
-    @GetMapping("/{reviewerId}/teams/{teamId}/roles")
-    public ResponseEntity<TeamReviewerRolesDTO> getReviewerTeamRoles(@PathVariable Integer reviewerId,
+    @GetMapping("/{id}/teams/{teamId}/roles")
+    public ResponseEntity<TeamReviewerRolesDTO> getReviewerTeamRoles(@PathVariable Integer id,
                                                                      @PathVariable Integer teamId) {
-        TeamReviewerRolesDTO roles = reviewerTeamService.getReviewerTeamRoles(reviewerId, teamId);
+        TeamReviewerRolesDTO roles = reviewerTeamService.getReviewerTeamRoles(id, teamId);
         return ResponseEntity.ok().body(roles);
     }
 
-    @GetMapping("/{reviewerId}/roles")
-    public ResponseEntity<ReviewerRolesDTO> getReviewerRoles(@PathVariable Integer reviewerId) {
-        ReviewerRolesDTO roles = reviewerTeamService.getReviewerRoles(reviewerId);
+    @GetMapping("/{id}/roles")
+    public ResponseEntity<ReviewerRolesDTO> getReviewerRoles(@PathVariable Integer id) {
+        ReviewerRolesDTO roles = reviewerTeamService.getReviewerRoles(id);
         return ResponseEntity.ok().body(roles);
     }
 
@@ -52,15 +52,15 @@ public class ReviewerController {
         return ResponseEntity.ok().body(createdReviewer);
     }
 
-    @GetMapping("/{reviewerId: [0-9]+}")
-    public ResponseEntity<ReviewerDTO> getReviewer(@PathVariable Integer reviewerId) {
-        ReviewerDTO rubrics = reviewerService.getReviewerViewById(reviewerId);
+    @GetMapping("/{id}")
+    public ResponseEntity<ReviewerDTO> getReviewer(@PathVariable Integer id) {
+        ReviewerDTO rubrics = reviewerService.getReviewerViewById(id);
         return ResponseEntity.ok().body(rubrics);
     }
 
-    @GetMapping("/{reviewerId}/teams")
-    public ResponseEntity<ReviewerTeamsAssessmentsDTO> getReviewerTeams(@PathVariable Integer reviewerId) {
-        ReviewerTeamsAssessmentsDTO teams = reviewerService.getReviewerTeamsAssessments(reviewerId);
+    @GetMapping("/{id}/teams")
+    public ResponseEntity<ReviewerTeamsAssessmentsDTO> getReviewerTeams(@PathVariable Integer id) {
+        ReviewerTeamsAssessmentsDTO teams = reviewerService.getReviewerTeamsAssessments(id);
         return ResponseEntity.ok().body(teams);
     }
 

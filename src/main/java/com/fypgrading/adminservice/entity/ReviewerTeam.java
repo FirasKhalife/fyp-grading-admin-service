@@ -35,6 +35,15 @@ public class ReviewerTeam {
     @OneToMany(mappedBy = "reviewerTeam")
     private List<Grade> grades;
 
+    public ReviewerTeam(Reviewer reviewer, Team team) {
+        this.reviewer = reviewer;
+        this.team = team;
+    }
+
+    public void addRole(Role role) {
+        reviewerRoles.add(role);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ReviewerTeam reviewerTeam)) return false;

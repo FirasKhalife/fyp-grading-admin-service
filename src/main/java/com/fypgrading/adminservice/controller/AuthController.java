@@ -1,55 +1,37 @@
 package com.fypgrading.adminservice.controller;
 
-import com.fypgrading.adminservice.service.ReviewerTeamService;
+import com.fypgrading.adminservice.service.ReviewerService;
 import com.fypgrading.adminservice.service.dto.JwtResponseDTO;
 import com.fypgrading.adminservice.service.dto.LoginDTO;
+import com.fypgrading.adminservice.service.dto.ReviewerSignupDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 //@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final ReviewerTeamService reviewerTeamService;
+    private final ReviewerService reviewerService;
 
-    public AuthController(ReviewerTeamService reviewerTeamService) {
-        this.reviewerTeamService = reviewerTeamService;
+    public AuthController(ReviewerService reviewerService) {
+        this.reviewerService = reviewerService;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtResponseDTO> authenticateUser(@Valid @RequestBody LoginDTO auth) {
-        JwtResponseDTO response =
-                auth.getPassword().equals("admin") ?
-                        JwtResponseDTO.builder()
-                                .id(1).email("rima.kilany@net.usj.edu.lb")
-                                .firstName("Rima").lastName("Kilany")
-                                .accessToken("accessToken").isAdmin(true)
-                                .build()
-                        :
-                        auth.getPassword().equals("fifo") ?
-                                JwtResponseDTO.builder()
-                                        .id(2).email("firas.khalife@net.usj.edu.lb")
-                                        .firstName("Firas").lastName("Khalife")
-                                        .accessToken("accessToken")
-                                        .build()
-                                :
-                                JwtResponseDTO.builder()
-                                        .id(3).email("gaelle.said@net.usj.edu.lb")
-                                        .firstName("Gaelle").lastName("Said")
-                                        .accessToken("accessToken")
-                                        .build();
-
-        response.setRoles(reviewerTeamService.getReviewerRoles(response.getId()).getRoles());
-
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<JwtResponseDTO> authenticateUser(@Valid @RequestBody LoginDTO loginDTO) {
+        JwtResponseDTO jwtResponse = reviewerService.login(loginDTO);
+        return ResponseEntity.ok().body(jwtResponse);
     }
 
-//    @PostMapping("/signup")
-//    public ResponseEntity<ReviewerViewDTO> registerUser(@Valid @RequestBody ReviewerDTO reviewerDTO) {
-//        ReviewerViewDTO reviewer = authService.signup(reviewerDTO);
-//        return ResponseEntity.ok().body(reviewer);
-//    }
+    @PostMapping("/signup")
+    public ResponseEntity<ReviewerSignupDTO> registerUser(@Valid @RequestBody ReviewerSignupDTO reviewerInfo) {
+        ReviewerSignupDTO createdReviewer = reviewerService.signup(reviewerInfo);
+        return ResponseEntity.ok().body(createdReviewer);
+    }
 
 }

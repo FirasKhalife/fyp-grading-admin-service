@@ -12,6 +12,12 @@ spring:
   application:
     name: admin-service
 
+
+    # Transient Error?
+    # Persistent Error?
+
+
+
   rabbitmq:
     host: localhost
     port: 5672
@@ -64,6 +70,4 @@ server:
   port: 8081
 
 app:
-  jwt:
-    secret: =========================FYP=Grading============================
-    expiration-ms: 86400000
+  gateway-url: 'https://ec8f-178-135-15-182.ngrok-free.app'

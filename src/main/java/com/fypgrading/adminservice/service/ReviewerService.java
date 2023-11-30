@@ -4,6 +4,7 @@ import com.fypgrading.adminservice.entity.Assessment;
 import com.fypgrading.adminservice.entity.Grade;
 import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.entity.ReviewerTeam;
+import com.fypgrading.adminservice.exception.AuthException;
 import com.fypgrading.adminservice.repository.AssessmentRepository;
 import com.fypgrading.adminservice.repository.ReviewerRepository;
 import com.fypgrading.adminservice.repository.RoleRepository;
@@ -12,9 +13,7 @@ import com.fypgrading.adminservice.service.mapper.AssessmentMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,8 +30,10 @@ public class ReviewerService {
     private final RoleRepository roleRepository;
     private final ReviewerMapper reviewerMapper;
     private final TeamMapper teamMapper;
+    private final String GATEWAY_URL;
 
     public ReviewerService(
+            @Value("${app.gateway-url}") String gateway_url,
             AssessmentRepository assessmentRepository,
             ReviewerTeamService reviewerTeamService,
             ReviewerRepository reviewerRepository,
@@ -47,7 +48,46 @@ public class ReviewerService {
         this.assessmentMapper = assessmentMapper;
         this.roleRepository = roleRepository;
         this.reviewerMapper = reviewerMapper;
+        this.GATEWAY_URL = gateway_url;
         this.teamMapper = teamMapper;
+    }
+
+    public JwtResponseDTO login(LoginDTO loginDTO) {
+        Reviewer reviewer = reviewerRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new AuthException("Invalid credentials"));
+
+        if (!loginDTO.getPassword().equals(reviewer.getPassword()))
+            throw new AuthException("Invalid credentials");
+
+        JwtResponseDTO jwtResponse = new JwtResponseDTO(reviewer);
+        jwtResponse.setRoles(reviewerTeamService.getReviewerRoles(reviewer.getId()).getRoles());
+
+        return jwtResponse;
+    }
+
+    public ReviewerSignupDTO signup(ReviewerSignupDTO reviewerInfo) {
+        Optional<Reviewer> reviewerOpt = reviewerRepository.findByEmail(reviewerInfo.getEmail());
+        if (reviewerOpt.isPresent()) {
+            throw new IllegalArgumentException("Email already registered");
+        }
+
+        Reviewer reviewer = new Reviewer(
+                reviewerInfo.getFirstName(),
+                reviewerInfo.getLastName(),
+                reviewerInfo.getEmail(),
+                reviewerInfo.getPassword(),
+                reviewerInfo.isAdmin()
+        );
+
+        Reviewer createdReviewer = reviewerRepository.save(reviewer);
+
+        reviewerInfo.getTeamRoleList().forEach(teamRoleDTO -> {
+            reviewerTeamService.createReviewerTeam(createdReviewer.getId(), teamRoleDTO.getTeamId());
+
+            reviewerTeamService.addReviewerTeamRole(reviewer.getId(), teamRoleDTO.getTeamId(), teamRoleDTO.getRole());
+        });
+
+        return reviewerInfo;
     }
 
     public List<ReviewerDTO> getReviewers() {
@@ -140,16 +180,17 @@ public class ReviewerService {
             return Collections.emptyList();
         }
 
-        ResponseEntity<List<NotificationDTO>> notificationsResponse = restTemplate.exchange(
-                "http://localhost:8084/api/notifications/",
-                HttpMethod.GET, null, new ParameterizedTypeReference<>() {}
+        System.out.println(GATEWAY_URL);
+
+        NotificationListDTO notificationList = restTemplate.getForObject(
+                GATEWAY_URL + "/api/notifications/", NotificationListDTO.class
         );
 
-        if (notificationsResponse.getStatusCode().isError()) {
+        if (notificationList == null) {
             throw new IllegalStateException("Error while fetching notifications");
         }
 
-        List<NotificationDTO> notifications = notificationsResponse.getBody();
+        List<NotificationDTO> notifications = notificationList.getNotifications();
 
         assert notifications != null;
         return notifications;

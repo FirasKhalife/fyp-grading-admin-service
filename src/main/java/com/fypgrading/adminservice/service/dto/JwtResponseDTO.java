@@ -1,13 +1,12 @@
 package com.fypgrading.adminservice.service.dto;
 
+import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.service.enums.RoleEnum;
-import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-@Builder
 public class JwtResponseDTO {
 
     private Integer id;
@@ -20,12 +19,19 @@ public class JwtResponseDTO {
 
     private String accessToken;
 
-    @Builder.Default
     private String tokenType = "Bearer";
 
-    @Builder.Default
     private Boolean isAdmin = false;
 
     private List<RoleEnum> roles;
+
+    public JwtResponseDTO(Reviewer reviewer) {
+        this.id = reviewer.getId();
+        this.email = reviewer.getEmail();
+        this.firstName = reviewer.getFirstName();
+        this.lastName = reviewer.getLastName();
+        this.accessToken = "accessToken";
+        this.isAdmin = reviewer.getIsAdmin() != null ? reviewer.getIsAdmin() : false;
+    }
 
 }

@@ -8,10 +8,8 @@ import com.fypgrading.adminservice.repository.ReviewerRepository;
 import com.fypgrading.adminservice.repository.ReviewerTeamRepository;
 import com.fypgrading.adminservice.repository.RoleRepository;
 import com.fypgrading.adminservice.repository.TeamRepository;
-import com.fypgrading.adminservice.service.dto.ReviewerRolesDTO;
-import com.fypgrading.adminservice.service.dto.TeamReviewerRolesDTO;
-import com.fypgrading.adminservice.service.dto.ReviewerDTO;
-import com.fypgrading.adminservice.service.dto.TeamDTO;
+import com.fypgrading.adminservice.service.dto.*;
+import com.fypgrading.adminservice.service.enums.RoleEnum;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.RoleMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
@@ -47,6 +45,18 @@ public class ReviewerTeamService {
         this.roleMapper = roleMapper;
     }
 
+    public ReviewerTeam createReviewerTeam(Integer reviewerId, Integer teamId) {
+        Reviewer reviewer = reviewerRepository.findById(reviewerId)
+                .orElseThrow(() -> new RuntimeException("Reviewer not found"));
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException("Team not found"));
+
+        ReviewerTeam reviewerTeam = new ReviewerTeam(reviewer, team);
+
+        return reviewerTeamRepository.save(reviewerTeam);
+    }
+
     public TeamReviewerRolesDTO getReviewerTeamRoles(Integer reviewerId, Integer teamId) {
         List<Role> reviewerRoles = roleRepository.getReviewerTeamRoles(reviewerId, teamId);
 
@@ -78,5 +88,16 @@ public class ReviewerTeamService {
         List<Role> roles = roleRepository.getDistinctReviewerRoles(reviewerId);
 
         return new ReviewerRolesDTO(reviewerId, roleMapper.toEnumList(roles));
+    }
+
+    public Reviewer addReviewerTeamRole(Integer id, Integer teamId, RoleEnum role) {
+        ReviewerTeam reviewerTeam = getReviewerTeamById(id, teamId);
+
+        Role reviewerRole = roleRepository.findById(role.getInstanceId())
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        reviewerTeam.getReviewerRoles().add(reviewerRole);
+
+        return reviewerRepository.save(reviewerTeam.getReviewer());
     }
 }

@@ -11,9 +11,7 @@ import com.fypgrading.adminservice.service.mapper.AssessmentMapper;
 import com.fypgrading.adminservice.service.mapper.GradeMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -35,8 +33,10 @@ public class GradeService {
     private final TeamService teamService;
     private final GradeMapper gradeMapper;
     private final TeamMapper teamMapper;
+    private final String GATEWAY_URL;
 
     public GradeService(
+            @Value("${app.gateway-url}") String gateway_url,
             ReviewerTeamRepository reviewerTeamRepository,
             AssessmentService assessmentService,
             AssessmentMapper assessmentMapper,
@@ -57,6 +57,7 @@ public class GradeService {
         this.reviewerMapper = reviewerMapper;
         this.gradeMapper = gradeMapper;
         this.teamService = teamService;
+        this.GATEWAY_URL = gateway_url;
         this.teamMapper = teamMapper;
     }
 
@@ -67,14 +68,14 @@ public class GradeService {
     }
 
     public List<GradedEvaluationDTO> getTeamEvaluationsByAssessment(String assessmentStr, Integer teamId) {
-        ResponseEntity<List<EvaluationDTO>> teamEvaluationsResponse = restTemplate.exchange(
-                "http://localhost:9191/api/evaluations/" + assessmentStr + "/" + teamId,
-                HttpMethod.GET, null, new ParameterizedTypeReference<>() {}
+        EvaluationDTOList teamEvaluationList = restTemplate.getForObject(
+                GATEWAY_URL + "/api/evaluations/" + assessmentStr + "/" + teamId, EvaluationDTOList.class
         );
-        List<EvaluationDTO> teamEvaluations = teamEvaluationsResponse.getBody();
-        if (teamEvaluations == null) {
+
+        if (teamEvaluationList == null) {
             throw new IllegalStateException("Team evaluations not found!");
         }
+        List<EvaluationDTO> teamEvaluations = teamEvaluationList.getEvaluations();
 
         Assessment assessment = assessmentService.getAssessmentByLowerCaseName(assessmentStr);
 

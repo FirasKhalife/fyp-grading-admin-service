@@ -1,6 +1,6 @@
 package com.fypgrading.adminservice.service.dto;
 
-import jakarta.validation.constraints.NotNull;
+import com.fypgrading.adminservice.service.enums.RoleEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,11 +8,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginDTO {
+public class ReviewerTeamRoleDTO {
 
-    @NotNull
-    private String email;
+    private Integer teamId;
 
-    @NotNull
-    private String password;
+    private RoleEnum role;
+
 }
