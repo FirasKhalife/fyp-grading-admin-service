@@ -13,7 +13,6 @@ import com.fypgrading.adminservice.service.mapper.AssessmentMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -22,24 +21,23 @@ import java.util.*;
 @Service
 public class ReviewerService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
     private final AssessmentRepository assessmentRepository;
     private final ReviewerTeamService reviewerTeamService;
     private final ReviewerRepository reviewerRepository;
     private final AssessmentMapper assessmentMapper;
     private final RoleRepository roleRepository;
     private final ReviewerMapper reviewerMapper;
+    private final RestTemplate restTemplate;
     private final TeamMapper teamMapper;
-    private final String GATEWAY_URL;
 
     public ReviewerService(
-            @Value("${app.gateway-url}") String gateway_url,
             AssessmentRepository assessmentRepository,
             ReviewerTeamService reviewerTeamService,
             ReviewerRepository reviewerRepository,
             AssessmentMapper assessmentMapper,
             RoleRepository roleRepository,
             ReviewerMapper reviewerMapper,
+            RestTemplate restTemplate,
             TeamMapper teamMapper
     ) {
         this.assessmentRepository = assessmentRepository;
@@ -48,7 +46,7 @@ public class ReviewerService {
         this.assessmentMapper = assessmentMapper;
         this.roleRepository = roleRepository;
         this.reviewerMapper = reviewerMapper;
-        this.GATEWAY_URL = gateway_url;
+        this.restTemplate = restTemplate;
         this.teamMapper = teamMapper;
     }
 
@@ -180,10 +178,8 @@ public class ReviewerService {
             return Collections.emptyList();
         }
 
-        System.out.println(GATEWAY_URL);
-
         NotificationListDTO notificationList = restTemplate.getForObject(
-                GATEWAY_URL + "/api/notifications/", NotificationListDTO.class
+                "http://api-gateway/api/notifications/", NotificationListDTO.class
         );
 
         if (notificationList == null) {

@@ -11,7 +11,6 @@ import com.fypgrading.adminservice.service.mapper.AssessmentMapper;
 import com.fypgrading.adminservice.service.mapper.GradeMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -23,20 +22,18 @@ import java.util.List;
 public class GradeService {
 
     private final com.fypgrading.adminservice.service.EventDispatcher eventDispatcher;
-    private final RestTemplate restTemplate = new RestTemplate();
     private final ReviewerTeamRepository reviewerTeamRepository;
     private final AssessmentService assessmentService;
     private final AssessmentMapper assessmentMapper;
     private final ReviewerService reviewerService;
     private final GradeRepository gradeRepository;
     private final ReviewerMapper reviewerMapper;
+    private final RestTemplate restTemplate;
     private final TeamService teamService;
     private final GradeMapper gradeMapper;
     private final TeamMapper teamMapper;
-    private final String GATEWAY_URL;
 
     public GradeService(
-            @Value("${app.gateway-url}") String gateway_url,
             ReviewerTeamRepository reviewerTeamRepository,
             AssessmentService assessmentService,
             AssessmentMapper assessmentMapper,
@@ -44,6 +41,7 @@ public class GradeService {
             EventDispatcher eventDispatcher,
             ReviewerService reviewerService,
             ReviewerMapper reviewerMapper,
+            RestTemplate restTemplate,
             GradeMapper gradeMapper,
             TeamService teamService,
             TeamMapper teamMapper
@@ -55,9 +53,9 @@ public class GradeService {
         this.eventDispatcher = eventDispatcher;
         this.reviewerService = reviewerService;
         this.reviewerMapper = reviewerMapper;
+        this.restTemplate = restTemplate;
         this.gradeMapper = gradeMapper;
         this.teamService = teamService;
-        this.GATEWAY_URL = gateway_url;
         this.teamMapper = teamMapper;
     }
 
@@ -69,7 +67,7 @@ public class GradeService {
 
     public List<GradedEvaluationDTO> getTeamEvaluationsByAssessment(String assessmentStr, Integer teamId) {
         EvaluationDTOList teamEvaluationList = restTemplate.getForObject(
-                GATEWAY_URL + "/api/evaluations/" + assessmentStr + "/" + teamId, EvaluationDTOList.class
+                "http://api-gateway/api/evaluations/" + assessmentStr + "/" + teamId, EvaluationDTOList.class
         );
 
         if (teamEvaluationList == null) {
