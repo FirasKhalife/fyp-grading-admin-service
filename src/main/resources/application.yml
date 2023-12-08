@@ -62,6 +62,3 @@ eureka:
 
 server:
   port: 8081
-
-app:
-  gateway-url: 'https://b527-94-187-21-153.ngrok-free.app'
