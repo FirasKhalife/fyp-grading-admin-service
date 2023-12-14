@@ -1,8 +1,9 @@
 pipeline {
-    agent any
-
-    tools {
-        maven 'Maven'
+    agent {
+        docker {
+            image 'maven'
+            image 'openjdk:17-jdk-slim'
+        }
     }
 
     stages {
