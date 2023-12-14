@@ -20,5 +20,4 @@ public class AdminServiceApplication {
 	public RestTemplate restTemplate() {
 		return new RestTemplate();
 	}
-
 }
