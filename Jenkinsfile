@@ -1,7 +1,7 @@
 pipeline {
     agent{
         docker {
-            image 'maven:3.6.3-jdk-11'
+            image 'maven'
             args '-v /root/.m2:/root/.m2'
         }
     }
@@ -25,6 +25,11 @@ pipeline {
             steps {
                 echo 'Testing'
                 bat 'mvn test'
+            }
+            post{
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                }
             }
         }
 
