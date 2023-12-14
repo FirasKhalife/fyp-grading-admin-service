@@ -1,9 +1,10 @@
 pipeline {
-    agent any
-
-    tools {
-            maven 'Maven3' // Specify the name of your Maven tool installation
+    agent{
+        docker {
+            image 'maven:3.6.3-jdk-11'
+            args '-v /root/.m2:/root/.m2'
         }
+    }
 
     stages {
         stage('Checkout') {
