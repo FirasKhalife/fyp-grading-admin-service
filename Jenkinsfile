@@ -6,6 +6,8 @@ pipeline {
         jdk 'JDK'
     }
 
+
+
     stages {
         stage('Checkout') {
             steps {
