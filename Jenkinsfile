@@ -69,7 +69,8 @@ pipeline {
             emailext (
                 subject: "Jenkins Pipeline Notification",
                 body: "Build failed, please check Jenkins logs for more details.",
-                recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+                from: "gaellesaid65@gmail.com",
+                to: "gaellesaid5@gmail.com",
                 replyTo: "gaellesaid65@gmail.com"
             )
         }
