@@ -71,10 +71,9 @@ pipeline {
                 body : """
                         <html>
                             <body>
-                                <p>Build Status: ${currentBuild.result}</p>
-                                <p>Build Number: ${currentBuild.number}</p>
-                                <p>Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
-                                <p>Check console output at <a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a></p>
+                                <p>Build Status: ${BUILD_STATUS}</p>
+                                <p>Build Number: ${BUILD_NUMBER}</p>
+                                <p>Check console output at <a href='${BUILD_URL}'></a></p>
                             </body>
                         </html>""",
                 to : 'gaellesaid65@gmail.com',
