@@ -77,7 +77,7 @@ pipeline {
                                 <p>Check console output at <a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a></p>
                             </body>
                         </html>""",
-                to : 'gaellesaid5@gmail.com',
+                to : 'gaellesaid65@gmail.com',
                 from : 'gaellesaid65@gmail.com',
                 replyTo : 'gaellesaid65@gmail.com',
                 mimeType : 'text/html'
