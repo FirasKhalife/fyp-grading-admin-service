@@ -66,19 +66,7 @@ pipeline {
     }
     post {
         always {
-            emailext (
-                subject : "Pipeline Status: ${currentBuild.result}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-                body : """
-                        <html>
-                            <body>
-                                <p>Job hello world</p>
-                            </body>
-                        </html>""",
-                to : 'gaellesaid65@gmail.com',
-                from : 'gaellesaid65@gmail.com',
-                replyTo : 'gaellesaid65@gmail.com',
-                mimeType : 'text/html'
-            )
+            emailext body: 'Build: ${BUILD_NUMBER} \n\n URL: ${BUILD_URL}',
         }
     }
 }
