@@ -80,8 +80,7 @@ pipeline {
                 to = 'gaellesaid5@gmail.com',
                 from = 'gaellesaid65@gmail.com',
                 replyTo = 'gaellesaid65@gmail.com',
-                mimeType = 'text/html',
-                recipientProviders = [[$class: 'DevelopersRecipientProvider']]
+                mimeType = 'text/html'
             }
         }
     }
