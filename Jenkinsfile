@@ -67,16 +67,10 @@ pipeline {
     post {
         always {
             emailext (
-                subject : "Pipeline Status",
-                body : """<html>
-                                <body>
-                                    <p>Job hello world</p>
-                                </body>
-                            </html>""",
-                to : 'gaellesaid65@gmail.com',
-                from : 'gaellesaid65@gmail.com',
-                replyTo : 'gaellesaid65@gmail.com',
-                mimeType : 'text/html'
+                subject: "Jenkins Pipeline Notification",
+                body: "Build failed, please check Jenkins logs for more details.",
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+                replyTo: "gaellesaid65@gmail.com"
             )
         }
     }
