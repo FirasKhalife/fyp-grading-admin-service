@@ -14,6 +14,19 @@ pipeline {
             }
         }
 
+        stage("send email") {
+            steps {
+                echo 'send email'
+                emailext (
+                    subject: "Jenkins Pipeline Notification",
+                    body: "Build failed, please check Jenkins logs for more details.",
+                    from: "gaellesaid65@gmail.com",
+                    to: "gaellesaid5@gmail.com",
+                    replyTo: "gaellesaid65@gmail.com"
+                )
+            }
+        }
+
         stage('Build') {
             steps {
                 echo 'Building'
@@ -62,17 +75,6 @@ pipeline {
                     }
                 }
             }
-        }
-    }
-    post {
-        always {
-            emailext (
-                subject: "Jenkins Pipeline Notification",
-                body: "Build failed, please check Jenkins logs for more details.",
-                from: "gaellesaid65@gmail.com",
-                to: "gaellesaid5@gmail.com",
-                replyTo: "gaellesaid65@gmail.com"
-            )
         }
     }
 }
