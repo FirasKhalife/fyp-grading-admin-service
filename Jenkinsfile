@@ -1,10 +1,10 @@
 pipeline {
-    agent {
-          docker {
-              image 'maven'
-              args '-v /root/.m2:/root/.m2'
-          }
-      }
+    agent any
+
+    tools {
+        maven 'Maven'
+        jdk 'JDK'
+    }
 
     stages {
         stage('Checkout') {
@@ -62,6 +62,11 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+    post {
+        always {
+            emailext body: 'A Test EMail', recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']], subject: 'Test'
         }
     }
 }
