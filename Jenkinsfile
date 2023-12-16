@@ -1,3 +1,10 @@
+def gv
+def matcher
+def nextIncrementVersion
+def major
+def minor
+def patch
+
 pipeline {
     agent any
 
@@ -8,6 +15,7 @@ pipeline {
 
     environment {
        IMAGE_NAME = 'admin-service'
+       DOCKER_IMAGE_VERSION = '1.0.0'
     }
 
     stages {
@@ -19,22 +27,26 @@ pipeline {
             }
         }
 
-        stage("init"){
-            steps{
-                script{
-                    gv = load("semver.groovy")
-                }
-            }
-        }
+        stage('Versioning') {
+            steps {
+                script {
+                    // Read the current version
+                    def version = readFile('version.txt').trim()
 
-        stage("increment"){
-            steps{
-                script{
-                   gv = load("script.groovy")
-                   gv.increment()
-                   major = gv.major
-                   minor = gv.minor
-                   patch = gv.patch
+                    // Split the version into parts
+                    def (major, minor, patch) = version.tokenize(',')
+
+                    // Increment the patch number, for example
+                    patch = patch.toInteger() + 1
+
+                    // Combine back into a version string
+                    def newVersion = "${major}.${minor}.${patch}"
+
+                    // Write the new version back to the file (optional)
+                    writeFile file: 'version.txt', text: newVersion
+
+                    // Set the new version as an environment variable
+                    env.DOCKER_IMAGE_VERSION = newVersion
                 }
             }
         }
