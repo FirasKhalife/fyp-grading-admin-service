@@ -37,8 +37,11 @@ pipeline {
         stage("increment"){
             steps{
                 script{
-                    gv.increment()
-
+                   gv = load("script.groovy")
+                   gv.increment()
+                   major = gv.major
+                   minor = gv.minor
+                   patch = gv.patch
                 }
             }
         }
