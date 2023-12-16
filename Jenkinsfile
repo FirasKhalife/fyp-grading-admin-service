@@ -44,20 +44,20 @@ pipeline {
                 success {
                     echo 'Build and push Docker image successful'
 
-                    withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Credentials',
-                    usernameVariable: 'dockerHubCredentials_USR',
-                    passwordVariable: 'dockerHubCredentials_PSW')]) {
+                    withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Credentials2',
+                    usernameVariable: 'dockerHubCredentials2_USR',
+                    passwordVariable: 'dockerHubCredentials2_PSW')]) {
 
-                        bat 'docker login -u ${dockerHubCredentials_USR} -p ${dockerHubCredentials_PSW}'
+                        bat 'docker login -u ${usernameVariable} --password-stdin ${passwordVariable}'
                         echo 'Logged in to Docker Hub'
 
-                        bat "docker build -t ${dockerHubCredentials_USR}/admin-service-with-jenkins ."
+                        bat "docker build -t ${usernameVariable}/admin-service-with-jenkins ."
                         echo 'Built Docker image'
 
-                        bat "docker tag ${dockerHubCredentials_USR}/admin-service-with-jenkins ${dockerHubCredentials_USR}/admin-service-with-jenkins:latest"
+                        bat "docker tag ${dockerHubCredentials2_USR}/admin-service-with-jenkins ${dockerHubCredentials2_USR}/admin-service-with-jenkins:latest"
                         echo 'Tagged Docker image'
 
-                        bat "docker push ${dockerHubCredentials_USR}/admin-service-with-jenkins:latest"
+                        bat "docker push ${dockerHubCredentials2_USR}/admin-service-with-jenkins:latest"
                         echo 'Pushed Docker image'
                     }
                 }
