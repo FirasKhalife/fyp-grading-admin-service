@@ -18,6 +18,14 @@ pipeline {
     }
 
     stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Checking out SCM'
+                checkout scm
+            }
+        }
+
         stage("init"){
             steps{
                 script{
@@ -25,20 +33,13 @@ pipeline {
                 }
             }
         }
+
         stage("increment"){
             steps{
                 script{
                     gv.increment()
 
                 }
-            }
-        }
-
-
-        stage('Checkout') {
-            steps {
-                echo 'Checking out SCM'
-                checkout scm
             }
         }
 
