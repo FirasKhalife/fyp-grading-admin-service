@@ -10,5 +10,7 @@ def increment(){
     patch = list[2]
     patch = patch as Integer
     patch = patch + 1
+
+    return [major, minor, patch]
 }
 return this
