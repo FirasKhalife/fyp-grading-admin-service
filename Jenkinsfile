@@ -13,13 +13,9 @@ pipeline {
         jdk 'JDK'
     }
 
-    environment{
-    withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Credentials2',
-                        usernameVariable: 'dockerHubCredentials2_USR',
-                        passwordVariable: 'dockerHubCredentials2_PSW')]) {
-        IMAGE_NAME = "%dockerHubCredentials2_USR%/admin-service-with-jenkins"
-                        }
-        }
+    environment {
+       IMAGE_NAME = 'admin-service'
+    }
 
     stages {
         stage("init"){
@@ -83,21 +79,27 @@ pipeline {
                         bat 'docker login -u %dockerHubCredentials2_USR% -p %dockerHubCredentials2_PSW%'
                         echo 'Logged in to Docker Hub'
 
-                        bat "docker build -t IMAGE_NAME ."
-                        echo 'Built Docker image'
+                        // Use the environment variable IMAGE_NAME
+                        def fullImageName = "%dockerHubCredentials2_USR%/${env.IMAGE_NAME}"
 
-                        bat "docker tag IMAGE_NAME IMAGE_NAME:latest"
-                        echo 'Tagged Docker image with latest'
+                        bat "docker build -t ${fullImageName} ."
+                        echo "Built Docker image ${fullImageName}"
 
-                        bat "docker tag IMAGE_NAME IMAGE_NAME:${major}.${minor}.${patch}"
-                        echo 'Tagged Docker image with version'
+                        // Tag the image with 'latest' and version
+                        bat "docker tag ${fullImageName} ${fullImageName}:latest"
+                        echo "Tagged Docker image with latest"
 
-                        bat "docker push IMAGE_NAME:latest"
-                        echo 'Pushed Docker image with latest'
+                        bat "docker tag ${fullImageName} ${fullImageName}:${major}.${minor}.${patch}"
+                        echo "Tagged Docker image with version ${major}.${minor}.${patch}"
 
-                        bat "docker push IMAGE_NAME:${major}.${minor}.${patch}"
-                        echo 'Pushed Docker image with version'
+                        // Push the tags to the Docker Hub
+                        bat "docker push ${fullImageName}:latest"
+                        echo "Pushed Docker image with latest"
 
+                        bat "docker push ${fullImageName}:${major}.${minor}.${patch}"
+                        echo "Pushed Docker image with version ${major}.${minor}.${patch}"
+
+                        // Write the version to a file
                         writeFile (file: "${env.WORKSPACE}/version.xml",
                                     text: "${major},${minor},${patch}", encoding: "UTF-8")
                         echo 'Wrote version file'
