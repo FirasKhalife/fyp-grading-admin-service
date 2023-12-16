@@ -79,24 +79,21 @@ pipeline {
                         bat 'docker login -u %dockerHubCredentials2_USR% -p %dockerHubCredentials2_PSW%'
                         echo 'Logged in to Docker Hub'
 
-                        // Use the environment variable IMAGE_NAME
-                        def fullImageName = "%dockerHubCredentials2_USR%/${env.IMAGE_NAME}"
-
-                        bat "docker build -t ${fullImageName} ."
-                        echo "Built Docker image ${fullImageName}"
+                        bat "docker build -t %dockerHubCredentials2_USR%/${env.IMAGE_NAME} ."
+                        echo "Built Docker image %dockerHubCredentials2_USR%/${env.IMAGE_NAME}"
 
                         // Tag the image with 'latest' and version
-                        bat "docker tag ${fullImageName} ${fullImageName}:latest"
+                        bat "docker tag %dockerHubCredentials2_USR%/${env.IMAGE_NAME} %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:latest"
                         echo "Tagged Docker image with latest"
 
-                        bat "docker tag ${fullImageName} ${fullImageName}:${major}.${minor}.${patch}"
+                        bat "docker tag %dockerHubCredentials2_USR%/${env.IMAGE_NAME} %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:${major}.${minor}.${patch}"
                         echo "Tagged Docker image with version ${major}.${minor}.${patch}"
 
                         // Push the tags to the Docker Hub
-                        bat "docker push ${fullImageName}:latest"
+                        bat "docker push %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:latest"
                         echo "Pushed Docker image with latest"
 
-                        bat "docker push ${fullImageName}:${major}.${minor}.${patch}"
+                        bat "docker push %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:${major}.${minor}.${patch}"
                         echo "Pushed Docker image with version ${major}.${minor}.${patch}"
 
                         // Write the version to a file
