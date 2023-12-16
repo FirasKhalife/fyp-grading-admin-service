@@ -29,7 +29,7 @@ pipeline {
         stage("init"){
             steps{
                 script{
-                    gv = load("script.groovy")
+                    gv = load("semver.groovy")
                 }
             }
         }
