@@ -30,10 +30,6 @@ pipeline {
             steps{
                 script{
                     gv = load("semver.groovy")
-                    matcher = gv.matcher
-                    major = gv.major
-                    minor = gv.minor
-                    patch = gv.patch
                 }
             }
         }
@@ -42,6 +38,11 @@ pipeline {
             steps{
                 script{
                     gv.increment()
+                    major = gv.major
+                    minor = gv.minor
+                    patch = gv.patch
+
+                    echo "major: ${major} minor: ${minor} patch: ${patch}"
                 }
             }
         }
