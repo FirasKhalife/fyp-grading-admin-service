@@ -48,16 +48,16 @@ pipeline {
                     usernameVariable: 'dockerHubCredentials2_USR',
                     passwordVariable: 'dockerHubCredentials2_PSW')]) {
 
-                        bat 'docker login -u ${usernameVariable} --password-stdin ${passwordVariable}'
+                        bat 'docker login -u %dockerHubCredentials2_USR% -p %dockerHubCredentials2_PSW%'
                         echo 'Logged in to Docker Hub'
 
-                        bat "docker build -t ${usernameVariable}/admin-service-with-jenkins ."
+                        bat "docker build -t %dockerHubCredentials2_USR%/admin-service-with-jenkins ."
                         echo 'Built Docker image'
 
-                        bat "docker tag ${dockerHubCredentials2_USR}/admin-service-with-jenkins ${dockerHubCredentials2_USR}/admin-service-with-jenkins:latest"
+                        bat "docker tag %dockerHubCredentials2_USR%/admin-service-with-jenkins %dockerHubCredentials2_USR%/admin-service-with-jenkins:latest"
                         echo 'Tagged Docker image'
 
-                        bat "docker push ${dockerHubCredentials2_USR}/admin-service-with-jenkins:latest"
+                        bat "docker push %dockerHubCredentials2_USR%/admin-service-with-jenkins:latest"
                         echo 'Pushed Docker image'
                     }
                 }
