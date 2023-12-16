@@ -1,10 +1,3 @@
-def gv
-def matcher
-def nextIncrementVersion
-def major
-def minor
-def patch
-
 pipeline {
     agent any
 
