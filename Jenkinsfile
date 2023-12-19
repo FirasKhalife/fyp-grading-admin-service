@@ -69,7 +69,24 @@ pipeline {
             }
         }
 
+        stage("Update Version"){
+            steps{
+                script{
+                    writeFile (file: "${env.WORKSPACE}/version.xml",
+                                text: "${major},${minor},${patch}", encoding: "UTF-8")
+                    echo 'Wrote version file'
 
+                    withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]) {
+                        sh "git config user.email 'jenkins@gmail.com'"
+                        sh "git config user.name 'jenkins-server'"
+                        sh "git add ${env.WORKSPACE}/version.xml"
+                        sh "git commit -m 'ci: version updated to ${versionString}'"
+                        sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${env.GitHub_USR}/${env.GitHub_REPO}.git"
+                        sh "git push --set-upstream origin ${env.Pipeline_NAME}"
+                    }
+                }
+            }
+        }
 
         stage('Build and Push Docker Image') {
             steps {
@@ -105,20 +122,6 @@ pipeline {
 
                         bat "docker push %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:${major}.${minor}.${patch}"
                         echo "Pushed Docker image with version ${major}.${minor}.${patch}"
-
-                        // Write the version to a file
-                        writeFile (file: "${env.WORKSPACE}/version.xml",
-                                    text: "${major},${minor},${patch}", encoding: "UTF-8")
-                        echo 'Wrote version file'
-
-                        withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]) {
-                            sh "git config user.email 'jenkins@gmail.com'"
-                            sh "git config user.name 'jenkins-server'"
-                            sh "git add ${env.WORKSPACE}/version.xml"
-                            sh "git commit -m 'ci: version updated to ${versionString}'"
-                            sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${env.GitHub_USR}/${env.GitHub_REPO}.git"
-                            sh "git push --set-upstream origin ${env.Pipeline_NAME}"
-                        }
                     }
                 }
             }
