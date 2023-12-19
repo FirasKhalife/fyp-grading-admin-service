@@ -26,7 +26,7 @@ def updateCommit() {
             text: "version: ${major},${minor},${patch}", encoding: "UTF-8")
 
     withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]){
-        sh "git add version.xml"
+        sh "git add ${env.WORKSPACE}/version.xml"
         sh "git commit -m 'ci: version updated in version file'"
         sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${GitHub_USR}/${GitHub_REPO}.git"
         sh "git push --set-upstream origin $Pipeline_NAME"
