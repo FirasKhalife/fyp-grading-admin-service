@@ -22,7 +22,7 @@ def updateCommit() {
     env.WORKSPACE = pwd()
     def version = increment()
     def versionString = version.join(",")
-    sh "echo '${versionString}' > ${env.WORKSPACE}/version.xmml;"
+    sh "echo '${versionString}' > ${env.WORKSPACE}/version.xml"
 
     withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]){
         sh "git add version.xml"
