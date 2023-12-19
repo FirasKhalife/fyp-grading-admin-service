@@ -19,11 +19,6 @@ def increment(){
 def updateCommit() {
     echo "Updating version file..."
     patch = patch as Integer
-    if (patch == 0){
-        sh "git config --global user.email 'jenkins@gmail.com'"
-        sh "git config --global user.name 'jenkins-server'"
-        sh "git config --list"
-    }
 
     env.WORKSPACE = pwd()
     def version = increment()
@@ -31,11 +26,13 @@ def updateCommit() {
     writeFile (file: "${env.WORKSPACE}/version.xml",
             text: "version: ${major},${minor},${patch}", encoding: "UTF-8")
 
-    withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]){
+    withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]) {
+        sh "git config user.email 'jenkins@gmail.com'"
+        sh "git config user.name 'jenkins-server'"
         sh "git add ${env.WORKSPACE}/version.xml"
-        sh "git commit -m 'ci: version updated in version file'"
+        sh "git commit -m 'ci: version updated to ${versionString}'"
         sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${GitHub_USR}/${GitHub_REPO}.git"
-        sh "git push --set-upstream origin $Pipeline_NAME"
+        sh "git push --set-upstream origin $BRANCH_NAME"
     }
 }
 return this
