@@ -77,8 +77,6 @@ pipeline {
                     echo 'Wrote version file'
 
                     withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]) {
-                        sh "git config user.email 'jenkins@gmail.com'"
-                        sh "git config user.name 'jenkins-server'"
                         sh "git checkout ${env.BRANCH_NAME}"
                         sh "git add ."
                         sh "git commit -m 'ci: version updated to ${versionString}'"
