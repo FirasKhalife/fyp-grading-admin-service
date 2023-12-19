@@ -18,6 +18,12 @@ def increment(){
 
 def updateCommit() {
     echo "Updating version file..."
+    patch = patch as Integer
+    if (patch == 0){
+        sh "git config --global user.email 'jenkins@gmail.com'"
+        sh "git config --global user.name 'jenkins-server'"
+        sh "git config --list"
+    }
 
     env.WORKSPACE = pwd()
     def version = increment()
