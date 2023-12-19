@@ -112,6 +112,14 @@ pipeline {
                 }
             }
         }
+
+        stage("Update Commit") {
+            steps{
+                script{
+                    gv.updateCommit()
+                }
+            }
+        }
     }
     post {
         always {
