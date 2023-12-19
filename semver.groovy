@@ -14,7 +14,7 @@ def increment(){
     return [major, minor, patch]
 }
 
-def updateVersionFile() {
+def updateCommit() {
     echo "Updating version file..."
 
     env.WORKSPACE = pwd()
