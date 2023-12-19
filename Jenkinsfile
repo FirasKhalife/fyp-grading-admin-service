@@ -75,7 +75,7 @@ pipeline {
 
                     withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]) {
                         sh "git checkout ${env.BRANCH_NAME}"
-                        writeFile (file: "$version.xml",
+                        writeFile (file: "${env.WORKSPACE}/version.xml",
                                    text: "${major},${minor},${patch}", encoding: "UTF-8")
                         echo 'Wrote version file'
                         sh "git add ."
