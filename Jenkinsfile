@@ -15,7 +15,7 @@ pipeline {
 
     environment {
        IMAGE_NAME = 'fyp-grading-admin-service'
-       Pipeline_NAME = 'admin-service-pipeline'
+       BRANCH_NAME = 'admin-service-pipeline'
        GitHub_REPO = 'fyp-grading-admin-service'
        GitHub_USR = 'FirasKhalife'
     }
@@ -79,10 +79,11 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]) {
                         sh "git config user.email 'jenkins@gmail.com'"
                         sh "git config user.name 'jenkins-server'"
-                        sh "git add ${env.WORKSPACE}/version.xml"
+                        sh "git checkout ${env.BRANCH_NAME}"
+                        sh "git add ."
                         sh "git commit -m 'ci: version updated to ${versionString}'"
                         sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${env.GitHub_USR}/${env.GitHub_REPO}.git"
-                        sh "git push --set-upstream origin ${env.Pipeline_NAME}"
+                        sh "git push --set-upstream origin ${env.BRANCH_NAME}"
                     }
                 }
             }
