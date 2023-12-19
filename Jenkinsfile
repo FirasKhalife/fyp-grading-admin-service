@@ -114,7 +114,7 @@ pipeline {
 
                         // Write the version to a file
                         writeFile (file: "${env.WORKSPACE}/version.xml",
-                                    text: "${major},${minor},${patch} hello", encoding: "UTF-8")
+                                    text: "${major},${minor},${patch}", encoding: "UTF-8")
                         echo 'Wrote version file'
                     }
                 }
