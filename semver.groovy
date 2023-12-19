@@ -23,7 +23,7 @@ def updateCommit() {
     def version = increment()
     def versionString = version.join(",")
     writeFile (file: "${env.WORKSPACE}/version.xml",
-            text: "${major},${minor},${patch}", encoding: "UTF-8")
+            text: "version: ${major},${minor},${patch}", encoding: "UTF-8")
 
     withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]){
         sh "git add version.xml"
