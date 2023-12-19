@@ -14,7 +14,7 @@ pipeline {
     }
 
     environment {
-       IMAGE_NAME = 'admin-service'
+       IMAGE_NAME = 'fyp-grading-admin-service'
     }
 
     stages {
