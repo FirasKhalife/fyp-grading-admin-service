@@ -69,6 +69,14 @@ pipeline {
             }
         }
 
+        stage("Update Commit") {
+            steps{
+                script{
+                    gv.updateCommit()
+                }
+            }
+        }
+
         stage('Build and Push Docker Image') {
             steps {
                 echo 'Building and pushing Docker image'
@@ -113,13 +121,6 @@ pipeline {
             }
         }
 
-        stage("Update Commit") {
-            steps{
-                script{
-                    gv.updateCommit()
-                }
-            }
-        }
     }
     post {
         always {
