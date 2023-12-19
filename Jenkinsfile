@@ -72,7 +72,7 @@ pipeline {
         stage("Update Version"){
             steps{
                 script{
-                    writeFile (file: "${env.WORKSPACE}/version.xml",
+                    writeFile (file: "$version.xml",
                                 text: "${major},${minor},${patch}", encoding: "UTF-8")
                     echo 'Wrote version file'
 
