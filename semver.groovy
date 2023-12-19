@@ -13,4 +13,20 @@ def increment(){
 
     return [major, minor, patch]
 }
+
+def updateVersionFile() {
+    echo "Updating version file..."
+
+    env.WORKSPACE = pwd()
+    def version = increment()
+    def versionString = version.join(",")
+    sh "echo 'version = ${versionString}' > version.txt"
+
+    withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]){
+        sh "git add version.txt"
+        sh "git commit -m 'ci: version updated in version file'"
+        sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${env.GitHub_USR}/${env.GitHub_REPO}.git"
+        sh "git push --set-upstream origin ${env.Pipeline_NAME}"
+    }
+}
 return this

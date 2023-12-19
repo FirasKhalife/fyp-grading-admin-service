@@ -15,6 +15,9 @@ pipeline {
 
     environment {
        IMAGE_NAME = 'fyp-grading-admin-service'
+       Pipeline_NAME = 'admin-service-pipeline'
+       GitHub_REPO = 'fyp-grading-admin-service'
+       GitHub_USR = 'FirasKhalife'
     }
 
     stages {
