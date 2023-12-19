@@ -2,8 +2,10 @@
 
 def increment(){
     echo "increment..."
+
     env.WORKSPACE = pwd()
     matcher = readFile("${env.WORKSPACE}/version.xml")
+
     def list = matcher.split(",")
     major = list[0]
     minor = list[1]
@@ -20,13 +22,13 @@ def updateCommit() {
     env.WORKSPACE = pwd()
     def version = increment()
     def versionString = version.join(",")
-    sh "echo 'version = ${versionString}' > version.txt"
+    sh "echo '${versionString}' > ${env.WORKSPACE}/version.xmml;"
 
     withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]){
-        sh "git add version.txt"
+        sh "git add version.xml"
         sh "git commit -m 'ci: version updated in version file'"
-        sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${env.GitHub_USR}/${env.GitHub_REPO}.git"
-        sh "git push --set-upstream origin ${env.Pipeline_NAME}"
+        sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${GitHub_USR}/${GitHub_REPO}.git"
+        sh "git push --set-upstream origin $Pipeline_NAME"
     }
 }
 return this
