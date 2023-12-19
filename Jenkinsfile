@@ -72,12 +72,12 @@ pipeline {
         stage("Update Version"){
             steps{
                 script{
-                    writeFile (file: "$version.xml",
-                                text: "${major},${minor},${patch}", encoding: "UTF-8")
-                    echo 'Wrote version file'
 
                     withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]) {
                         sh "git checkout ${env.BRANCH_NAME}"
+                        writeFile (file: "$version.xml",
+                                   text: "${major},${minor},${patch}", encoding: "UTF-8")
+                        echo 'Wrote version file'
                         sh "git add ."
                         sh "git commit -m 'ci: version updated to ${versionString}'"
                         sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${env.GitHub_USR}/${env.GitHub_REPO}.git"
