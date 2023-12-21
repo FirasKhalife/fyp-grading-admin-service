@@ -80,7 +80,7 @@ pipeline {
                     sh 'git config --global user.name "Jenkins"'
 
                     // Clone the repository - optional, only if needed
-                    sh 'git clone https://github.com/your-repository.git'
+                    sh 'git clone https://github.com/FirasKhalife/fyp-grading-admin-service'
                 }
             }
         }
