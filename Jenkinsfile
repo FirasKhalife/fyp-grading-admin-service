@@ -18,6 +18,8 @@ pipeline {
        BRANCH_NAME = 'admin-service-pipeline'
        GitHub_REPO = 'fyp-grading-admin-service'
        GitHub_USR = 'FirasKhalife'
+       VERSION = readMavenPom().getVersion()
+       echo "VERSION: ${VERSION}"
     }
 
     stages {
@@ -94,15 +96,15 @@ pipeline {
                         bat "docker tag %dockerHubCredentials2_USR%/${env.IMAGE_NAME} %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:latest"
                         echo "Tagged Docker image with latest"
 
-                        bat "docker tag %dockerHubCredentials2_USR%/${env.IMAGE_NAME} %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:${major}.${minor}.${patch}"
-                        echo "Tagged Docker image with version ${major}.${minor}.${patch}"
+                        bat "docker tag %dockerHubCredentials2_USR%/${env.IMAGE_NAME} %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:${env.VERSION}"
+                        echo "Tagged Docker image with version ${env.VERSION}"
 
                         // Push the tags to the Docker Hub
                         bat "docker push %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:latest"
                         echo "Pushed Docker image with latest"
 
-                        bat "docker push %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:${major}.${minor}.${patch}"
-                        echo "Pushed Docker image with version ${major}.${minor}.${patch}"
+                        bat "docker push %dockerHubCredentials2_USR%/${env.IMAGE_NAME}:${env.VERSION}"
+                        echo "Pushed Docker image with version ${env.VERSION}"
                     }
                 }
             }

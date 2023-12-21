@@ -16,19 +16,3 @@ def increment(){
     return [major, minor, patch]
 }
 
-def increment2() {
-    echo "increment..."
-
-    env.WORKSPACE = pwd()
-    def pomPath = "${env.WORKSPACE}/pom.xml"
-
-    // Read the Maven pom.xml file
-    def pom = readMavenPom file: pomPath
-    def versionString = pom.getVersion()
-
-    echo "Current version: ${versionString}"
-
-    def (major, minor, patch) = versionString.tokenize('.').collect { it as Integer }
-
-    return [major, minor, patch]
-}
