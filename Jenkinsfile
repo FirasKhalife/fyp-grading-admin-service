@@ -18,7 +18,7 @@ pipeline {
        BRANCH_NAME = 'admin-service-pipeline'
        GitHub_REPO = 'fyp-grading-admin-service'
        GitHub_USR = 'FirasKhalife'
-       VERSION = '1.0.0'
+       VERSION = readMavenPom().getVersion()
     }
 
     stages {
@@ -58,32 +58,6 @@ pipeline {
             }
         }
 
-       stage("increment"){
-           steps{
-               script{
-                   gv.increment()
-                   major = gv.major
-                   minor = gv.minor
-                   patch = gv.patch
-
-                   echo "major: ${major} minor: ${minor} patch: ${patch}"
-               }
-           }
-       }
-
-
-        stage('Version') {
-            steps {
-                script {
-                    // Call the version function to extract the version
-                    gv.version()
-                    env.VERSION = gv.version
-
-
-                    echo "Extracted version: ${env.VERSION}"
-                }
-            }
-        }
 
         stage('Build and Push Docker Image') {
             steps {
