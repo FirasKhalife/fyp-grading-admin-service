@@ -4,9 +4,10 @@ def increment(){
     echo "increment..."
 
     env.WORKSPACE = pwd()
-    matcher = readFile("${env.WORKSPACE}/version.xml")
+    matcher = readFile("${env.WORKSPACE}/pom.xml") =~ /<version>(.+?)<\/version>/
 
-    def list = matcher.split(",")
+
+    def list = matcher.split(".")
     major = list[0]
     minor = list[1]
     patch = list[2]

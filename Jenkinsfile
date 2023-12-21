@@ -34,6 +34,7 @@ pipeline {
             steps{
                 script{
                     gv = load("semver.groovy")
+
                 }
             }
         }
@@ -56,6 +57,19 @@ pipeline {
                 }
             }
         }
+
+       stage("increment"){
+           steps{
+               script{
+                   gv.increment()
+                   major = gv.major
+                   minor = gv.minor
+                   patch = gv.patch
+
+                   echo "major: ${major} minor: ${minor} patch: ${patch}"
+               }
+           }
+       }
 
 
         stage('Version') {
