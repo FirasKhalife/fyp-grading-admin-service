@@ -1,6 +1,5 @@
 #!/usr/bin/env groovy
 
-
 def increment(){
     echo "increment..."
 
