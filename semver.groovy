@@ -20,5 +20,7 @@ def version() {
 
     env.WORKSPACE = pwd()
     matcher = readFile("${env.WORKSPACE}/pom.xml") =~ '<version>(.+?)</version>'
-    matcher ? matcher[0][1] : null
+    version = matcher[0][1]
+
+    return version
 }

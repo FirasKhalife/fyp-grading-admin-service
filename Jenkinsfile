@@ -57,11 +57,14 @@ pipeline {
             }
         }
 
+
         stage('Version') {
             steps {
                 script {
                     // Call the version function to extract the version
-                    env.VERSION = gv.version()
+                    gv.version()
+                    env.VERSION = gv.version
+
 
                     echo "Extracted version: ${env.VERSION}"
                 }
