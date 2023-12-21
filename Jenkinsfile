@@ -11,7 +11,6 @@ pipeline {
     tools {
         maven 'Maven'
         jdk 'JDK'
-        git 'Git'
     }
 
     environment {
