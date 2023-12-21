@@ -1,5 +1,7 @@
 #!/usr/bin/env groovy
 
+import groovy.xml.XmlSlurper
+
 def increment(){
     echo "increment..."
 
@@ -11,28 +13,30 @@ def increment(){
     minor = list[1]
     patch = list[2]
     patch = patch as Integer
-    patch = patch + 1
 
     return [major, minor, patch]
 }
 
-def updateCommit() {
-    echo "Updating version file..."
-    patch = patch as Integer
+def increment2() {
+    echo "increment..."
 
     env.WORKSPACE = pwd()
-    def version = increment()
-    def versionString = version.join(",")
-    writeFile (file: "${env.WORKSPACE}/version.xml",
-            text: "version: ${major},${minor},${patch}", encoding: "UTF-8")
+    def pomFile = new File("${env.WORKSPACE}/pom.xml")
 
-    withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]) {
-        sh "git config user.email 'jenkins@gmail.com'"
-        sh "git config user.name 'jenkins-server'"
-        sh "git add ${env.WORKSPACE}/version.xml"
-        sh "git commit -m 'ci: version updated to ${versionString}'"
-        sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${GitHub_USR}/${GitHub_REPO}.git"
-        sh "git push --set-upstream origin $BRANCH_NAME"
+    if (!pomFile.exists()) {
+        echo "pom.xml not found"
+        return
     }
+
+    def pomXml = new XmlSlurper().parse(pomFile)
+    def versionString = pomXml.version.text()
+
+    echo "Current version: ${versionString}"
+
+    def (major, minor, patch) = versionString.tokenize('.').collect { it as Integer }
+
+    // Increment the patch number
+    patch++
+
+    return [major, minor, patch]
 }
-return this
