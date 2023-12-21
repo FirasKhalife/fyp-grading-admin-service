@@ -11,6 +11,7 @@ pipeline {
     tools {
         maven 'Maven'
         jdk 'JDK'
+        git 'Git'
     }
 
     environment {
@@ -69,15 +70,29 @@ pipeline {
             }
         }
 
+        stage("Install and Configure Git") {
+            steps {
+                script {
+                    sh 'sudo apt-get update && sudo apt-get install -y git'
+
+                    // Configure Git
+                    sh 'git config --global user.email "Jenkins@mail.com"'
+                    sh 'git config --global user.name "Jenkins"'
+
+                    // Clone the repository - optional, only if needed
+                    sh 'git clone https://github.com/your-repository.git'
+                }
+            }
+        }
+
         stage("Update Version"){
             steps{
                 script{
-
                     withCredentials([usernamePassword(credentialsId: "github-token", usernameVariable: "githubToken_USR", passwordVariable: "githubToken_PSW")]) {
+                        sh "git checkout ${env.BRANCH_NAME}"
                         writeFile (file: "${env.WORKSPACE}/version.xml",
                                    text: "${major},${minor},${patch}", encoding: "UTF-8")
                         echo 'Wrote version file'
-                        sh "git checkout ${env.BRANCH_NAME}"
                         sh "git add ."
                         sh "git commit -m 'ci: version updated to ${versionString}'"
                         sh "git remote set-url origin https://${githubToken_USR}:${githubToken_PSW}@github.com/${env.GitHub_USR}/${env.GitHub_REPO}.git"
