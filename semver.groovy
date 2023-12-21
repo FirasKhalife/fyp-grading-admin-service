@@ -1,6 +1,5 @@
 #!/usr/bin/env groovy
 
-import groovy.xml.XmlSlurper
 
 def increment(){
     echo "increment..."
@@ -21,22 +20,15 @@ def increment2() {
     echo "increment..."
 
     env.WORKSPACE = pwd()
-    def pomFile = new File("${env.WORKSPACE}/pom.xml")
+    def pomPath = "${env.WORKSPACE}/pom.xml"
 
-    if (!pomFile.exists()) {
-        echo "pom.xml not found"
-        return
-    }
-
-    def pomXml = new XmlSlurper().parse(pomFile)
-    def versionString = pomXml.version.text()
+    // Read the Maven pom.xml file
+    def pom = readMavenPom file: pomPath
+    def versionString = pom.getVersion()
 
     echo "Current version: ${versionString}"
 
     def (major, minor, patch) = versionString.tokenize('.').collect { it as Integer }
-
-    // Increment the patch number
-    patch++
 
     return [major, minor, patch]
 }
