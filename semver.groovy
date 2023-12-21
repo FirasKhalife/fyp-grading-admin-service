@@ -19,8 +19,9 @@ def version() {
     echo "extracting version..."
 
     env.WORKSPACE = pwd()
-    matcher = readFile("${env.WORKSPACE}/pom.xml") =~ '<version>(.+?)</version>'
-    version = matcher[0][1]
+    matcher = readFile("${env.WORKSPACE}/pom.xml")
+    def matcher2 = matcher =~ /<version>(.+?)<\/version>/
+    def version = matcher2[0][1]
 
     return version
 }
