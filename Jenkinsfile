@@ -41,7 +41,7 @@ pipeline {
         stage("increment"){
             steps{
                 script{
-                    gv.increment2()
+                    gv.increment()
                     major = gv.major
                     minor = gv.minor
                     patch = gv.patch
