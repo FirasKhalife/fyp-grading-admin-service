@@ -18,7 +18,7 @@ pipeline {
        BRANCH_NAME = 'admin-service-pipeline'
        GitHub_REPO = 'fyp-grading-admin-service'
        GitHub_USR = 'FirasKhalife'
-       VERSION = readMavenPom().getVersion()
+       VERSION = '1.0.0'
     }
 
     stages {
@@ -66,6 +66,17 @@ pipeline {
             post{
                 always {
                     junit 'target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Version') {
+            steps {
+                script {
+                    // Call the version function to extract the version
+                    env.VERSION = version()
+
+                    echo "Extracted version: ${env.VERSION}"
                 }
             }
         }

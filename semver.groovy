@@ -16,3 +16,10 @@ def increment(){
     return [major, minor, patch]
 }
 
+def version() {
+    echo "extracting version..."
+
+    env.WORKSPACE = pwd()
+    matcher = readFile("${env.WORKSPACE}/pom.xml") =~ '<version>(.+?)</version>'
+    matcher ? matcher[0][1] : null
+}
