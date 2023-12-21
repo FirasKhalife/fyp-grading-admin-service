@@ -19,7 +19,6 @@ pipeline {
        GitHub_REPO = 'fyp-grading-admin-service'
        GitHub_USR = 'FirasKhalife'
        VERSION = readMavenPom().getVersion()
-       echo "VERSION: ${VERSION}"
     }
 
     stages {
