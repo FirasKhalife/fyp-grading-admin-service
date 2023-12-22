@@ -1,0 +1,30 @@
+name: GitHub Actions Demo
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on: [pull_request]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Build with Maven
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: mvn clean install
+
+      - name: Send mail
+        uses: dawidd6/action-send-mail@v3
+        with:
+
+          server_address: smtp.gmail.com
+          server_port: 465
+
+          subject: Github Actions job result
+          to: gaellesaid65@gmail.com
+          
+          from: gaellesaid5@gmail.com
+          body: Build job completed successfully, ready to be merged!
