@@ -108,6 +108,29 @@ pipeline {
 
     }
     post {
+        success {
+            emailext (
+                subject: "Build SUCCESS - #${env.BUILD_NUMBER}",
+                body: "The build was successful! Build Number: ${env.BUILD_NUMBER}",
+                from: "gaellesaid65@gmail.com",
+                to: "gaellesaid5@gmail.com",
+                replyTo: "gaellesaid65@gmail.com"
+            )
+        }
+        failure {
+            script {
+                // Assuming logs are in 'logs' directory, adjust as necessary
+                sh 'zip -r build-logs.zip logs/'
+            }
+            emailext (
+                subject: "Build FAILURE - #${env.BUILD_NUMBER}",
+                body: "The build failed. Please find the attached logs for details. Build Number: ${env.BUILD_NUMBER}",
+                from: "gaellesaid65@gmail.com",
+                to: "gaellesaid5@gmail.com",
+                replyTo: "gaellesaid65@gmail.com",
+                attachmentsPattern: 'build-logs.zip' // Assuming the zip file is in the root directory
+            )
+        }
         always {
             emailext (
                 subject: "Jenkins Pipeline Notification",
@@ -118,4 +141,5 @@ pipeline {
             )
         }
     }
+
 }

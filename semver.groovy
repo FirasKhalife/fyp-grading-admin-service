@@ -4,7 +4,7 @@ def increment(){
     echo "increment..."
 
     env.WORKSPACE = pwd()
-    matcher = readFile("${env.WORKSPACE}/pom.xml") =~ /<version>(.+?)<\/version>/
+    matcher = readFile("${env.WORKSPACE}/version.xml")
 
 
     def list = matcher.split(".")
@@ -31,26 +31,6 @@ def version() {
 
 return this
 
-String extractVersionFromPom() {
-    def filePath = "pom.xml"
-    def pomFile = new File(filePath)
-    if (!pomFile.exists()) {
-        throw new FileNotFoundException("File not found: $filePath")
-    }
-
-    def pomXml = new XmlParser().parse(pomFile)
-
-    try {
-        def version = extractVersionFromPom()
-        println "Version: $version"
-    } catch (Exception e) {
-        println e.message
-    }
-
-    return pomXml.version.text()
-}
-
-return this
 
 
 
