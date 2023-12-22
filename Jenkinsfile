@@ -58,6 +58,32 @@ pipeline {
             }
         }
 
+        stage("increment version"){
+            steps{
+                script{
+                    env.VERSION = gv.extractVersionFromPom()
+                    echo "Version : gv.extractVersionFromPom()"
+                    echo "VERSION: ${env.VERSION}"
+                }
+            }
+        }
+
+        stage("increment version2"){
+            steps{
+                script{
+                    matcher = gv.matcher(VERSION)
+                    nextIncrementVersion = gv.nextIncrementVersion(matcher)
+                    major = gv.major(matcher)
+                    minor = gv.minor(matcher)
+                    patch = gv.patch(matcher)
+                    echo "nextIncrementVersion: ${nextIncrementVersion}"
+                    echo "major: ${major}"
+                    echo "minor: ${minor}"
+                    echo "patch: ${patch}"
+                }
+            }
+        }
+
 
         stage('Build and Push Docker Image') {
             steps {
