@@ -62,6 +62,7 @@ pipeline {
             steps{
                 script{
                     env.VERSION = gv.version2()
+
                     echo "VERSION: ${env.VERSION}"
                 }
             }
