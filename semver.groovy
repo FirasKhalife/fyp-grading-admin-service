@@ -16,6 +16,8 @@ def increment(){
     return [major, minor, patch]
 }
 
+return this
+
 def version() {
     echo "extracting version..."
 
@@ -26,6 +28,8 @@ def version() {
 
     return version
 }
+
+return this
 
 String extractVersionFromPom() {
     def filePath = "pom.xml"
@@ -45,6 +49,8 @@ String extractVersionFromPom() {
 
     return pomXml.version.text()
 }
+
+return this
 
 
 
