@@ -13,7 +13,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots verify
+        run: mvn clean package --batch-mode --update-snapshots
+      - run: mvn install -DskipTests=true
       - run: mvn --batch-mode --update-snapshots verify
       - run: mkdir staging && cp target/*.jar staging
       - uses: actions/upload-artifact@v3
