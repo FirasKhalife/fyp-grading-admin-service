@@ -33,7 +33,10 @@ pipeline {
         stage("init"){
             steps{
                 script{
-                    gv = load("semver.groovy")
+                    env.WORKSPACE = pwd()
+                    echo "filePath: ${filePath}"
+
+                    gv = load("${env.WORKSPACE}/semver.groovy")
                     echo "semver.groovy loaded, ${gv}"
                 }
             }
