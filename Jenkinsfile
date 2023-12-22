@@ -43,7 +43,7 @@ pipeline {
         stage("init"){
             steps{
                 script{
-                    gv = load("server.groovy")
+                    gv = load("semver.groovy")
                     echo "semver.groovy loaded, ${gv}"
                 }
             }
@@ -132,16 +132,14 @@ pipeline {
         }
         failure {
             setBuildStatus("Build failed", "FAILURE");
-            script {
-                sh 'zip -r build-logs.zip logs/'
-            }
             emailext (
+                attachLog: true,
                 subject: "Build FAILURE - #${env.BUILD_NUMBER}",
-                body: "The build failed. Please ind the attached logs for details. Build Number: ${env.BUILD_NUMBER}",
+                body: "The build failed. Please find the attached logs for details. Build Number: ${env.BUILD_NUMBER}\nPlease go to ${env.BUILD_URL}/consoleText for more details.",
                 from: "gaellesaid65@gmail.com",
                 to: "gaellesaid5@gmail.com",
                 replyTo: "gaellesaid65@gmail.com",
-                attachmentsPattern: 'build-logs.zip' // Assuming the zip file is in the root directory
+                attachmentsPattern: 'build-logs.zip'
             )
         }
     }
