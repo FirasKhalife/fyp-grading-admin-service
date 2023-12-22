@@ -61,8 +61,8 @@ pipeline {
         stage("increment version"){
             steps{
                 script{
-                    env.VERSION = gv.extractVersionFromPom()
-                    echo "Version : gv.extractVersionFromPom()"
+                    env.VERSION = gv.version()
+                    echo "Version : gv.version()"
                     echo "VERSION: ${env.VERSION}"
                 }
             }
