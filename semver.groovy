@@ -27,8 +27,6 @@ def version() {
     return version
 }
 
-import groovy.xml.XmlSlurper
-
 String extractVersionFromPom() {
     def filePath = "pom.xml"
     def pomFile = new File(filePath)
@@ -36,8 +34,7 @@ String extractVersionFromPom() {
         throw new FileNotFoundException("File not found: $filePath")
     }
 
-    def pomXml = new XmlSlurper().parse(pomFile)
-    println "Version: $version"
+    def pomXml = new XmlParser().parse(pomFile)
 
     try {
         def version = extractVersionFromPom()
