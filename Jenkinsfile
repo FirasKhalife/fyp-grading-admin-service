@@ -133,7 +133,6 @@ pipeline {
         failure {
             setBuildStatus("Build failed", "FAILURE");
             script {
-                // Assuming logs are in 'logs' directory, adjust as necessary
                 sh 'zip -r build-logs.zip logs/'
             }
             emailext (
@@ -145,15 +144,5 @@ pipeline {
                 attachmentsPattern: 'build-logs.zip' // Assuming the zip file is in the root directory
             )
         }
-        always {
-            emailext (
-                subject: "Jenkins Pipeline Notification",
-                body: "Build failed, please check Jenkins logs for more details.",
-                from: "gaellesaid65@gmail.com",
-                to: "gaellesaid5@gmail.com",
-                replyTo: "gaellesaid65@gmail.com"
-            )
-        }
     }
-
 }
