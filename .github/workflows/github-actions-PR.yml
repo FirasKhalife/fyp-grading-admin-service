@@ -10,9 +10,6 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build with Maven
-        uses: actions/setup-java@v2
-        with:
-          java-version: '17'
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: mvn clean install
 
