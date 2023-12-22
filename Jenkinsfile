@@ -5,6 +5,16 @@ def major
 def minor
 def patch
 
+void setBuildStatus(String message, String state) {
+  step([
+      $class: "GitHubCommitStatusSetter",
+      reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/my-org/my-repo"],
+      contextSource: [$class: "ManuallyEnteredCommitContextSource", context: "ci/jenkins/build-status"],
+      errorHandlers: [[$class: "ChangingBuildStatusErrorHandler", result: "UNSTABLE"]],
+      statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
+  ]);
+}
+
 pipeline {
     agent any
 
@@ -61,8 +71,7 @@ pipeline {
         stage("increment version"){
             steps{
                 script{
-                    env.VERSION = gv.version2()
-
+                    env.VERSION = gv.version()
                     echo "VERSION: ${env.VERSION}"
                 }
             }
@@ -107,9 +116,12 @@ pipeline {
             }
         }
 
+
+
     }
     post {
         success {
+            setBuildStatus("Build succeeded", "SUCCESS");
             emailext (
                 subject: "Build SUCCESS - #${env.BUILD_NUMBER}",
                 body: "The build was successful! Build Number: ${env.BUILD_NUMBER}",
@@ -119,6 +131,7 @@ pipeline {
             )
         }
         failure {
+            setBuildStatus("Build failed", "FAILURE");
             script {
                 // Assuming logs are in 'logs' directory, adjust as necessary
                 sh 'zip -r build-logs.zip logs/'
