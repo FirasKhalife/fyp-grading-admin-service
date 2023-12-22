@@ -61,7 +61,7 @@ pipeline {
         stage("increment version"){
             steps{
                 script{
-                    env.VERSION = gv.version()
+                    env.VERSION = gv.version2()
                     echo "VERSION: ${env.VERSION}"
                 }
             }
