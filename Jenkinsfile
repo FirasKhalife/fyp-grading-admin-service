@@ -34,7 +34,7 @@ pipeline {
             steps{
                 script{
                     gv = load("semver.groovy")
-
+                    echo "semver.groovy loaded, ${gv}"
                 }
             }
         }
