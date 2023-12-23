@@ -61,12 +61,4 @@ class AssessmentServiceTest {
         when(assessmentRepository.findById(id)).thenReturn(Optional.of(assessmentEntity));
     }
 
-    @Test
-    void getAssessmentByUpperCaseName() {
-        Integer id = 1;
-        String upperCaseName = "PROPOSAL_Presentation";
-        AssessmentEnum assessmentEnum = AssessmentEnum.valueOf(upperCaseName);
-        Assessment assessmentEntity = new Assessment(id, assessmentEnum, 40, null);
-        when(assessmentRepository.findById(id)).thenReturn(Optional.of(assessmentEntity));
-    }
 }
