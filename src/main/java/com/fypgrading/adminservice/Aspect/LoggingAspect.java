@@ -1,40 +1,50 @@
 package com.fypgrading.adminservice.Aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.logging.Logger;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Aspect
 @Component
+@Slf4j
 public class LoggingAspect {
 
-    Logger LOGGER = (Logger) LoggerFactory.getLogger(LoggingAspect.class);
+    private static final String POINTCUT = "within(com.fypgrading.adminservice.*)";
 
-    @Around("execution(* com.fypgrading.adminservice.*.*.*(..) ) && !execution(* com.fypgrading.adminservice.*.*(..))")
-    public Object applicationLogger(ProceedingJoinPoint pjp) throws Throwable {
-        ObjectMapper mapper = new ObjectMapper();
-        String methodName = pjp.getSignature().getName();
-        String className = pjp.getTarget().getClass().toString();
-        Object[] arguments = pjp.getArgs();
-        Long startTime = System.currentTimeMillis();
-        LOGGER.info("method - " + methodName + " from class - "+className + " started with arguments "+ mapper.writeValueAsString(arguments));
-        Object object = null;
-        try {
-            object = pjp.proceed();
-        }finally {
-            Long endTime = System.currentTimeMillis();
-            Long diff = endTime - startTime;
-            System.out.println("time taken by method - "+methodName + " of class - " + className +" : "+diff + "ms");
-        }
-        LOGGER.info("method - " + methodName + " from class - "+className + " ended with result - "+mapper.writeValueAsString(object));
-        return object;
+    @Around(POINTCUT)
+    @SneakyThrows
+    public Object logArroundExec(ProceedingJoinPoint pjp) {
+        log.info("before {}", constructLogMsg(pjp));
+        var proceed = pjp.proceed();
+        log.info("after {} with result: {}",constructLogMsg(pjp), proceed.toString());
+        return proceed;
     }
 
-}
+    @AfterThrowing(pointcut = POINTCUT, throwing = "e")
+    public void logAfterException(JoinPoint jp, Exception e) {
+        log.error("Exception during: {} with ex: {}", constructLogMsg(jp),  e.toString());
+    }
 
+    private String constructLogMsg(JoinPoint jp) {
+        var args = Arrays.asList(jp.getArgs()).stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+        Method method = ((MethodSignature) jp.getSignature()).getMethod();
+        var sb = new StringBuilder("@");
+        sb.append(method.getName());
+        sb.append(":");
+        sb.append(args);
+        return sb.toString();
+    }
+}
