@@ -68,7 +68,7 @@ pipeline {
             }
         }
 
-        stage("increment version"){
+        stage("extract version"){
             steps{
                 script{
                     env.VERSION = gv.version()
