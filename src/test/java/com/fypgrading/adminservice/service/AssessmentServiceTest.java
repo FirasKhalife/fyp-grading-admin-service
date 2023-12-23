@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 //@SpringBootTest
+@EnableAspectJAutoProxy
 class AssessmentServiceTest {
 
 //    @Autowired
@@ -51,8 +53,8 @@ class AssessmentServiceTest {
         assertNotNull(assessments);
 
         List<ILoggingEvent> logsList = listAppender.list;
-        assertFalse(logsList.isEmpty()); // Check that logs are present
-        assertTrue(logsList.stream().anyMatch(event -> event.getMessage().contains("method - getAssessmentById"))); // Specific log message check
+        assertFalse(logsList.isEmpty());
+        assertTrue(logsList.stream().anyMatch(event -> event.getMessage().contains("method - getAssessmentById")));
 
     }
 
