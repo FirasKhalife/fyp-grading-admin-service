@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.fyp-grading</groupId>
 	<artifactId>admin-service</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>admin-service</name>
 	<description>FYP Grading project - Admin Microservice</description>
 	<properties>
