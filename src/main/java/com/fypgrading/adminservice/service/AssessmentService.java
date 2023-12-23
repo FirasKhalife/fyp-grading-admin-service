@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AssessmentService {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(AssessmentService.class);
 
     private final AssessmentRepository assessmentRepository;
