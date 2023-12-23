@@ -24,10 +24,10 @@ pipeline {
     }
 
     environment {
-       IMAGE_NAME = 'fyp-grading-admin-service'
+       IMAGE_NAME = 'admin-service'
        BRANCH_NAME = 'admin-service-pipeline'
        GitHub_REPO = 'fyp-grading-admin-service'
-       GitHub_USR = 'FirasKhalife'
+       GitHub_USR = 'firas29'
        VERSION = readMavenPom().getVersion()
     }
 
@@ -81,7 +81,7 @@ pipeline {
             steps {
                 echo 'Building and pushing Docker image'
                 expression {
-                    env.BRANCH_NAME == 'add_admin_pipeline'
+                    env.BRANCH_NAME == 'master'
                 }
             }
             post {
