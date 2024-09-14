@@ -13,6 +13,6 @@ FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
-COPY --from=build /app/target/account-service-0.0.1-SNAPSHOT.jar /app/admin.jar
+COPY --from=build /app/target/admin-service-0.0.1-SNAPSHOT.jar /app/admin.jar
 
 ENTRYPOINT ["java", "-jar", "admin.jar"]

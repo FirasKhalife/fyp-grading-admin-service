@@ -26,25 +26,23 @@ spring:
       simple:
         acknowledge-mode: manual
 
-    check-notification:
-      queue: "check-notification-queue"
-      exchange: "check-notification-exchange"
-      routing-key: "check-notification-key"
-
-    retry-check-notification:
-      queue: "retry-check-notification-queue"
-      exchange: "retry-check-notification-exchange"
-      routing-key: "retry-check-notification-key"
-
     notification:
       queue: "notification-queue"
       exchange: "notification-exchange"
       routing-key: "notification-key"
-
     retry-notification:
       queue: "retry-notification-queue"
       exchange: "retry-notification-exchange"
       routing-key: "retry-notification-key"
+
+    check-notification:
+      queue: "check-notification-queue"
+      exchange: "check-notification-exchange"
+      routing-key: "check-notification-key"
+    retry-check-notification:
+      queue: "retry-check-notification-queue"
+      exchange: "retry-check-notification-exchange"
+      routing-key: "retry-check-notification-key"
 
     dead-letter:
       queue: "dead-queue"
