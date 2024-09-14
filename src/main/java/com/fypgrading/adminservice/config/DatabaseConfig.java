@@ -26,7 +26,7 @@ public class DatabaseConfig {
     @Bean
     public static BeanFactoryPostProcessor dependsOnPostProcessor() {
         return bf -> {
-            // Let JPA EntityManagerFactory depend on the DatabaseStartupValidator
+            // Make JPA EntityManagerFactory depend on the DatabaseStartupValidator
             String[] jpa = bf.getBeanNamesForType(EntityManagerFactory.class);
             Stream.of(jpa)
                     .map(bf::getBeanDefinition)

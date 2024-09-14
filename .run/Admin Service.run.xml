@@ -1,0 +1,21 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Admin Service" type="Application" factoryName="Application">
+    <envs>
+      <env name="DATABASE_URL" value="jdbc:postgresql://localhost:5432/admin-db" />
+      <env name="DATABASE_USERNAME" value="admin" />
+      <env name="DATABASE_PASSWORD" value="admin" />
+      <env name="REGISTRY_SERVICE_URL" value="http://localhost:8761/eureka/" />
+      <env name="RABBITMQ_HOST" value="localhost" />
+      <env name="RABBITMQ_PORT" value="5672" />
+      <env name="RABBITMQ_USERNAME" value="admin" />
+      <env name="RABBITMQ_PASSWORD" value="admin" />
+      <env name="SPRING_PROFILES_ACTIVE" value="dev" />
+      <env name="PORT" value="8081" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="com.fypgrading.adminservice.AdminServiceApplication" />
+    <module name="admin-service" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
