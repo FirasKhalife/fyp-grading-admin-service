@@ -47,16 +47,16 @@ public class AdminController {
     }
 
     @GetMapping("/teams/{teamId}/grades/{assessment}")
-    public ResponseEntity<List<GradeDTO>> getTeamGradesByAssessment(@PathVariable Integer teamId,
+    public ResponseEntity<List<GradeDTO>> getTeamGradesByAssessment(@PathVariable Long teamId,
                                                                     @PathVariable String assessment) {
         LOGGER.info("Getting grades for teamId: {} and assessment: {}", teamId, assessment);
-        List<GradeDTO> reviewerTeamGrades = gradeService.getTeamGradesByAssessment(assessment, teamId);
-        LOGGER.info("Found {} grades for teamId: {} and assessment: {}", reviewerTeamGrades.size(), teamId, assessment);
-        return ResponseEntity.ok().body(reviewerTeamGrades);
+        List<GradeDTO> assessmentTeamGrades = gradeService.getTeamGradesByAssessment(assessment, teamId);
+        LOGGER.info("Found {} grades for teamId: {} and assessment: {}", assessmentTeamGrades.size(), teamId, assessment);
+        return ResponseEntity.ok().body(assessmentTeamGrades);
     }
 
     @GetMapping("/teams/{teamId}/evaluations/{assessment}")
-    public ResponseEntity<List<GradedEvaluationDTO>> getTeamEvaluationsByAssessment(@PathVariable Integer teamId,
+    public ResponseEntity<List<GradedEvaluationDTO>> getTeamEvaluationsByAssessment(@PathVariable Long teamId,
                                                                                     @PathVariable String assessment) {
         LOGGER.info("Getting evaluations for teamId: {} and assessment: {}", teamId, assessment);
         List<GradedEvaluationDTO> evaluations = gradeService.getTeamEvaluationsByAssessment(assessment, teamId);

@@ -1,7 +1,6 @@
 package com.fypgrading.adminservice.repository;
 
-import com.fypgrading.adminservice.entity.ReviewerTeam;
-import com.fypgrading.adminservice.entity.idClass.ReviewerTeamId;
+import com.fypgrading.adminservice.entity.TeamReviewer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -11,11 +10,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ReviewerTeamRepository extends JpaRepository<ReviewerTeam, ReviewerTeamId> {
+public interface ReviewerTeamRepository extends JpaRepository<TeamReviewer, Long> {
 
-    Optional<ReviewerTeam> findByReviewerIdAndTeamId(Integer reviewerId, Integer teamId);
+    Optional<TeamReviewer> findByReviewerIdAndTeamId(Long reviewerId, Long teamId);
 
-    List<ReviewerTeam> findByReviewerId(Integer reviewerId);
+    List<TeamReviewer> findByReviewerId(Long reviewerId);
 
     @Query(
             value = "SELECT rt.* " +
@@ -26,7 +25,7 @@ public interface ReviewerTeamRepository extends JpaRepository<ReviewerTeam, Revi
                     "WHERE rt.team_id = :teamId AND assessment.id = :assessmentId",
             nativeQuery = true
     )
-    List<ReviewerTeam> findByTeamIdAndAssessmentId(@QueryParam("teamId") Integer teamId,
-                                                   @QueryParam("assessmentId") Integer assessmentId);
+    List<TeamReviewer> findByTeamIdAndAssessmentId(@QueryParam("teamId") Long teamId,
+                                                   @QueryParam("assessmentId") Long assessmentId);
 
 }

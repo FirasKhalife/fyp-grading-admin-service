@@ -12,9 +12,9 @@ import java.util.List;
 @AllArgsConstructor
 public class TeamReviewerRolesDTO {
 
-    private Integer reviewerId;
+    private Long reviewerId;
 
-    private Integer teamId;
+    private Long teamId;
 
     private List<RoleEnum> roles;
 }

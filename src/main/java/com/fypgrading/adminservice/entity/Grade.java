@@ -13,7 +13,7 @@ public class Grade extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne
     private Assessment assessment;
@@ -21,10 +21,10 @@ public class Grade extends Auditable {
     private Float grade;
 
     @ManyToOne
-    private ReviewerTeam reviewerTeam;
+    private TeamReviewer teamReviewer;
 
-    public Grade(Assessment assessment, Float grade, ReviewerTeam reviewerTeam) {
-        this.reviewerTeam = reviewerTeam;
+    public Grade(Assessment assessment, Float grade, TeamReviewer teamReviewer) {
+        this.teamReviewer = teamReviewer;
         this.assessment = assessment;
         this.grade = grade;
     }

@@ -47,7 +47,7 @@ public class TeamService {
         return teamMapper.toDTO(createdEntity);
     }
 
-    public TeamDTO updateTeam(Integer id, TeamDTO teamDTO) {
+    public TeamDTO updateTeam(Long id, TeamDTO teamDTO) {
         getTeamById(id);
         Team team = teamMapper.toEntity(teamDTO);
         Team updatedEntity = teamRepository.save(team);
@@ -59,27 +59,27 @@ public class TeamService {
         teamRepository.save(team);
     }
 
-    public TeamDTO deleteTeam(Integer id) {
+    public TeamDTO deleteTeam(Long id) {
         Team team = getTeamById(id);
         teamRepository.delete(team);
         return teamMapper.toDTO(team);
     }
 
-    public Team getTeamById(Integer id) {
+    public Team getTeamById(Long id) {
         return teamRepository.findById(id).orElseThrow(() ->
                         new EntityNotFoundException("Team not found"));
     }
 
-    public CountDTO getTeamReviewersCount(Integer id) {
+    public CountDTO getTeamReviewersCount(Long id) {
         int reviewersCount = getTeamById(id).getReviewers().size();
         return new CountDTO(Integer.toUnsignedLong(reviewersCount));
     }
 
-    public List<ReviewerDTO> getTeamReviewers(Integer id) {
+    public List<ReviewerDTO> getTeamReviewers(Long id) {
         List<Reviewer> reviewers =
                 getTeamById(id).getReviewers()
                         .parallelStream()
-                        .map(ReviewerTeam::getReviewer)
+                        .map(TeamReviewer::getReviewer)
                         .toList();
         return reviewerMapper.toDTOList(reviewers);
     }

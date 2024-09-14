@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 public class JwtResponseDTO {
 
-    private Integer id;
+    private Long id;
 
     private String email;
 

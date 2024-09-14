@@ -1,7 +1,6 @@
 package com.fypgrading.adminservice.service;
 
 import com.fypgrading.adminservice.entity.*;
-import com.fypgrading.adminservice.entity.idClass.ReviewerTeamId;
 import com.fypgrading.adminservice.repository.GradeRepository;
 import com.fypgrading.adminservice.repository.ReviewerTeamRepository;
 import com.fypgrading.adminservice.service.dto.*;
@@ -61,11 +60,11 @@ public class GradeService {
 
     public List<GradeDTO> getGradesByAssessment(String assessmentStr) {
         AssessmentEnum assessment = AssessmentEnum.valueOf(assessmentStr.toUpperCase());
-        List<Grade> reviewerTeamGrades = gradeRepository.findAllByAssessmentId(assessment.getEnumId());
+        List<Grade> reviewerTeamGrades = gradeRepository.findAllByAssessmentId(assessment.getInstanceId());
         return gradeMapper.toTeamGradeDTOList(reviewerTeamGrades);
     }
 
-    public List<GradedEvaluationDTO> getTeamEvaluationsByAssessment(String assessmentStr, Integer teamId) {
+    public List<GradedEvaluationDTO> getTeamEvaluationsByAssessment(String assessmentStr, Long teamId) {
         EvaluationDTOList teamEvaluationList = restTemplate.getForObject(
                 "http://api-gateway/api/evaluations/" + assessmentStr + "/" + teamId, EvaluationDTOList.class
         );
@@ -78,9 +77,9 @@ public class GradeService {
         Assessment assessment = assessmentService.getAssessmentByLowerCaseName(assessmentStr);
 
         List<Grade> gradeList =
-                gradeRepository.findAllByReviewerTeam_TeamIdAndAssessmentId(teamId, assessment.getId());
+                gradeRepository.findAllByTeamReviewer_TeamIdAndAssessmentId(teamId, assessment.getId());
 
-        List<ReviewerTeam> teamReviewers =
+        List<TeamReviewer> teamReviewers =
                 reviewerTeamRepository.findByTeamIdAndAssessmentId(teamId, assessment.getId());
 
         System.out.println("teamReviewers: " + teamReviewers);
@@ -90,11 +89,11 @@ public class GradeService {
         }
 
         Team team = teamReviewers.get(0).getTeam();
-        List<Reviewer> reviewers = teamReviewers.stream().map(ReviewerTeam::getReviewer).toList();
+        List<Reviewer> reviewers = teamReviewers.stream().map(TeamReviewer::getReviewer).toList();
 
         List<GradedEvaluationDTO> evaluations = new ArrayList<>();
         reviewers.stream().map(reviewer -> {
-            Grade grade = gradeList.stream().filter(g -> g.getReviewerTeam().getReviewer().equals(reviewer)).findFirst().orElse(null);
+            Grade grade = gradeList.stream().filter(g -> g.getTeamReviewer().getReviewer().equals(reviewer)).findFirst().orElse(null);
             EvaluationDTO evaluation = teamEvaluations.stream().filter(e -> e.getReviewerId().equals(reviewer.getId())).findFirst().orElse(null);
             return new GradedEvaluationDTO(
                     reviewerMapper.toDTO(reviewer),
@@ -115,17 +114,17 @@ public class GradeService {
         Team team = teamService.getTeamById(gradeIDs.getTeamId());
         TeamDTO teamDTO = teamMapper.toDTO(team);
 
-        ReviewerTeam reviewerTeam =
-                reviewerTeamRepository.findById(new ReviewerTeamId(reviewer, team))
+        TeamReviewer teamReviewer =
+                reviewerTeamRepository.findByReviewerIdAndTeamId(reviewer.getId(), team.getId())
                         .orElseThrow(() -> new IllegalArgumentException("Reviewer and Team are not linked!"));
 
-        gradeRepository.findByReviewerTeam_ReviewerIdAndReviewerTeam_TeamIdAndAssessmentId(
+        gradeRepository.findByTeamReviewer_ReviewerIdAndTeamReviewer_TeamIdAndAssessmentId(
                 gradeIDs.getReviewerId(), gradeIDs.getTeamId(), assessment.getId()
         ).ifPresent(foundGrade -> {
             throw new IllegalStateException("Reviewer already submitted evaluation for this team assessment!");
         });
 
-        Grade grade = new Grade(assessment, gradeIDs.getGrade(), reviewerTeam);
+        Grade grade = new Grade(assessment, gradeIDs.getGrade(), teamReviewer);
 
         Grade createdGrade = gradeRepository.save(grade);
 
@@ -135,19 +134,19 @@ public class GradeService {
         return gradeMapper.toTeamGradeDTO(createdGrade);
     }
 
-    public List<GradeDTO> getGrades(Integer reviewerId, Integer teamId) {
+    public List<GradeDTO> getGrades(Long reviewerId, Long teamId) {
         List<Grade> grades =
-                gradeRepository.findAllByReviewerTeam_ReviewerIdAndReviewerTeam_TeamId(
+                gradeRepository.findAllByTeamReviewer_ReviewerIdAndTeamReviewer_TeamId(
                         reviewerId, teamId
                 );
 
         return gradeMapper.toTeamGradeDTOList(grades);
     }
 
-    public List<GradeDTO> getTeamGradesByAssessment(String assessmentStr, Integer teamId) {
+    public List<GradeDTO> getTeamGradesByAssessment(String assessmentStr, Long teamId) {
         AssessmentEnum assessment = AssessmentEnum.valueOf(assessmentStr.toUpperCase());
         List<Grade> grades =
-                gradeRepository.findAllByReviewerTeam_TeamIdAndAssessmentId(teamId, assessment.getEnumId());
+                gradeRepository.findAllByTeamReviewer_TeamIdAndAssessmentId(teamId, assessment.getInstanceId());
 
         return gradeMapper.toTeamGradeDTOList(grades);
     }

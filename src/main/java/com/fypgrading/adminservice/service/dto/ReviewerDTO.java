@@ -12,7 +12,7 @@ import java.util.Objects;
 @AllArgsConstructor
 public class ReviewerDTO {
 
-    private Integer id;
+    private Long id;
 
     private String firstName;
 

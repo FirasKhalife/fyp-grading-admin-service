@@ -19,7 +19,7 @@ public class AssessmentService {
         LOGGER.info("AssessmentService initialized");
     }
 
-    public Assessment getAssessmentById(Integer id) {
+    public Assessment getAssessmentById(Long id) {
         LOGGER.info("Retrieving assessment by ID: {}", id);
         return assessmentRepository.findById(id)
                 .orElseThrow(() -> {
@@ -30,16 +30,16 @@ public class AssessmentService {
 
     public Assessment getAssessmentByEnum(AssessmentEnum assessmentEnum) {
         LOGGER.info("Retrieving assessment by enum: {}", assessmentEnum);
-        return getAssessmentById(assessmentEnum.getEnumId());
+        return getAssessmentById(assessmentEnum.getInstanceId());
     }
 
     public Assessment getAssessmentByLowerCaseName(String name) {
         LOGGER.info("Retrieving assessment by lower case name: {}", name);
-        return getAssessmentById(AssessmentEnum.valueOf(name.toUpperCase()).getEnumId());
+        return getAssessmentById(AssessmentEnum.valueOf(name.toUpperCase()).getInstanceId());
     }
 
     public Assessment getAssessmentByUpperCaseName(String name) {
         LOGGER.info("Retrieving assessment by upper case name: {}", name);
-        return getAssessmentById(AssessmentEnum.valueOf(name).getEnumId());
+        return getAssessmentById(AssessmentEnum.valueOf(name).getInstanceId());
     }
 }

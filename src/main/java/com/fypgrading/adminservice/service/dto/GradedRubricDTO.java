@@ -11,7 +11,7 @@ public class GradedRubricDTO {
 
     private String name;
 
-    private Integer percentage;
+    private Long percentage;
 
-    private Integer grade;
+    private Long grade;
 }

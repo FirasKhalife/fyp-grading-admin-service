@@ -11,9 +11,9 @@ import java.util.List;
 @AllArgsConstructor
 public class EvaluationDTO {
 
-    private Integer reviewerId;
+    private Long reviewerId;
 
-    private Integer teamId;
+    private Long teamId;
 
     private List<GradedRubricDTO> gradedRubrics;
 
@@ -26,6 +26,6 @@ public class EvaluationDTO {
 
     @Override
     public int hashCode() {
-        return this.getReviewerId() + this.getTeamId();
+        return this.getReviewerId().hashCode() + this.getTeamId().hashCode();
     }
 }

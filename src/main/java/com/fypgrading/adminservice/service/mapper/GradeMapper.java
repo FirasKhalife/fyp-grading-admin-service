@@ -8,17 +8,17 @@ import org.mapstruct.Mapping;
 import java.util.List;
 
 @Mapper(
-        componentModel = "spring",
-        uses = {
-                TeamMapper.class,
-                ReviewerMapper.class,
-                AssessmentMapper.class
-        }
+    componentModel = "spring",
+    uses = {
+        TeamMapper.class,
+        ReviewerMapper.class,
+        AssessmentMapper.class
+    }
 )
 public interface GradeMapper {
 
-    @Mapping(source = "reviewerTeam.reviewer", target = "reviewer")
-    @Mapping(source = "reviewerTeam.team", target = "team")
+    @Mapping(source = "teamReviewer.reviewer", target = "reviewer")
+    @Mapping(source = "teamReviewer.team", target = "team")
     GradeDTO toTeamGradeDTO(Grade grade);
 
     List<GradeDTO> toTeamGradeDTOList(List<Grade> gradeList);

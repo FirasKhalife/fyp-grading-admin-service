@@ -15,8 +15,8 @@ public enum RoleEnum {
     @JsonProperty("ADVISOR")
     ADVISOR;
 
-    public Integer getInstanceId() {
-        return ordinal() + 1;
+    public long getInstanceId() {
+        return ordinal() + 1L;
     }
 
 }

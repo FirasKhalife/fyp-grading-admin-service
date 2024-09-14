@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 public class RoleDTO {
 
-    private Integer id;
+    private Long id;
 
     private RoleEnum name;
 
@@ -26,7 +26,7 @@ public class RoleDTO {
 
     @Override
     public int hashCode() {
-        return this.getId();
+        return this.getId().hashCode();
     }
 
 }

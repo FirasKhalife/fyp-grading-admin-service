@@ -15,14 +15,14 @@ public class Team {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     private Float finalGrade;
 
     @OneToMany(mappedBy = "team")
-    private List<ReviewerTeam> reviewers;
+    private List<TeamReviewer> reviewers;
 
-    public Team(Integer id) {
+    public Team(Long id) {
         this.id = id;
     }
 

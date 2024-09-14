@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ReviewerTeamRoleDTO {
 
-    private Integer teamId;
+    private Long teamId;
 
     private RoleEnum role;
 

@@ -17,7 +17,7 @@ public class Reviewer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @NotNull
     private String firstName;
@@ -35,7 +35,7 @@ public class Reviewer {
 
     @ToString.Exclude
     @OneToMany(mappedBy = "reviewer")
-    private List<ReviewerTeam> teams;
+    private List<TeamReviewer> teams;
 
     public Reviewer(String firstName, String lastName, String email, String password, Boolean isAdmin) {
         this.firstName = firstName;

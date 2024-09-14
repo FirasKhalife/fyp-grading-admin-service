@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class GradeFinalizedEvent {
 
-    private Integer teamId;
+    private Long teamId;
 
     private AssessmentEnum assessment;
 

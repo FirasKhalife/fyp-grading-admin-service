@@ -85,7 +85,7 @@ public class EventHandler implements ChannelAwareMessageListener {
 
             // number of submitted reviews for this team assessment
             long submittedAssessmentTeamReviewsCount =
-                    gradeRepository.countByReviewerTeam_TeamIdAndAssessmentId(
+                    gradeRepository.countByTeamReviewer_TeamIdAndAssessmentId(
                             teamDTO.getId(), event.getAssessment().getId()
                     );
 
@@ -95,7 +95,7 @@ public class EventHandler implements ChannelAwareMessageListener {
             // if all reviewers submitted their reviews for this team assessment,
             // calculate final grade for this assessment, save it, and send notification
             float teamAssessmentGrade = (float) (double)
-                            gradeRepository.findAllByReviewerTeam_TeamIdAndAssessmentId(
+                            gradeRepository.findAllByTeamReviewer_TeamIdAndAssessmentId(
                                     teamDTO.getId(), event.getAssessment().getId()
                             ).stream().reduce(0.0, (acc, gradeUnit) ->
                                     acc + (double) gradeUnit.getGrade(), Double::sum) / teamReviewersCount;

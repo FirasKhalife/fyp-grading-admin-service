@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ReviewerSignupDTO {
 
-    private Integer id;
+    private Long id;
 
     @NotNull
     private String firstName;

@@ -10,14 +10,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AssessmentGradeDTO {
 
-    private Integer id;
+    private Long id;
 
     private AssessmentDTO assessment;
 
     private Float grade;
 
-    private Integer reviewerId;
+    private Long reviewerId;
 
-    private Integer teamId;
+    private Long teamId;
 }
 

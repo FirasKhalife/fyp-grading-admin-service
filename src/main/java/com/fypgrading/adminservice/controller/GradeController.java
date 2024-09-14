@@ -33,8 +33,8 @@ public class GradeController {
     }
 
     @GetMapping("/{reviewerId}/{teamId}")
-    public ResponseEntity<List<GradeDTO>> getGrades(@PathVariable Integer reviewerId,
-                                                    @PathVariable Integer teamId) {
+    public ResponseEntity<List<GradeDTO>> getGrades(@PathVariable Long reviewerId,
+                                                    @PathVariable Long teamId) {
         LOGGER.info("Getting grades for reviewerId: {} and teamId: {}", reviewerId, teamId);
         List<GradeDTO> grades = gradeService.getGrades(reviewerId, teamId);
         LOGGER.info("Found {} grades for reviewerId: {} and teamId: {}", grades.size(), reviewerId, teamId);

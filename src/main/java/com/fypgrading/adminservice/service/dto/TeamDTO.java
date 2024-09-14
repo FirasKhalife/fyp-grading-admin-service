@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TeamDTO {
 
-    private Integer id;
+    private Long id;
 
     private Float finalGrade;
 

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ReviewerRepository extends JpaRepository<Reviewer, Integer> {
+public interface ReviewerRepository extends JpaRepository<Reviewer, Long> {
 
     Optional<Reviewer> findByEmail(String email);
 
@@ -23,7 +23,7 @@ public interface ReviewerRepository extends JpaRepository<Reviewer, Integer> {
                     "WHERE trr.team_id = :teamId",
             nativeQuery = true
     )
-    List<Reviewer> findAllTeamReviewers(Integer teamId);
+    List<Reviewer> findAllTeamReviewers(Long teamId);
 
     @Query(
             value = "SELECT COUNT(trr.reviewer_id) " +
@@ -33,7 +33,7 @@ public interface ReviewerRepository extends JpaRepository<Reviewer, Integer> {
                     "WHERE trr.team_id = :teamId AND assessment.id = :assessmentId",
             nativeQuery = true
     )
-    long countReviewersByTeamIdAndAssessmentId(@QueryParam("teamId") Integer teamId,
-                                               @QueryParam("assessmentId") Integer assessmentId);
+    long countReviewersByTeamIdAndAssessmentId(@QueryParam("teamId") Long teamId,
+                                               @QueryParam("assessmentId") Long assessmentId);
 
 }

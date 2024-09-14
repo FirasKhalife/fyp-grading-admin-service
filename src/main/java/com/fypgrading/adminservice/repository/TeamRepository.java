@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface TeamRepository extends JpaRepository<Team, Integer> {
+public interface TeamRepository extends JpaRepository<Team, Long> {
 
     @Query(
             value = "SELECT team.* " +
@@ -16,7 +16,7 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
                     "JOIN team ON trr.team_id = team.id " +
                     "WHERE trr.reviewer_id = :reviewerId",
             nativeQuery = true)
-    List<Team> getAllReviewerTeams(Integer reviewerId);
+    List<Team> getAllReviewerTeams(Long reviewerId);
 
     List<Team> findAllByOrderByIdAsc();
 

@@ -23,7 +23,7 @@ public enum AssessmentEnum {
     @JsonProperty("FINAL_PRESENTATION")
     FINAL_PRESENTATION;
 
-    public Integer getEnumId() {
-        return ordinal() + 1;
+    public long getInstanceId() {
+        return ordinal() + 1L;
     }
 }

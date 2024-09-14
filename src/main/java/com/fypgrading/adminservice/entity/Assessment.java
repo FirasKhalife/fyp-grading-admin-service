@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class Assessment {
 
     @Id
-    private Integer id;
+    private Long id;
 
     @Enumerated(EnumType.STRING)
     private AssessmentEnum name;
@@ -24,7 +24,7 @@ public class Assessment {
     private Role role;
 
     public Assessment(AssessmentEnum assessmentEnum) {
-        this.id = assessmentEnum.getEnumId();
+        this.id = assessmentEnum.getInstanceId();
         this.name = assessmentEnum;
     }
 

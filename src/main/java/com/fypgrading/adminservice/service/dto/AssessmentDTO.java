@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AssessmentDTO {
 
-    private Integer id;
+    private Long id;
 
     private AssessmentEnum name;
 
@@ -21,7 +21,7 @@ public class AssessmentDTO {
     private RoleEnum role;
 
     public AssessmentDTO(AssessmentEnum assessmentEnum) {
-        this.id = assessmentEnum.getEnumId();
+        this.id = assessmentEnum.getInstanceId();
         this.name = assessmentEnum;
     }
 

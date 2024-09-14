@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.entity;
 
-import com.fypgrading.adminservice.entity.idClass.ReviewerTeamId;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,32 +9,30 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @Entity
-@IdClass(ReviewerTeamId.class)
-public class ReviewerTeam {
+public class TeamReviewer {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @ManyToOne
     private Reviewer reviewer;
 
-    @Id
     @ManyToOne
     private Team team;
 
     @ManyToMany
     @JoinTable(
             name = "team_reviewer_role",
-            joinColumns = {
-                    @JoinColumn(name = "reviewer_id"),
-                    @JoinColumn(name = "team_id")
-            },
+            joinColumns = @JoinColumn(name = "team_reviewer_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private List<Role> reviewerRoles;
 
-    @OneToMany(mappedBy = "reviewerTeam")
+    @OneToMany(mappedBy = "teamReviewer")
     private List<Grade> grades;
 
-    public ReviewerTeam(Reviewer reviewer, Team team) {
+    public TeamReviewer(Reviewer reviewer, Team team) {
         this.reviewer = reviewer;
         this.team = team;
     }
@@ -46,9 +43,9 @@ public class ReviewerTeam {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ReviewerTeam reviewerTeam)) return false;
-        return this.getReviewer().equals(reviewerTeam.getReviewer())
-                && this.getTeam().equals(reviewerTeam.getTeam());
+        if (!(obj instanceof TeamReviewer teamReviewer)) return false;
+        return this.getReviewer().equals(teamReviewer.getReviewer())
+                && this.getTeam().equals(teamReviewer.getTeam());
     }
 
     @Override

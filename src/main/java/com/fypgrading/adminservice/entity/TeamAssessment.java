@@ -1,27 +1,31 @@
 package com.fypgrading.adminservice.entity;
 
-import com.fypgrading.adminservice.entity.idClass.TeamAssessmentId;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Entity
-@IdClass(TeamAssessmentId.class)
 public class TeamAssessment {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @ManyToOne(cascade = CascadeType.MERGE)
     private Team team;
 
-    @Id
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
     private Assessment assessment;
 
     private Float grade;
+
+    public TeamAssessment(Team team, Assessment assessment, Float grade) {
+        this.team = team;
+        this.assessment = assessment;
+        this.grade = grade;
+    }
 
     @Override
     public boolean equals(Object obj) {

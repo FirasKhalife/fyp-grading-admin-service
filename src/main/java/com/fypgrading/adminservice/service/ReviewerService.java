@@ -3,7 +3,7 @@ package com.fypgrading.adminservice.service;
 import com.fypgrading.adminservice.entity.Assessment;
 import com.fypgrading.adminservice.entity.Grade;
 import com.fypgrading.adminservice.entity.Reviewer;
-import com.fypgrading.adminservice.entity.ReviewerTeam;
+import com.fypgrading.adminservice.entity.TeamReviewer;
 import com.fypgrading.adminservice.exception.AuthException;
 import com.fypgrading.adminservice.repository.AssessmentRepository;
 import com.fypgrading.adminservice.repository.ReviewerRepository;
@@ -22,7 +22,7 @@ import java.util.*;
 public class ReviewerService {
 
     private final AssessmentRepository assessmentRepository;
-    private final ReviewerTeamService reviewerTeamService;
+    private final TeamReviewerService teamReviewerService;
     private final ReviewerRepository reviewerRepository;
     private final AssessmentMapper assessmentMapper;
     private final RoleRepository roleRepository;
@@ -32,7 +32,7 @@ public class ReviewerService {
 
     public ReviewerService(
             AssessmentRepository assessmentRepository,
-            ReviewerTeamService reviewerTeamService,
+            TeamReviewerService teamReviewerService,
             ReviewerRepository reviewerRepository,
             AssessmentMapper assessmentMapper,
             RoleRepository roleRepository,
@@ -41,7 +41,7 @@ public class ReviewerService {
             TeamMapper teamMapper
     ) {
         this.assessmentRepository = assessmentRepository;
-        this.reviewerTeamService = reviewerTeamService;
+        this.teamReviewerService = teamReviewerService;
         this.reviewerRepository = reviewerRepository;
         this.assessmentMapper = assessmentMapper;
         this.roleRepository = roleRepository;
@@ -58,7 +58,7 @@ public class ReviewerService {
             throw new AuthException("Invalid credentials");
 
         JwtResponseDTO jwtResponse = new JwtResponseDTO(reviewer);
-        jwtResponse.setRoles(reviewerTeamService.getReviewerRoles(reviewer.getId()).getRoles());
+        jwtResponse.setRoles(teamReviewerService.getReviewerRoles(reviewer.getId()).getRoles());
 
         return jwtResponse;
     }
@@ -80,9 +80,8 @@ public class ReviewerService {
         Reviewer createdReviewer = reviewerRepository.save(reviewer);
 
         reviewerInfo.getTeamRoleList().forEach(teamRoleDTO -> {
-            reviewerTeamService.createReviewerTeam(createdReviewer.getId(), teamRoleDTO.getTeamId());
-
-            reviewerTeamService.addReviewerTeamRole(reviewer.getId(), teamRoleDTO.getTeamId(), teamRoleDTO.getRole());
+            teamReviewerService.createReviewerTeam(createdReviewer.getId(), teamRoleDTO.getTeamId());
+            teamReviewerService.addReviewerTeamRole(reviewer.getId(), teamRoleDTO.getTeamId(), teamRoleDTO.getRole());
         });
 
         return reviewerInfo;
@@ -99,7 +98,7 @@ public class ReviewerService {
         return reviewerMapper.toDTO(createdEntity);
     }
 
-    public ReviewerDTO updateReviewer(Integer id, ReviewerLoginDTO reviewerLoginDTO) {
+    public ReviewerDTO updateReviewer(Long id, ReviewerLoginDTO reviewerLoginDTO) {
         getReviewerById(id);
         Reviewer reviewer = reviewerMapper.toEntity(reviewerLoginDTO);
         reviewer.setId(id);
@@ -107,24 +106,24 @@ public class ReviewerService {
         return reviewerMapper.toDTO(updatedEntity);
     }
 
-    public ReviewerDTO deleteReviewer(Integer id) {
+    public ReviewerDTO deleteReviewer(Long id) {
         Reviewer reviewer = getReviewerById(id);
         reviewerRepository.delete(reviewer);
         return reviewerMapper.toDTO(reviewer);
     }
 
-    public Reviewer getReviewerById(Integer id) {
+    public Reviewer getReviewerById(Long id) {
         return reviewerRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Reviewer not found"));
     }
 
-    public ReviewerDTO getReviewerViewById(Integer id) {
+    public ReviewerDTO getReviewerViewById(Long id) {
         Reviewer reviewer = getReviewerById(id);
         return reviewerMapper.toDTO(reviewer);
     }
 
-    public ReviewerTeamsAssessmentsDTO getReviewerTeamsAssessments(Integer id) {
-        List<ReviewerTeam> reviewerTeams = reviewerTeamService.getReviewerTeamListByReviewerId(id);
+    public ReviewerTeamsAssessmentsDTO getReviewerTeamsAssessments(Long id) {
+        List<TeamReviewer> teamReviewers = teamReviewerService.getReviewerTeamListByReviewerId(id);
 
         List<ReviewerTeamViewDTO> resList = new ArrayList<>();
 
@@ -133,9 +132,9 @@ public class ReviewerService {
         );
 
         //for every team
-        for(ReviewerTeam reviewerTeam : reviewerTeams) {
+        for(TeamReviewer teamReviewer : teamReviewers) {
             List<Assessment> allAssessments =
-                    reviewerTeam.getReviewerRoles().stream().flatMap(role -> role.getAssessments().stream())
+                    teamReviewer.getReviewerRoles().stream().flatMap(role -> role.getAssessments().stream())
                             .sorted(Comparator.comparing(Assessment::getId))
                             .toList();
 
@@ -146,7 +145,7 @@ public class ReviewerService {
                         new TeamReviewerAssessmentDTO(new AssessmentDTO(assessment));
 
                 List<Grade> gradeEntityList =
-                        reviewerTeam.getGrades().stream()
+                        teamReviewer.getGrades().stream()
                                 .filter(grade -> grade.getAssessment().equals(assessment)).toList();
 
                 if (gradeEntityList.isEmpty()) {
@@ -159,7 +158,7 @@ public class ReviewerService {
             });
 
             ReviewerTeamViewDTO reviewerTeamViewDTO = new ReviewerTeamViewDTO();
-            reviewerTeamViewDTO.setTeam(teamMapper.toDTO(reviewerTeam.getTeam()));
+            reviewerTeamViewDTO.setTeam(teamMapper.toDTO(teamReviewer.getTeam()));
             reviewerTeamViewDTO.setTeamAssessments(teamReviewerAssessmentList);
 
             resList.add(reviewerTeamViewDTO);
@@ -168,11 +167,11 @@ public class ReviewerService {
         return new ReviewerTeamsAssessmentsDTO(reviewerAssessments, resList);
     }
 
-    public long countReviewersByTeamIdAndAssessmentId(Integer teamId, Integer assessmentId) {
+    public long countReviewersByTeamIdAndAssessmentId(Long teamId, Long assessmentId) {
         return reviewerRepository.countReviewersByTeamIdAndAssessmentId(teamId, assessmentId);
     }
 
-    public List<NotificationDTO> getAdminNotifications(Integer reviewerId) {
+    public List<NotificationDTO> getAdminNotifications(Long reviewerId) {
         Optional<Reviewer> reviewerOpt = reviewerRepository.findById(reviewerId);
         if (reviewerOpt.isEmpty() || !reviewerOpt.get().getIsAdmin()) {
             return Collections.emptyList();
@@ -192,7 +191,7 @@ public class ReviewerService {
         return notifications;
     }
 
-    public ReviewerHomeDTO getReviewerHome(Integer reviewerId) {
+    public ReviewerHomeDTO getReviewerHome(Long reviewerId) {
         return new ReviewerHomeDTO(getReviewerTeamsAssessments(reviewerId), getAdminNotifications(reviewerId));
     }
 }

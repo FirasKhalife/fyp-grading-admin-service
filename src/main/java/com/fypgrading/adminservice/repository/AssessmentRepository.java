@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface AssessmentRepository extends JpaRepository<Assessment, Integer> {
+public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
 
     List<Assessment> findAllByRoleInOrderById(List<Role> roles);
 
