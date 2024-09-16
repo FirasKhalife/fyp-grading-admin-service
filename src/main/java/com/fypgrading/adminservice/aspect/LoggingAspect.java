@@ -1,4 +1,4 @@
-package com.fypgrading.adminservice.Aspect;
+package com.fypgrading.adminservice.aspect;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;

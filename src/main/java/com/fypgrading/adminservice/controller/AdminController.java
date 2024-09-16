@@ -7,6 +7,8 @@ import com.fypgrading.adminservice.service.dto.GradedEvaluationDTO;
 import com.fypgrading.adminservice.service.dto.TeamGradesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@RefreshScope
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -23,11 +26,23 @@ public class AdminController {
 
     private final GradeService gradeService;
     private final TeamService teamService;
+    private final String buildVersion;
 
-    public AdminController(GradeService gradeService, TeamService teamService) {
+    public AdminController(
+        GradeService gradeService,
+        TeamService teamService,
+        @Value("${build.version}") String buildVersion
+    ) {
         this.gradeService = gradeService;
         this.teamService = teamService;
+        this.buildVersion = buildVersion;
         LOGGER.info("AdminController initialized!");
+    }
+
+    @GetMapping("/build-version")
+    public ResponseEntity<String> getBuildVersion() {
+        LOGGER.info("Getting build version");
+        return ResponseEntity.ok().body(buildVersion);
     }
 
     @GetMapping("/teams/grades")

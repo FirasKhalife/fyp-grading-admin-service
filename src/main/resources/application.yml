@@ -3,10 +3,16 @@ logging:
     root: INFO
 
 spring:
+  application:
+    name: admin
+
   datasource:
     url: ${DATABASE_URL}
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
+
+  config:
+    import: configserver:${CONFIG_SERVER_URL}
 
   liquibase:
     enabled: true
@@ -18,35 +24,24 @@ spring:
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
 
-    retry-queues-ttl: 2000
-    retry-max-count: 3
-
-    listener:
-      simple:
-        acknowledge-mode: manual
-
-    notification:
-      queue: "notification-queue"
-      exchange: "notification-exchange"
-      routing-key: "notification-key"
-    retry-notification:
-      queue: "retry-notification-queue"
-      exchange: "retry-notification-exchange"
-      routing-key: "retry-notification-key"
-
-    check-notification:
-      queue: "check-notification-queue"
-      exchange: "check-notification-exchange"
-      routing-key: "check-notification-key"
-    retry-check-notification:
-      queue: "retry-check-notification-queue"
-      exchange: "retry-check-notification-exchange"
-      routing-key: "retry-check-notification-key"
-
-    dead-letter:
-      queue: "dead-queue"
-      exchange: "dead-exchange"
-      routing-key: "dead-key"
+# expose /actuator endpoints over HTTP
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  # /actuator/health
+  # /actuator/health/liveness
+  # /actuator/health/readiness
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
 
 #eureka:
 #  client:

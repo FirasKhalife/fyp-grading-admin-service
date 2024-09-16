@@ -5,6 +5,7 @@
       <env name="DATABASE_USERNAME" value="admin" />
       <env name="DATABASE_PASSWORD" value="admin" />
       <env name="REGISTRY_SERVICE_URL" value="http://localhost:8761/eureka/" />
+      <env name="CONFIG_SERVER_URL" value="http://localhost:8071/" />
       <env name="RABBITMQ_HOST" value="localhost" />
       <env name="RABBITMQ_PORT" value="5672" />
       <env name="RABBITMQ_USERNAME" value="admin" />
