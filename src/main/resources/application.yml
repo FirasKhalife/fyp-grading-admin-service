@@ -32,6 +32,10 @@ spring:
         enabled: true # config server reached via Eureka
       name: config
 
+    openfeign:
+      circuitbreaker:
+        enabled: true # circuit breaker integrated with openfeign
+
   liquibase:
     enabled: true
     change-log: classpath:liquibase/master.xml

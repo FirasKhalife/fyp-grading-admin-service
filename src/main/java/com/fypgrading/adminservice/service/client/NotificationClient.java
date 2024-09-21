@@ -6,7 +6,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.List;
 
-@FeignClient(name = "${services.notification-service-name}", path = "/api")
+@FeignClient(
+    name = "${services.notification-service-name}",
+    path = "/api",
+    fallback = NotificationFallback.class
+)
 public interface NotificationClient {
 
     @GetMapping("/notifications/")

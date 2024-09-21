@@ -7,7 +7,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
-@FeignClient(name = "${services.evaluation-service-name}", path = "/api")
+@FeignClient(
+    name = "${services.evaluation-service-name}",
+    path = "/api",
+    fallback = EvaluationFallback.class
+)
 public interface EvaluationClient {
 
     @GetMapping("/evaluations/{assessment}/{teamId}")
