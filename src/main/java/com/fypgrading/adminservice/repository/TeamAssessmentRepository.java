@@ -5,9 +5,9 @@ import com.fypgrading.adminservice.entity.Team;
 import com.fypgrading.adminservice.entity.TeamAssessment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import javax.ws.rs.QueryParam;
 import java.util.List;
 
 @Repository
@@ -22,6 +22,6 @@ public interface TeamAssessmentRepository extends JpaRepository<TeamAssessment, 
             "WHERE t.team.id = :teamId " +
             "ORDER BY t.assessment.id ASC"
     )
-    List<Float> findAllGradesByTeamIdOrderByAssessmentId(@QueryParam("teamId") Long teamId);
+    List<Float> findAllGradesByTeamIdOrderByAssessmentId(@Param("teamId") Long teamId);
 
 }

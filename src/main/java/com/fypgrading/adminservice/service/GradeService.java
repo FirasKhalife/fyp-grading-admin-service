@@ -3,6 +3,7 @@ package com.fypgrading.adminservice.service;
 import com.fypgrading.adminservice.entity.*;
 import com.fypgrading.adminservice.repository.GradeRepository;
 import com.fypgrading.adminservice.repository.ReviewerTeamRepository;
+import com.fypgrading.adminservice.service.client.EvaluationClient;
 import com.fypgrading.adminservice.service.dto.*;
 import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import com.fypgrading.adminservice.service.event.EvaluationSubmittedEvent;
@@ -10,53 +11,28 @@ import com.fypgrading.adminservice.service.mapper.AssessmentMapper;
 import com.fypgrading.adminservice.service.mapper.GradeMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@AllArgsConstructor
 @Service
 public class GradeService {
 
     private final com.fypgrading.adminservice.service.EventDispatcher eventDispatcher;
     private final ReviewerTeamRepository reviewerTeamRepository;
+    private final EvaluationClient evaluationClient;
     private final AssessmentService assessmentService;
     private final AssessmentMapper assessmentMapper;
     private final ReviewerService reviewerService;
     private final GradeRepository gradeRepository;
     private final ReviewerMapper reviewerMapper;
-    private final RestTemplate restTemplate;
     private final TeamService teamService;
     private final GradeMapper gradeMapper;
     private final TeamMapper teamMapper;
-
-    public GradeService(
-            ReviewerTeamRepository reviewerTeamRepository,
-            AssessmentService assessmentService,
-            AssessmentMapper assessmentMapper,
-            GradeRepository gradeRepository,
-            EventDispatcher eventDispatcher,
-            ReviewerService reviewerService,
-            ReviewerMapper reviewerMapper,
-            RestTemplate restTemplate,
-            GradeMapper gradeMapper,
-            TeamService teamService,
-            TeamMapper teamMapper
-    ) {
-        this.reviewerTeamRepository = reviewerTeamRepository;
-        this.assessmentService = assessmentService;
-        this.assessmentMapper = assessmentMapper;
-        this.gradeRepository = gradeRepository;
-        this.eventDispatcher = eventDispatcher;
-        this.reviewerService = reviewerService;
-        this.reviewerMapper = reviewerMapper;
-        this.restTemplate = restTemplate;
-        this.gradeMapper = gradeMapper;
-        this.teamService = teamService;
-        this.teamMapper = teamMapper;
-    }
 
     public List<GradeDTO> getGradesByAssessment(String assessmentStr) {
         AssessmentEnum assessment = AssessmentEnum.valueOf(assessmentStr.toUpperCase());
@@ -65,14 +41,8 @@ public class GradeService {
     }
 
     public List<GradedEvaluationDTO> getTeamEvaluationsByAssessment(String assessmentStr, Long teamId) {
-        EvaluationDTOList teamEvaluationList = restTemplate.getForObject(
-                "http://api-gateway/api/evaluations/" + assessmentStr + "/" + teamId, EvaluationDTOList.class
-        );
-
-        if (teamEvaluationList == null) {
-            throw new IllegalStateException("Team evaluations not found!");
-        }
-        List<EvaluationDTO> teamEvaluations = teamEvaluationList.getEvaluations();
+        List<EvaluationDTO> teamEvaluations =
+            evaluationClient.getTeamEvaluationsByAssessment(assessmentStr, teamId);
 
         Assessment assessment = assessmentService.getAssessmentByLowerCaseName(assessmentStr);
 

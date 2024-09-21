@@ -11,18 +11,22 @@ import java.util.List;
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
     @Query(
-            value = "SELECT DISTINCT role.* " +
+        value = "SELECT DISTINCT role.* " +
                     "FROM team_reviewer_role trr " +
-                    "JOIN role ON trr.role_id = role.id " +
-                    "WHERE trr.reviewer_id = :reviewerId",
-            nativeQuery = true)
+                        "JOIN team_reviewer tr ON tr.id = trr.team_reviewer_id " +
+                        "JOIN role ON trr.role_id = role.id " +
+                    "WHERE tr.reviewer_id = :reviewerId",
+        nativeQuery = true
+    )
     List<Role> getDistinctReviewerRoles(Long reviewerId);
 
     @Query(
             value = "SELECT role.* " +
-                    "FROM team_reviewer_role trr " +
-                    "JOIN role ON trr.role_id = role.id " +
-                    "WHERE trr.reviewer_id = :reviewerId AND trr.team_id = :teamId",
-            nativeQuery = true)
+                    "FROM team_reviewer tr " +
+                        "JOIN team_reviewer_role trr ON tr.id = trr.team_reviewer_id " +
+                        "JOIN role ON trr.role_id = role.id " +
+                    "WHERE tr.reviewer_id = :reviewerId AND tr.team_id = :teamId",
+            nativeQuery = true
+    )
     List<Role> getReviewerTeamRoles(Long reviewerId, Long teamId);
 }

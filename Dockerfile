@@ -16,6 +16,6 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY --from=build /app/target/admin-service-0.0.1-SNAPSHOT.jar /app/admin.jar
+COPY --from=build /app/target/admin-service-0.0.1-SNAPSHOT.jar /app/admin-service.jar
 
-ENTRYPOINT ["java", "-jar", "admin.jar"]
+ENTRYPOINT ["java", "-jar", "admin-service.jar"]

@@ -8,47 +8,29 @@ import com.fypgrading.adminservice.exception.AuthException;
 import com.fypgrading.adminservice.repository.AssessmentRepository;
 import com.fypgrading.adminservice.repository.ReviewerRepository;
 import com.fypgrading.adminservice.repository.RoleRepository;
+import com.fypgrading.adminservice.service.client.NotificationClient;
 import com.fypgrading.adminservice.service.dto.*;
 import com.fypgrading.adminservice.service.mapper.AssessmentMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+@AllArgsConstructor
 @Service
 public class ReviewerService {
 
+    private final NotificationClient notificationClient;
     private final AssessmentRepository assessmentRepository;
     private final TeamReviewerService teamReviewerService;
     private final ReviewerRepository reviewerRepository;
     private final AssessmentMapper assessmentMapper;
     private final RoleRepository roleRepository;
     private final ReviewerMapper reviewerMapper;
-    private final RestTemplate restTemplate;
     private final TeamMapper teamMapper;
-
-    public ReviewerService(
-            AssessmentRepository assessmentRepository,
-            TeamReviewerService teamReviewerService,
-            ReviewerRepository reviewerRepository,
-            AssessmentMapper assessmentMapper,
-            RoleRepository roleRepository,
-            ReviewerMapper reviewerMapper,
-            RestTemplate restTemplate,
-            TeamMapper teamMapper
-    ) {
-        this.assessmentRepository = assessmentRepository;
-        this.teamReviewerService = teamReviewerService;
-        this.reviewerRepository = reviewerRepository;
-        this.assessmentMapper = assessmentMapper;
-        this.roleRepository = roleRepository;
-        this.reviewerMapper = reviewerMapper;
-        this.restTemplate = restTemplate;
-        this.teamMapper = teamMapper;
-    }
 
     public JwtResponseDTO login(LoginDTO loginDTO) {
         Reviewer reviewer = reviewerRepository.findByEmail(loginDTO.getEmail())
@@ -177,18 +159,7 @@ public class ReviewerService {
             return Collections.emptyList();
         }
 
-        NotificationListDTO notificationList = restTemplate.getForObject(
-                "http://api-gateway/api/notifications/", NotificationListDTO.class
-        );
-
-        if (notificationList == null) {
-            throw new IllegalStateException("Error while fetching notifications");
-        }
-
-        List<NotificationDTO> notifications = notificationList.getNotifications();
-
-        assert notifications != null;
-        return notifications;
+        return notificationClient.getNotifications();
     }
 
     public ReviewerHomeDTO getReviewerHome(Long reviewerId) {
