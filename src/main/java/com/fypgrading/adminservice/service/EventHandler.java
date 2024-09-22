@@ -68,7 +68,7 @@ public class EventHandler implements ChannelAwareMessageListener {
     @Transactional
     public void onMessage(Message message, Channel channel) {
         try {
-            logger.info("Received message: " + message);
+            logger.debug("Received message: {}", message);
 
             EvaluationSubmittedEvent event =
                     objectMapper.readValue(
@@ -130,7 +130,7 @@ public class EventHandler implements ChannelAwareMessageListener {
             );
 
         } catch (Exception ex) {
-            logger.warn("Exception: " + ex.getMessage());
+            logger.error("Exception: {}", ex.getMessage());
             rabbitService.sendNack(message, channel);
         }
     }

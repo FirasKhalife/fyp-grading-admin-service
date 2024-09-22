@@ -11,6 +11,11 @@ logging:
   level:
     root: INFO
 
+management:
+  metrics:
+    tags:
+      application: ${SPRING_APPLICATION_NAME}
+
 services:
   evaluation-service-name: ${EVALUATION_SERVICE_NAME}
   notification-service-name: ${NOTIFICATION_SERVICE_NAME}

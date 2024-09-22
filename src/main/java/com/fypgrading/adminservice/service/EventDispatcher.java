@@ -36,7 +36,7 @@ public class EventDispatcher {
             throw new RuntimeException(e);
         }
 
-        logger.info("Sending GradeFinalizedEvent to " + RabbitConfig.NOTIFICATION_QUEUE_NAME + ": " + event);
+        logger.debug("Sending GradeFinalizedEvent to {}: {}", RabbitConfig.NOTIFICATION_QUEUE_NAME, event);
 
         rabbitTemplate.send("", RabbitConfig.NOTIFICATION_QUEUE_NAME, message);
     }
@@ -52,7 +52,7 @@ public class EventDispatcher {
             throw new RuntimeException(e);
         }
 
-        logger.info("Sending EvaluationSubmittedEvent to " + RabbitConfig.CHECK_NOTIFICATION_QUEUE_NAME + ": " + event);
+        logger.debug("Sending EvaluationSubmittedEvent to {}: {}", RabbitConfig.CHECK_NOTIFICATION_QUEUE_NAME, event);
 
         rabbitTemplate.send("", RabbitConfig.CHECK_NOTIFICATION_QUEUE_NAME, message);
     }

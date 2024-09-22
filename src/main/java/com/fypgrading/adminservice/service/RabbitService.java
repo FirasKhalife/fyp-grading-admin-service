@@ -34,11 +34,11 @@ public class RabbitService {
                 return;
             }
             // if retryCount == RabbitConfig.MAX_RETRY_COUNT, send to dead letter queue
-            logger.warn("Message sent to dead letter queue: " + message);
+            logger.error("Message sent to dead letter queue: {}", message);
             rabbitTemplate.send("", RabbitConfig.DEAD_QUEUE_NAME, message);
         }
         catch (Exception e) {
-            logger.error("Error sending nack: " + e.getMessage());
+            logger.error("Error sending nack: {}", e.getMessage());
         }
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.Collectors;
-
+ 
 @Aspect
 @Component
 @Slf4j
@@ -24,9 +24,9 @@ public class LoggingAspect {
     @Around(POINTCUT)
     @SneakyThrows
     public Object logAroundExec(ProceedingJoinPoint pjp) {
-        log.info("before {}", constructLogMsg(pjp));
+        log.debug("before {}", constructLogMsg(pjp));
         var proceed = pjp.proceed();
-        log.info("after {} with result: {}",constructLogMsg(pjp), proceed.toString());
+        log.debug("after {} with result: {}",constructLogMsg(pjp), proceed.toString());
         return proceed;
     }
 

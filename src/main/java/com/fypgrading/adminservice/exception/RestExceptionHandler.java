@@ -16,21 +16,21 @@ public class RestExceptionHandler {
 
     @ExceptionHandler
     protected ResponseEntity<ExceptionResponse> handleAuthException(AuthException ex, WebRequest request) {
-        logger.warn(ex.getMessage());
+        logger.error(ex.getMessage());
         ExceptionResponse response = new ExceptionResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
     protected ResponseEntity<ExceptionResponse> handleIllegalStateException(IllegalStateException ex, WebRequest request) {
-        logger.warn(ex.getMessage());
+        logger.error(ex.getMessage());
         ExceptionResponse response = new ExceptionResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler
     protected ResponseEntity<ExceptionResponse> handleEntityNotFound(EntityNotFoundException ex, WebRequest request) {
-        logger.warn(ex.getMessage());
+        logger.error(ex.getMessage());
         ExceptionResponse response = new ExceptionResponse(HttpStatus.NOT_FOUND, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
