@@ -8,10 +8,7 @@ import com.fypgrading.adminservice.service.dto.TeamGradesDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -32,6 +29,12 @@ public class AdminController {
         this.gradeService = gradeService;
         this.teamService = teamService;
         this.buildVersion = buildVersion;
+    }
+
+    @PostMapping("testCheckNotification")
+    public ResponseEntity<Void> testCheckNotification() {
+        gradeService.testCheckNotification();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/build-version")

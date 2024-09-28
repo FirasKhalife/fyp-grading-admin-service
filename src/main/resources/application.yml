@@ -41,15 +41,45 @@ spring:
       circuitbreaker:
         enabled: true # circuit breaker integrated with openfeign
 
-  liquibase:
-    enabled: true
-    change-log: classpath:liquibase/master.xml
+    function:
+      definition: checkForNotification
+    stream:
+      bindings:
+        sendNotification-out-0:
+          destination: notification-queue
+          group: notification-group
+        checkForNotification-out-0:
+          destination: check-notification-queue
+          group: check-notification-group
+
+        checkForNotification-in-0:
+          destination: check-notification-queue
+          group: check-notification-group
+          consumer:
+            max-attempts: 5
+            back-off-initial-interval: 1000
+            back-off-multiplier: 2.0
+            back-off-max-interval: 10000
+
+      rabbit:
+        bindings:
+          default:
+            consumer:
+              auto-bind-dlq: true
+              dead-letter-queue-name: dead-letter-queue
+              dead-letter-exchange: dead-letter-exchange
+              dead-letter-routing-key: dead-letter-routing-key
 
   rabbitmq:
     host: ${RABBITMQ_HOST}
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+    connection-timeout: 10s
+
+  liquibase:
+    enabled: true
+    change-log: classpath:liquibase/master.xml
 
   security:
     oauth2:

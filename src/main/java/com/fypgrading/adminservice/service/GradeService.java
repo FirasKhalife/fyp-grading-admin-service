@@ -12,8 +12,6 @@ import com.fypgrading.adminservice.service.mapper.GradeMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import lombok.AllArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -41,6 +39,12 @@ public class GradeService {
         AssessmentEnum assessment = AssessmentEnum.valueOf(assessmentStr.toUpperCase());
         List<Grade> reviewerTeamGrades = gradeRepository.findAllByAssessmentId(assessment.getInstanceId());
         return gradeMapper.toTeamGradeDTOList(reviewerTeamGrades);
+    }
+
+    public void testCheckNotification() {
+        eventDispatcher.checkForAdminNotification(
+            new EvaluationSubmittedEvent(null, null)
+        );
     }
 
     public List<GradedEvaluationDTO> getTeamEvaluationsByAssessment(String assessmentStr, Long teamId) {
