@@ -1,0 +1,24 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- TODO: remove when done testing -->
+    <changeSet author="Firas Khalife" id="test-create_reviewer_for_back_app">
+        <sql>
+            INSERT INTO public.reviewer (id,email,first_name,last_name,is_admin)
+            VALUES ('77bd321a-4304-4aa2-b66b-4db5613914f0'::uuid,
+                    'backend_service@service.com','Backend','Service',true);
+        </sql>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-insert_initial_roles">
+        <sqlFile path="./liquibase/sql/09-14-24-insert_initial_roles.sql"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-insert_initial_assessments">
+        <sqlFile path="./liquibase/sql/09-14-24-insert_initial_assessments.sql"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
@@ -18,7 +19,7 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
                     "WHERE tr.reviewer_id = :reviewerId",
         nativeQuery = true
     )
-    List<Role> getDistinctReviewerRoles(Long reviewerId);
+    List<Role> getDistinctReviewerRoles(UUID reviewerId);
 
     @Query(
             value = "SELECT role.* " +
@@ -28,5 +29,5 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
                     "WHERE tr.reviewer_id = :reviewerId AND tr.team_id = :teamId",
             nativeQuery = true
     )
-    List<Role> getReviewerTeamRoles(Long reviewerId, Long teamId);
+    List<Role> getReviewerTeamRoles(UUID reviewerId, Long teamId);
 }

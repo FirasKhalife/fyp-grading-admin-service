@@ -8,13 +8,14 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ReviewerTeamRepository extends JpaRepository<TeamReviewer, Long> {
 
-    Optional<TeamReviewer> findByReviewerIdAndTeamId(Long reviewerId, Long teamId);
+    Optional<TeamReviewer> findByReviewerIdAndTeamId(UUID reviewerId, Long teamId);
 
-    List<TeamReviewer> findByReviewerId(Long reviewerId);
+    List<TeamReviewer> findByReviewerId(UUID reviewerId);
 
     @Query(
             value = "SELECT tr.* " +

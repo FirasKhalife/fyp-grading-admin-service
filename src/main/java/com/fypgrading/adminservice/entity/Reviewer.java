@@ -2,22 +2,24 @@ package com.fypgrading.adminservice.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Entity
 public class Reviewer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
+
+    @NotNull
+    private String email;
 
     @NotNull
     private String firstName;
@@ -25,32 +27,11 @@ public class Reviewer {
     @NotNull
     private String lastName;
 
-    @NotNull
-    private String email;
-
-    @NotNull
-    private String password;
-
     private Boolean isAdmin = false;
 
     @ToString.Exclude
     @OneToMany(mappedBy = "reviewer")
     private List<TeamReviewer> teams;
-
-    public Reviewer(String firstName, String lastName, String email, String password, Boolean isAdmin) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.password = password;
-        this.isAdmin = isAdmin;
-    }
-
-    public Reviewer(String firstName, String lastName, String email, String password) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.password = password;
-    }
 
     @Override
     public boolean equals(Object o) {

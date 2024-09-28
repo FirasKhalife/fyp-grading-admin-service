@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface GradeRepository extends JpaRepository<Grade, Long> {
@@ -13,12 +14,12 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
     List<Grade> findAllByAssessmentId(Long assessmentId);
 
     Optional<Grade> findByTeamReviewer_ReviewerIdAndTeamReviewer_TeamIdAndAssessmentId(
-        Long reviewerId, Long teamId, Long assessmentId
+        UUID reviewerId, Long teamId, Long assessmentId
     );
 
     Long countByTeamReviewer_TeamIdAndAssessmentId(Long teamId, Long assessmentId);
 
-    List<Grade> findAllByTeamReviewer_ReviewerIdAndTeamReviewer_TeamId(Long reviewerId, Long teamId);
+    List<Grade> findAllByTeamReviewer_ReviewerIdAndTeamReviewer_TeamId(UUID reviewerId, Long teamId);
 
     List<Grade> findAllByTeamReviewer_TeamIdAndAssessmentId(Long teamId, Long assessmentId);
 }

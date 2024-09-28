@@ -6,13 +6,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class TeamReviewerRolesDTO {
 
-    private Long reviewerId;
+    private UUID reviewerId;
 
     private Long teamId;
 

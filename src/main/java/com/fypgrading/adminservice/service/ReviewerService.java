@@ -1,10 +1,10 @@
 package com.fypgrading.adminservice.service;
 
+import com.fypgrading.adminservice.config.security.SecurityUtils;
 import com.fypgrading.adminservice.entity.Assessment;
 import com.fypgrading.adminservice.entity.Grade;
 import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.entity.TeamReviewer;
-import com.fypgrading.adminservice.exception.AuthException;
 import com.fypgrading.adminservice.repository.AssessmentRepository;
 import com.fypgrading.adminservice.repository.ReviewerRepository;
 import com.fypgrading.adminservice.repository.RoleRepository;
@@ -32,43 +32,6 @@ public class ReviewerService {
     private final ReviewerMapper reviewerMapper;
     private final TeamMapper teamMapper;
 
-    public JwtResponseDTO login(LoginDTO loginDTO) {
-        Reviewer reviewer = reviewerRepository.findByEmail(loginDTO.getEmail())
-                .orElseThrow(() -> new AuthException("Invalid credentials"));
-
-        if (!loginDTO.getPassword().equals(reviewer.getPassword()))
-            throw new AuthException("Invalid credentials");
-
-        JwtResponseDTO jwtResponse = new JwtResponseDTO(reviewer);
-        jwtResponse.setRoles(teamReviewerService.getReviewerRoles(reviewer.getId()).getRoles());
-
-        return jwtResponse;
-    }
-
-    public ReviewerSignupDTO signup(ReviewerSignupDTO reviewerInfo) {
-        Optional<Reviewer> reviewerOpt = reviewerRepository.findByEmail(reviewerInfo.getEmail());
-        if (reviewerOpt.isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
-        }
-
-        Reviewer reviewer = new Reviewer(
-                reviewerInfo.getFirstName(),
-                reviewerInfo.getLastName(),
-                reviewerInfo.getEmail(),
-                reviewerInfo.getPassword(),
-                reviewerInfo.isAdmin()
-        );
-
-        Reviewer createdReviewer = reviewerRepository.save(reviewer);
-
-        reviewerInfo.getTeamRoleList().forEach(teamRoleDTO -> {
-            teamReviewerService.createReviewerTeam(createdReviewer.getId(), teamRoleDTO.getTeamId());
-            teamReviewerService.addReviewerTeamRole(reviewer.getId(), teamRoleDTO.getTeamId(), teamRoleDTO.getRole());
-        });
-
-        return reviewerInfo;
-    }
-
     public List<ReviewerDTO> getReviewers() {
         List<Reviewer> reviewers = reviewerRepository.findAll();
         return reviewerMapper.toDTOList(reviewers);
@@ -80,7 +43,7 @@ public class ReviewerService {
         return reviewerMapper.toDTO(createdEntity);
     }
 
-    public ReviewerDTO updateReviewer(Long id, ReviewerLoginDTO reviewerLoginDTO) {
+    public ReviewerDTO updateReviewer(UUID id, ReviewerLoginDTO reviewerLoginDTO) {
         getReviewerById(id);
         Reviewer reviewer = reviewerMapper.toEntity(reviewerLoginDTO);
         reviewer.setId(id);
@@ -88,23 +51,23 @@ public class ReviewerService {
         return reviewerMapper.toDTO(updatedEntity);
     }
 
-    public ReviewerDTO deleteReviewer(Long id) {
+    public ReviewerDTO deleteReviewer(UUID id) {
         Reviewer reviewer = getReviewerById(id);
         reviewerRepository.delete(reviewer);
         return reviewerMapper.toDTO(reviewer);
     }
 
-    public Reviewer getReviewerById(Long id) {
+    public Reviewer getReviewerById(UUID id) {
         return reviewerRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Reviewer not found"));
     }
 
-    public ReviewerDTO getReviewerViewById(Long id) {
+    public ReviewerDTO getReviewerViewById(UUID id) {
         Reviewer reviewer = getReviewerById(id);
         return reviewerMapper.toDTO(reviewer);
     }
 
-    public ReviewerTeamsAssessmentsDTO getReviewerTeamsAssessments(Long id) {
+    public ReviewerTeamsAssessmentsDTO getReviewerTeamsAssessments(UUID id) {
         List<TeamReviewer> teamReviewers = teamReviewerService.getReviewerTeamListByReviewerId(id);
 
         List<ReviewerTeamViewDTO> resList = new ArrayList<>();
@@ -153,7 +116,30 @@ public class ReviewerService {
         return reviewerRepository.countReviewersByTeamIdAndAssessmentId(teamId, assessmentId);
     }
 
-    public List<NotificationDTO> getAdminNotifications(Long reviewerId) {
+    public Reviewer getById(UUID id) {
+        return reviewerRepository.findById(id)
+            .orElseThrow(EntityNotFoundException::new);
+    }
+
+    public Optional<Reviewer> findById(UUID id) {
+        return reviewerRepository.findById(id);
+    }
+
+    public Reviewer save(Reviewer reviewer) {
+        return reviewerRepository.save(reviewer);
+    }
+
+    public Reviewer createReviewerFromAuthentication(Map<String, Object> claims) {
+        return Reviewer.builder()
+            .id(UUID.fromString((String) claims.get("sub")))
+            .email((String) claims.get("email"))
+            .firstName((String) claims.get("given_name"))
+            .lastName((String) claims.get("family_name"))
+            .isAdmin(SecurityUtils.isAdminInClaims(claims))
+            .build();
+    }
+
+    public List<NotificationDTO> getAdminNotifications(UUID reviewerId) {
         Optional<Reviewer> reviewerOpt = reviewerRepository.findById(reviewerId);
         if (reviewerOpt.isEmpty() || !reviewerOpt.get().getIsAdmin()) {
             return Collections.emptyList();
@@ -162,7 +148,7 @@ public class ReviewerService {
         return notificationClient.getNotifications();
     }
 
-    public ReviewerHomeDTO getReviewerHome(Long reviewerId) {
+    public ReviewerHomeDTO getReviewerHome(UUID reviewerId) {
         return new ReviewerHomeDTO(getReviewerTeamsAssessments(reviewerId), getAdminNotifications(reviewerId));
     }
 }

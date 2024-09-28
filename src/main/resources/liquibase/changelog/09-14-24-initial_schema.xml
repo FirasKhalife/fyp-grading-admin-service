@@ -4,6 +4,11 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
                    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
+    <changeSet author="Firas Khalife" id="09-14-24-create_uuid_extension">
+        <sqlFile path="./liquibase/sql/09-14-24-create_uuid_extension.sql"/>
+    </changeSet>
+
+    <!-- TODO: set better constraints -->
     <changeSet author="Firas Khalife" id="09-14-24-create_table_grade">
         <createTable tableName="grade">
             <column autoIncrement="true" name="id" type="BIGINT">
@@ -25,7 +30,7 @@
 
     <changeSet author="Firas Khalife" id="09-14-24-create_table_reviewer">
         <createTable tableName="reviewer">
-            <column autoIncrement="true" name="id" type="BIGINT">
+            <column defaultValueComputed="uuid_generate_v4()" name="id" type="UUID">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="reviewer_pkey"/>
             </column>
             <column name="email" type="VARCHAR(255)">
@@ -38,9 +43,6 @@
             <column name="last_name" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="password" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
         </createTable>
     </changeSet>
 
@@ -50,7 +52,7 @@
                 <constraints nullable="false" primaryKey="true" primaryKeyName="role_pkey"/>
             </column>
             <column name="name" type="VARCHAR(255)">
-                <constraints nullable="false"/>
+                <constraints nullable="false" unique="true"/>
             </column>
         </createTable>
     </changeSet>
@@ -80,17 +82,19 @@
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="team_reviewer_pkey"/>
             </column>
-            <column name="reviewer_id" type="BIGINT"/>
+            <column name="reviewer_id" type="UUID"/>
             <column name="team_id" type="BIGINT"/>
         </createTable>
     </changeSet>
 
     <changeSet author="Firas Khalife" id="09-14-24-create_table_assessment">
         <createTable tableName="assessment">
-            <column name="id" type="BIGINT">
+            <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="assessment_pkey"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints unique="true" />
+            </column>
             <column name="weight" type="INTEGER"/>
             <column name="role_id" type="BIGINT"/>
         </createTable>

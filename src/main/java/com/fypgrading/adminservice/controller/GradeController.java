@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @AllArgsConstructor
 @RestController
@@ -23,7 +24,7 @@ public class GradeController {
     }
 
     @GetMapping("/{reviewerId}/{teamId}")
-    public ResponseEntity<List<GradeDTO>> getGrades(@PathVariable Long reviewerId,
+    public ResponseEntity<List<GradeDTO>> getGrades(@PathVariable UUID reviewerId,
                                                     @PathVariable Long teamId) {
         List<GradeDTO> grades = gradeService.getGrades(reviewerId, teamId);
         return ResponseEntity.ok().body(grades);

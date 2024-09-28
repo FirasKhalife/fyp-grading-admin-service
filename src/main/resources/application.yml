@@ -51,5 +51,21 @@ spring:
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVER_URL}/protocol/openid-connect/certs
+      client:
+        registration:
+          master:
+            client-id: ${APPLICATION_CLIENT_ID}
+            client-secret: ${APPLICATION_CLIENT_SECRET}
+            scope: openid, profile, email
+            authorization-grant-type: client_credentials
+        provider:
+          master:
+            issuer-uri: ${AUTH_SERVER_URL}
+
 server:
   port: ${PORT}

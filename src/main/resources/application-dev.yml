@@ -2,3 +2,5 @@ logging:
   level:
     sql: DEBUG
     web: DEBUG
+    feign.client: DEBUG
+    org.springframework.cloud.openfeign: DEBUG

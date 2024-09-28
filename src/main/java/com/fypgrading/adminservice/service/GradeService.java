@@ -12,11 +12,14 @@ import com.fypgrading.adminservice.service.mapper.GradeMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @AllArgsConstructor
 @Service
@@ -104,7 +107,7 @@ public class GradeService {
         return gradeMapper.toTeamGradeDTO(createdGrade);
     }
 
-    public List<GradeDTO> getGrades(Long reviewerId, Long teamId) {
+    public List<GradeDTO> getGrades(UUID reviewerId, Long teamId) {
         List<Grade> grades =
                 gradeRepository.findAllByTeamReviewer_ReviewerIdAndTeamReviewer_TeamId(
                         reviewerId, teamId

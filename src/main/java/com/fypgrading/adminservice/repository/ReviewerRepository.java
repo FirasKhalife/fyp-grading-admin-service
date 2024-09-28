@@ -8,9 +8,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface ReviewerRepository extends JpaRepository<Reviewer, Long> {
+public interface ReviewerRepository extends JpaRepository<Reviewer, UUID> {
 
     Optional<Reviewer> findByEmail(String email);
 
