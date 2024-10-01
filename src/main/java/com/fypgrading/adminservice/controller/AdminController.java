@@ -5,46 +5,26 @@ import com.fypgrading.adminservice.service.TeamService;
 import com.fypgrading.adminservice.service.dto.GradeDTO;
 import com.fypgrading.adminservice.service.dto.GradedEvaluationDTO;
 import com.fypgrading.adminservice.service.dto.TeamGradesDTO;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
+import com.fypgrading.adminservice.service.enums.SystemRoleEnum;
+import jakarta.annotation.security.RolesAllowed;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RefreshScope
+@AllArgsConstructor
 @RestController
+@RolesAllowed({ SystemRoleEnum.Names.ROLE_ADMIN })
 @RequestMapping("/api/admin")
 public class AdminController {
 
     private final GradeService gradeService;
     private final TeamService teamService;
-    private final String buildVersion;
-
-    public AdminController(
-        GradeService gradeService,
-        TeamService teamService,
-        @Value("${build.version}") String buildVersion
-    ) {
-        this.gradeService = gradeService;
-        this.teamService = teamService;
-        this.buildVersion = buildVersion;
-    }
-
-    @PostMapping("testCheckNotification")
-    public ResponseEntity<Void> testCheckNotification() {
-        gradeService.testCheckNotification();
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/build-version")
-    public ResponseEntity<String> getBuildVersion() {
-        return ResponseEntity.ok().body(buildVersion);
-    }
 
     @GetMapping("/teams/grades")
     public ResponseEntity<List<TeamGradesDTO>> getAllTeamsGrades() {
-        List<TeamGradesDTO> teams = teamService.getAllGrades();
+        List<TeamGradesDTO> teams = teamService.getAllTeamsGrades();
         return ResponseEntity.ok().body(teams);
     }
 

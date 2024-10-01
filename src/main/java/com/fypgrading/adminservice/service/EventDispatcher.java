@@ -21,7 +21,7 @@ public class EventDispatcher {
     }
 
     public void checkForAdminNotification(EvaluationSubmittedEvent event) {
-        logger.debug("Sending EvaluationSubmittedEventto {}: {}","checkForNotification-out-0", event);
+        logger.debug("Sending EvaluationSubmittedEvent to {}: {}","checkForNotification-out-0", event);
         streamBridge.send("checkForNotification-out-0", event);
     }
 }

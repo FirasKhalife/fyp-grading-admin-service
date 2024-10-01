@@ -1,7 +1,7 @@
 package com.fypgrading.adminservice.config.security;
 
 import com.fypgrading.adminservice.entity.Reviewer;
-import com.fypgrading.adminservice.service.enums.RoleEnum;
+import com.fypgrading.adminservice.service.enums.SystemRoleEnum;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -36,15 +36,11 @@ public final class SecurityUtils {
         return headers;
     }
 
-    public static boolean isAdminInClaims(Map<String, Object> claims) {
-        return getAuthorityNamesFromClaims(claims).contains(RoleEnum.ADMIN.toString());
+    public static boolean isUserAdmin(Reviewer reviewer) {
+        return reviewer.getRoles()
+            .stream().anyMatch(role -> Objects.equals(role.getName(), SystemRoleEnum.ROLE_ADMIN.toString()));
     }
 
-    /**
-     * Check if a user is authenticated.
-     *
-     * @return true if the user is authenticated, false otherwise.
-     */
     public static boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null && getAuthorities(authentication).noneMatch("ROLE_ANONYMOUS"::equals);

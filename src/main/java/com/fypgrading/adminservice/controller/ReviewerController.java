@@ -15,12 +15,12 @@ import java.util.UUID;
 @RequestMapping("/api/reviewers")
 public class ReviewerController {
 
-    private final ReviewerService reviewerService;
     private final TeamReviewerService teamReviewerService;
+    private final ReviewerService reviewerService;
 
-    @GetMapping("/{id}/home")
-    public ResponseEntity<ReviewerHomeDTO> getReviewerHome(@PathVariable UUID id) {
-        ReviewerHomeDTO reviewerHome = reviewerService.getReviewerHome(id);
+    @GetMapping("/home")
+    public ResponseEntity<ReviewerHomeDTO> getReviewerHome() {
+        ReviewerHomeDTO reviewerHome = reviewerService.getReviewerHome();
         return ResponseEntity.ok().body(reviewerHome);
     }
 
@@ -38,19 +38,13 @@ public class ReviewerController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<ReviewerDTO>> getReviewers() {
-        List<ReviewerDTO> rubrics = reviewerService.getReviewers();
+    public ResponseEntity<List<ReviewerDTO>> getAllReviewers() {
+        List<ReviewerDTO> rubrics = reviewerService.getAllReviewers();
         return ResponseEntity.ok().body(rubrics);
     }
 
-    @PostMapping("/")
-    public ResponseEntity<ReviewerDTO> createReviewer(@RequestBody ReviewerLoginDTO rubricDTO) {
-        ReviewerDTO createdReviewer = reviewerService.createReviewer(rubricDTO);
-        return ResponseEntity.ok().body(createdReviewer);
-    }
-
     @GetMapping("/{id}")
-    public ResponseEntity<ReviewerDTO> getReviewer(@PathVariable UUID id) {
+    public ResponseEntity<ReviewerDTO> getReviewerView(@PathVariable UUID id) {
         ReviewerDTO rubrics = reviewerService.getReviewerViewById(id);
         return ResponseEntity.ok().body(rubrics);
     }
@@ -59,12 +53,6 @@ public class ReviewerController {
     public ResponseEntity<ReviewerTeamsAssessmentsDTO> getReviewerTeams(@PathVariable UUID id) {
         ReviewerTeamsAssessmentsDTO teams = reviewerService.getReviewerTeamsAssessments(id);
         return ResponseEntity.ok().body(teams);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ReviewerDTO> deleteReviewer(@PathVariable UUID id) {
-        ReviewerDTO rubrics = reviewerService.deleteReviewer(id);
-        return ResponseEntity.ok().body(rubrics);
     }
     
 }

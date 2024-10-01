@@ -9,12 +9,13 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeamReviewerAssessmentDTO extends AssessmentDTO {
+public class GradedAssessmentDTO extends AssessmentDTO {
 
     private Float grade;
 
-    public TeamReviewerAssessmentDTO(AssessmentDTO assessment) {
+    public GradedAssessmentDTO(AssessmentDTO assessment, Float grade) {
         super(assessment.getId(), assessment.getName(), assessment.getWeight(), assessment.getRole());
+        this.grade = grade;
     }
 
 }

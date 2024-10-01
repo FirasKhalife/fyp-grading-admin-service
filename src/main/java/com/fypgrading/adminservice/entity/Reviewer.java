@@ -19,15 +19,20 @@ public class Reviewer {
     private UUID id;
 
     @NotNull
+    @Column(nullable = false, unique = true)
     private String email;
 
     @NotNull
+    @Column(nullable = false)
     private String firstName;
 
     @NotNull
+    @Column(nullable = false)
     private String lastName;
 
-    private Boolean isAdmin = false;
+    @ManyToMany
+    @JoinTable(name = "user_system_role")
+    private List<SystemRole> roles;
 
     @ToString.Exclude
     @OneToMany(mappedBy = "reviewer")

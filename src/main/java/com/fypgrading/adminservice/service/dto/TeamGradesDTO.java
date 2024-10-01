@@ -13,6 +13,6 @@ public class TeamGradesDTO {
 
     private TeamDTO team;
 
-    private List<TeamAssessmentDTO> assessmentGradeList;
+    private List<TeamAssessmentDTO> gradedAssessments;
 
 }

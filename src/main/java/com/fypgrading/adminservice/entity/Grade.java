@@ -16,12 +16,15 @@ public class Grade extends Auditable {
     private Long id;
 
     @ManyToOne
+    @JoinColumn(nullable = false)
     private Assessment assessment;
 
-    private Float grade;
-
     @ManyToOne
+    @JoinColumn(nullable = false)
     private TeamReviewer teamReviewer;
+
+    @Column(nullable = false)
+    private Float grade;
 
     public Grade(Assessment assessment, Float grade, TeamReviewer teamReviewer) {
         this.teamReviewer = teamReviewer;

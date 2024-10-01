@@ -1,11 +1,13 @@
 package com.fypgrading.adminservice.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class TeamAssessment {
 
@@ -14,9 +16,11 @@ public class TeamAssessment {
     private Long id;
 
     @ManyToOne(cascade = CascadeType.MERGE)
+    @JoinColumn(nullable = false)
     private Team team;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @JoinColumn(nullable = false)
     private Assessment assessment;
 
     private Float grade;
@@ -30,12 +34,12 @@ public class TeamAssessment {
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof TeamAssessment teamAssessment)) return false;
-        return this.getTeam().equals(teamAssessment.getTeam())
-                && this.getAssessment().equals(teamAssessment.getAssessment());
+        return this.team.equals(teamAssessment.getTeam())
+                && this.assessment.equals(teamAssessment.getAssessment());
     }
 
     @Override
     public int hashCode() {
-        return getTeam().hashCode() + getAssessment().hashCode();
+        return team.hashCode() + assessment.hashCode();
     }
 }

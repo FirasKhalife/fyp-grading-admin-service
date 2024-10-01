@@ -28,7 +28,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(request -> request
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 // TODO: revert when done
-                // .requestMatchers("/actuator/shutdown").hasAuthority("ADMIN")
+                // .requestMatchers("/actuator/shutdown").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET).permitAll()
                 .anyRequest().authenticated())
             .oauth2Client(Customizer.withDefaults())

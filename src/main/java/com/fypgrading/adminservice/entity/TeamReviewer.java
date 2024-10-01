@@ -16,18 +16,16 @@ public class TeamReviewer {
     private Long id;
 
     @ManyToOne
+    @JoinColumn(nullable = false)
     private Reviewer reviewer;
 
     @ManyToOne
+    @JoinColumn(nullable = false)
     private Team team;
 
     @ManyToMany
-    @JoinTable(
-            name = "team_reviewer_role",
-            joinColumns = @JoinColumn(name = "team_reviewer_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private List<Role> reviewerRoles;
+    @JoinTable(name = "team_reviewer_role")
+    private List<ReviewerRole> reviewerRoles;
 
     @OneToMany(mappedBy = "teamReviewer")
     private List<Grade> grades;
@@ -37,20 +35,16 @@ public class TeamReviewer {
         this.team = team;
     }
 
-    public void addRole(Role role) {
-        reviewerRoles.add(role);
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof TeamReviewer teamReviewer)) return false;
-        return this.getReviewer().equals(teamReviewer.getReviewer())
-                && this.getTeam().equals(teamReviewer.getTeam());
+        return this.reviewer.equals(teamReviewer.getReviewer())
+                && this.team.equals(teamReviewer.getTeam());
     }
 
     @Override
     public int hashCode() {
-        return getReviewer().hashCode() + getTeam().hashCode();
+        return reviewer.hashCode() + team.hashCode();
     }
 
 }

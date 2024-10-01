@@ -9,10 +9,10 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReviewerTeamViewDTO {
+public class TeamGradedAssessmentsDTO {
 
     private TeamDTO team;
 
-    private List<TeamReviewerAssessmentDTO> teamAssessments;
+    private List<GradedAssessmentDTO> gradedAssessments;
 
 }

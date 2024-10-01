@@ -13,5 +13,5 @@ public class ReviewerTeamsAssessmentsDTO {
 
     private List<AssessmentDTO> reviewerAssessments;
 
-    private List<ReviewerTeamViewDTO> reviewerTeams;
+    private List<TeamGradedAssessmentsDTO> reviewerTeams;
 }

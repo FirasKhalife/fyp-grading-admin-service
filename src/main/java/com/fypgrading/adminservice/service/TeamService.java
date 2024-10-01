@@ -6,35 +6,28 @@ import com.fypgrading.adminservice.repository.TeamAssessmentRepository;
 import com.fypgrading.adminservice.repository.TeamRepository;
 import com.fypgrading.adminservice.service.dto.*;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
+import com.fypgrading.adminservice.service.mapper.TeamAssessmentMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+@AllArgsConstructor
 @Service
 public class TeamService {
 
     private final TeamAssessmentRepository teamAssessmentRepository;
     private final AssessmentRepository assessmentRepository;
     private final TeamRepository teamRepository;
+
+    private final TeamAssessmentMapper teamAssessmentMapper;
     private final ReviewerMapper reviewerMapper;
     private final TeamMapper teamMapper;
-
-    public TeamService(TeamAssessmentRepository teamAssessmentRepository,
-                       AssessmentRepository assessmentRepository,
-                       TeamRepository teamRepository,
-                       ReviewerMapper reviewerMapper,
-                       TeamMapper teamMapper
-    ) {
-        this.teamAssessmentRepository = teamAssessmentRepository;
-        this.assessmentRepository = assessmentRepository;
-        this.teamRepository = teamRepository;
-        this.reviewerMapper = reviewerMapper;
-        this.teamMapper = teamMapper;
-    }
 
     public List<TeamDTO> getTeams() {
         List<Team> teams = teamRepository.findAll();
@@ -67,7 +60,7 @@ public class TeamService {
 
     public Team getTeamById(Long id) {
         return teamRepository.findById(id).orElseThrow(() ->
-                        new EntityNotFoundException("Team not found"));
+            new EntityNotFoundException("Team not found"));
     }
 
     public CountDTO getTeamReviewersCount(Long id) {
@@ -77,33 +70,36 @@ public class TeamService {
 
     public List<ReviewerDTO> getTeamReviewers(Long id) {
         List<Reviewer> reviewers =
-                getTeamById(id).getReviewers()
-                        .parallelStream()
-                        .map(TeamReviewer::getReviewer)
-                        .toList();
+            getTeamById(id).getReviewers()
+                .stream().map(TeamReviewer::getReviewer)
+                .toList();
         return reviewerMapper.toDTOList(reviewers);
     }
 
-    public List<TeamGradesDTO> getAllGrades() {
+    public List<TeamGradesDTO> getAllTeamsGrades() {
         List<Team> teams = teamRepository.findAllByOrderByIdAsc();
+        List<Assessment> allAssessments = assessmentRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
 
-        List<Assessment> assessments = assessmentRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+        // team ID -> (assessment ID -> team assessment)
+        Map<Long, Map<Long, TeamAssessment>> teamAssessmentsMap = teamAssessmentRepository.findAll()
+            .stream().collect(
+                Collectors.groupingBy(
+                    teamAssessment -> teamAssessment.getTeam().getId(),
+                    Collectors.toMap(
+                        teamAssessment -> teamAssessment.getAssessment().getId(),
+                        teamAssessment -> teamAssessment)
+                ));
 
         return teams.stream().map(team -> {
-            List<TeamAssessment> grades = teamAssessmentRepository.findAllByTeamId(team.getId());
+            List<TeamAssessmentDTO> teamGradedAssessments =
+                allAssessments.stream().map(assessment ->
+                    teamAssessmentMapper.toDTO(
+                        teamAssessmentsMap
+                            .getOrDefault(team.getId(), Map.of())
+                            .getOrDefault(assessment.getId(), new TeamAssessment(team, assessment, null)))
+                ).toList();
 
-            List<TeamAssessmentDTO> gradesDTO = new ArrayList<>();
-            assessments.forEach(assessment -> {
-                TeamAssessment grade = new TeamAssessment(team, assessment, null);
-                int index;
-                if ((index = grades.indexOf(grade)) != -1) {
-                    grade = grades.get(index);
-                }
-
-                gradesDTO.add(new TeamAssessmentDTO(grade));
-            });
-
-            return new TeamGradesDTO(teamMapper.toDTO(team), gradesDTO);
+            return new TeamGradesDTO(teamMapper.toDTO(team), teamGradedAssessments);
         }).toList();
     }
 }

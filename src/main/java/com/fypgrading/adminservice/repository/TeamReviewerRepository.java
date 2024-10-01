@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface ReviewerTeamRepository extends JpaRepository<TeamReviewer, Long> {
+public interface TeamReviewerRepository extends JpaRepository<TeamReviewer, Long> {
 
     Optional<TeamReviewer> findByReviewerIdAndTeamId(UUID reviewerId, Long teamId);
 
@@ -21,8 +21,7 @@ public interface ReviewerTeamRepository extends JpaRepository<TeamReviewer, Long
             value = "SELECT tr.* " +
                     "FROM team_reviewer AS tr " +
                         "JOIN team_reviewer_role AS trr ON trr.team_reviewer_id = tr.id " +
-                        "JOIN role ON role.id = trr.role_id " +
-                        "JOIN assessment ON assessment.role_id = role.id " +
+                        "JOIN assessment ON assessment.reviewer_role_id = trr.reviewer_role_id " +
                     "WHERE tr.team_id = :teamId AND assessment.id = :assessmentId",
             nativeQuery = true
     )

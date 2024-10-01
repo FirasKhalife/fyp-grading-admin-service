@@ -1,8 +1,7 @@
 package com.fypgrading.adminservice.service.dto;
 
-import com.fypgrading.adminservice.entity.Assessment;
 import com.fypgrading.adminservice.service.enums.AssessmentEnum;
-import com.fypgrading.adminservice.service.enums.RoleEnum;
+import com.fypgrading.adminservice.service.enums.ReviewerRoleEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,18 +17,11 @@ public class AssessmentDTO {
 
     private Integer weight;
 
-    private RoleEnum role;
+    private ReviewerRoleEnum role;
 
     public AssessmentDTO(AssessmentEnum assessmentEnum) {
         this.id = assessmentEnum.getInstanceId();
         this.name = assessmentEnum;
-    }
-
-    public AssessmentDTO(Assessment assessment) {
-        this.id = assessment.getId();
-        this.name = assessment.getName();
-        this.weight = assessment.getWeight();
-        this.role = assessment.getRole() != null ? assessment.getRole().getName() : null;
     }
 
     @Override
