@@ -8,7 +8,6 @@
         <sqlFile path="./liquibase/sql/09-14-24-create_uuid_extension.sql"/>
     </changeSet>
 
-    <!-- TODO: add indexes -->
     <changeSet author="Firas Khalife" id="09-14-24-create_table_grade">
         <createTable tableName="grade">
             <column autoIncrement="true" name="id" type="BIGINT">

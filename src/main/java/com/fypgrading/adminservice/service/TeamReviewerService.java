@@ -73,7 +73,7 @@ public class TeamReviewerService {
     }
 
     public ReviewerRolesDTO getReviewerRoles(UUID reviewerId) {
-        List<ReviewerRole> roles = reviewerRoleRepository.getReviewerRoles(reviewerId);
+        List<ReviewerRole> roles = reviewerRoleRepository.getReviewerRolesByReviewerId(reviewerId);
 
         return new ReviewerRolesDTO(reviewerId, roleMapper.toEnumList(roles));
     }
