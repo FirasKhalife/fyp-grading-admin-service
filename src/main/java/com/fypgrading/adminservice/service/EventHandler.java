@@ -36,7 +36,7 @@ public class EventHandler {
     private final TeamMapper teamMapper;
 
     @Bean
-    public Consumer<EvaluationSubmittedEvent> checkForNotification() {
+    public Consumer<EvaluationSubmittedEvent> aggregateGrades() {
         return event -> {
             TeamDTO teamDTO = event.getTeam();
 

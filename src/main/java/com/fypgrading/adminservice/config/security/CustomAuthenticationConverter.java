@@ -3,8 +3,7 @@ package com.fypgrading.adminservice.config.security;
 import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.service.ReviewerService;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
@@ -21,10 +20,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @AllArgsConstructor
 public class CustomAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
-
-    private final Logger logger = LoggerFactory.getLogger(CustomAuthenticationConverter.class);
 
     private final ClientRegistration clientRegistration;
     private final RestTemplate restTemplate;
@@ -45,7 +43,7 @@ public class CustomAuthenticationConverter implements Converter<Jwt, AbstractAut
                 if (userInfo == null)
                     throw new IllegalStateException("Unable to fetch user info from OAuth2 provider");
 
-                logger.info("Found User Info: {}", userInfo);
+                log.info("Found User Info: {}", userInfo);
 
                 Reviewer user = reviewerService.createReviewerFromAuthentication(userInfo);
                 Collection<GrantedAuthority> authorities = AuthoritiesConverter.convertAuthorities(jwt);

@@ -27,7 +27,6 @@ public class ReviewerDTO {
     public boolean equals(Object object) {
         if (!(object instanceof Reviewer reviewer))
             return false;
-
         return Objects.equals(id, reviewer.getId());
     }
 

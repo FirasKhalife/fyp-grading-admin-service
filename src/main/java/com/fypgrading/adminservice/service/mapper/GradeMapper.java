@@ -5,8 +5,6 @@ import com.fypgrading.adminservice.service.dto.GradeDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.List;
-
 @Mapper(
     componentModel = "spring",
     uses = {
@@ -15,13 +13,11 @@ import java.util.List;
         AssessmentMapper.class
     }
 )
-public interface GradeMapper {
+public interface GradeMapper extends EntityMapper<Grade, GradeDTO> {
 
+    @Override
     @Mapping(source = "teamReviewer.reviewer", target = "reviewer")
     @Mapping(source = "teamReviewer.team", target = "team")
-    GradeDTO toTeamGradeDTO(Grade grade);
-
-    List<GradeDTO> toTeamGradeDTOList(List<Grade> gradeList);
-
+    GradeDTO toDTO(Grade grade);
 
 }

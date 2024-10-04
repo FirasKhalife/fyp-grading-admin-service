@@ -1,6 +1,3 @@
-build:
-  version: ${BUILD_VERSION}
-
 info:
   app:
     name: ${SPRING_APPLICATION_NAME}
@@ -42,17 +39,17 @@ spring:
         enabled: true # circuit breaker integrated with openfeign
 
     function:
-      definition: checkForNotification
+      definition: aggregateGrades
     stream:
       bindings:
         sendNotification-out-0:
           destination: notification-queue
           group: notification-group
-        checkForNotification-out-0:
+        aggregateGrades-out-0:
           destination: check-notification-queue
           group: check-notification-group
 
-        checkForNotification-in-0:
+        aggregateGrades-in-0:
           destination: check-notification-queue
           group: check-notification-group
           consumer:

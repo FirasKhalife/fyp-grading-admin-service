@@ -13,7 +13,7 @@ import com.fypgrading.adminservice.service.dto.ReviewerRolesDTO;
 import com.fypgrading.adminservice.service.dto.TeamDTO;
 import com.fypgrading.adminservice.service.dto.TeamReviewerRolesDTO;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
-import com.fypgrading.adminservice.service.mapper.RoleMapper;
+import com.fypgrading.adminservice.service.mapper.ReviewerRoleMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +31,7 @@ public class TeamReviewerService {
     private final ReviewerRoleRepository reviewerRoleRepository;
     private final TeamRepository teamRepository;
     private final TeamMapper teamMapper;
-    private final RoleMapper roleMapper;
+    private final ReviewerRoleMapper reviewerRoleMapper;
 
     public TeamReviewer createReviewerTeam(UUID reviewerId, Long teamId) {
         Reviewer reviewer = reviewerRepository.findById(reviewerId)
@@ -48,7 +48,7 @@ public class TeamReviewerService {
     public TeamReviewerRolesDTO getTeamReviewerRoles(UUID reviewerId, Long teamId) {
         List<ReviewerRole> reviewerRoles = reviewerRoleRepository.getReviewerTeamRoles(reviewerId, teamId);
 
-        return new TeamReviewerRolesDTO(reviewerId, teamId, roleMapper.toEnumList(reviewerRoles));
+        return new TeamReviewerRolesDTO(reviewerId, teamId, reviewerRoleMapper.toEnumList(reviewerRoles));
     }
 
     public TeamReviewer getReviewerTeamById(UUID reviewerId, Long teamId) {
@@ -75,6 +75,6 @@ public class TeamReviewerService {
     public ReviewerRolesDTO getReviewerRoles(UUID reviewerId) {
         List<ReviewerRole> roles = reviewerRoleRepository.getReviewerRolesByReviewerId(reviewerId);
 
-        return new ReviewerRolesDTO(reviewerId, roleMapper.toEnumList(roles));
+        return new ReviewerRolesDTO(reviewerId, reviewerRoleMapper.toEnumList(roles));
     }
 }

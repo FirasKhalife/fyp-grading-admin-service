@@ -39,7 +39,7 @@ public class GradeService {
     public List<GradeDTO> getGradesByAssessment(String assessmentStr) {
         Assessment assessment = assessmentService.getAssessmentByLowerCaseName(assessmentStr);
         List<Grade> reviewerTeamGrades = gradeRepository.findAllByAssessmentId(assessment.getId());
-        return gradeMapper.toTeamGradeDTOList(reviewerTeamGrades);
+        return gradeMapper.toDTOList(reviewerTeamGrades);
     }
 
     public List<GradedEvaluationDTO> getTeamEvaluationsByAssessment(String assessmentStr, Long teamId) {
@@ -95,21 +95,21 @@ public class GradeService {
         Grade createdGrade = gradeRepository.save(grade);
 
         EvaluationSubmittedEvent event = new EvaluationSubmittedEvent(teamDTO, assessmentMapper.toDTO(assessment));
-        eventDispatcher.checkForAdminNotification(event);
+        eventDispatcher.aggregateGrades(event);
 
-        return gradeMapper.toTeamGradeDTO(createdGrade);
+        return gradeMapper.toDTO(createdGrade);
     }
 
     public List<GradeDTO> getTeamReviewerGrades(UUID reviewerId, Long teamId) {
         List<Grade> grades =
                 gradeRepository.findAllByTeamReviewer_ReviewerIdAndTeamReviewer_TeamId(reviewerId, teamId);
-        return gradeMapper.toTeamGradeDTOList(grades);
+        return gradeMapper.toDTOList(grades);
     }
 
     public List<GradeDTO> getTeamGradesByAssessment(String assessmentStr, Long teamId) {
         AssessmentEnum assessment = AssessmentEnum.valueOf(assessmentStr.toUpperCase());
         List<Grade> grades =
                 gradeRepository.findAllByTeamReviewer_TeamIdAndAssessmentId(teamId, assessment.getInstanceId());
-        return gradeMapper.toTeamGradeDTOList(grades);
+        return gradeMapper.toDTOList(grades);
     }
 }

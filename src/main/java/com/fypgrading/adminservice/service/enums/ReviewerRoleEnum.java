@@ -4,6 +4,6 @@ import lombok.Getter;
 
 @Getter
 public enum ReviewerRoleEnum {
-    JURY_MEMBER,
+    JURY,
     ADVISOR
 }

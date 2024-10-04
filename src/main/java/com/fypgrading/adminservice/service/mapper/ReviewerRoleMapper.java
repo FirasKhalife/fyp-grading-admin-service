@@ -7,7 +7,7 @@ import org.mapstruct.Mapper;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface RoleMapper {
+public interface ReviewerRoleMapper {
 
     default ReviewerRoleEnum toEnum(ReviewerRole role) {
         return role.getName();

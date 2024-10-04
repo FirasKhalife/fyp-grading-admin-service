@@ -11,8 +11,5 @@ import org.mapstruct.Mapper;
         AssessmentMapper.class
     }
 )
-public interface TeamAssessmentMapper {
-
-    TeamAssessmentDTO toDTO(TeamAssessment assessment);
-
+public interface TeamAssessmentMapper extends EntityMapper<TeamAssessment, TeamAssessmentDTO> {
 }

@@ -4,16 +4,6 @@ import com.fypgrading.adminservice.entity.Reviewer;
 import com.fypgrading.adminservice.service.dto.ReviewerDTO;
 import org.mapstruct.Mapper;
 
-import java.util.List;
-
-@Mapper(
-    componentModel = "spring",
-    uses = { RoleMapper.class }
-)
-public interface ReviewerMapper {
-
-    List<ReviewerDTO> toDTOList(List<Reviewer> reviewers);
-
-    ReviewerDTO toDTO(Reviewer reviewer);
-
+@Mapper(componentModel = "spring")
+public interface ReviewerMapper extends EntityMapper<Reviewer, ReviewerDTO> {
 }
