@@ -15,26 +15,29 @@ public class Team {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String name;
 
     private Float finalGrade;
 
-    @OneToMany(mappedBy = "team")
-    private List<ReviewerTeam> reviewers;
+    @ManyToMany
+    private List<TeamReviewer> reviewers;
 
-    public Team(Integer id) {
+    public Team(Long id) {
         this.id = id;
     }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof Team team)) return false;
-        return this.getId().equals(team.getId());
+        return this.id.equals(team.getId());
     }
 
     @Override
     public int hashCode() {
-        return getId().hashCode();
+        return id.hashCode();
     }
 
     @Override

@@ -1,0 +1,273 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_uuid_extension">
+        <sqlFile path="./liquibase/sql/09-14-24-create_uuid_extension.sql"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_grade">
+        <createTable tableName="grade">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="grade_pkey"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="updated_by" type="VARCHAR(255)"/>
+            <column name="grade" type="FLOAT4">
+                <constraints nullable="false"/>
+            </column>
+            <column name="assessment_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="team_reviewer_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_reviewer">
+        <createTable tableName="reviewer">
+            <column defaultValueComputed="uuid_generate_v4()" name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="reviewer_pkey"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="first_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_reviewer_role">
+        <createTable tableName="reviewer_role">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="reviewer_role_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_system_role">
+        <createTable tableName="system_role">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="system_role_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_user_system_role">
+        <createTable tableName="user_system_role">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_system_role_pkey"/>
+            </column>
+            <column name="reviewer_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="system_role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="user_system_role"
+                columnNames="reviewer_id, system_role_id"
+                constraintName="unique_user_system_role_reviewer_id_system_role_id"/>
+    </changeSet>
+
+    <!-- TODO: check if a name for a team is fine or we should add students' name in some way -->
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_team">
+        <createTable tableName="team">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="team_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="final_grade" type="FLOAT4"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_assessment">
+        <createTable tableName="assessment">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="assessment_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="reviewer_role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="weight" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_team_assessment">
+        <createTable tableName="team_assessment">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="team_assessment_pkey"/>
+            </column>
+            <column name="team_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="assessment_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="grade" type="FLOAT4">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="team_assessment"
+                columnNames="team_id, assessment_id"
+                constraintName="unique_team_assessment_team_id_assessment_id"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_team_reviewer">
+        <createTable tableName="team_reviewer">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="team_reviewer_pkey"/>
+            </column>
+            <column name="team_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reviewer_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="team_reviewer"
+                columnNames="team_id, reviewer_id"
+                constraintName="unique_team_reviewer_team_id_reviewer_id"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-create_table_team_reviewer_role">
+        <createTable tableName="team_reviewer_role">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="team_reviewer_role_pkey"/>
+            </column>
+            <column name="team_reviewer_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reviewer_role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="team_reviewer_role"
+                columnNames="team_reviewer_id, reviewer_role_id"
+                constraintName="unique_team_reviewer_role_team_reviewer_id_reviewer_role_id"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_team_id_table_team_reviewer">
+        <addForeignKeyConstraint baseColumnNames="team_id"
+                                 baseTableName="team_reviewer"
+                                 constraintName="fk_team_id_table_team_reviewer"
+                                 referencedColumnNames="id"
+                                 referencedTableName="team"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_reviewer_id_table_team_reviewer">
+        <addForeignKeyConstraint baseColumnNames="reviewer_id"
+                                 baseTableName="team_reviewer"
+                                 constraintName="fk_reviewer_id_table_team_reviewer"
+                                 referencedColumnNames="id"
+                                 referencedTableName="reviewer"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_team_reviewer_id_table_team_reviewer_role">
+        <addForeignKeyConstraint baseColumnNames="team_reviewer_id"
+                                 baseTableName="team_reviewer_role"
+                                 constraintName="fk_team_reviewer_id_table_team_reviewer_role"
+                                 referencedColumnNames="id"
+                                 referencedTableName="team_reviewer"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_reviewer_role_id_table_team_reviewer_role">
+        <addForeignKeyConstraint baseColumnNames="reviewer_role_id"
+                                 baseTableName="team_reviewer_role"
+                                 constraintName="fk_reviewer_role_id_table_team_reviewer_role"
+                                 referencedColumnNames="id"
+                                 referencedTableName="reviewer_role"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_team_reviewer_id_table_grade">
+        <addForeignKeyConstraint baseColumnNames="team_reviewer_id"
+                                 baseTableName="grade"
+                                 constraintName="fk_team_reviewer_id_table_grade"
+                                 referencedColumnNames="id"
+                                 referencedTableName="team_reviewer"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_assessment_id_table_grade">
+        <addForeignKeyConstraint baseColumnNames="assessment_id"
+                                 baseTableName="grade"
+                                 constraintName="fk_assessment_id_table_grade"
+                                 referencedColumnNames="id"
+                                 referencedTableName="assessment"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_assessment_id_table_team_assessment">
+        <addForeignKeyConstraint baseColumnNames="assessment_id"
+                                 baseTableName="team_assessment"
+                                 constraintName="fk_assessment_id_table_team_assessment"
+                                 referencedColumnNames="id"
+                                 referencedTableName="assessment"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_team_id_table_team_assessment">
+        <addForeignKeyConstraint baseColumnNames="team_id"
+                                 baseTableName="team_assessment"
+                                 constraintName="fk_team_id_table_team_assessment"
+                                 referencedColumnNames="id"
+                                 referencedTableName="team"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_reviewer_role_id_table_assessment">
+        <addForeignKeyConstraint
+                baseColumnNames="reviewer_role_id"
+                baseTableName="assessment"
+                constraintName="fk_reviewer_role_id_table_assessment"
+                referencedColumnNames="id"
+                referencedTableName="reviewer_role"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_reviewer_id_table_user_system_role">
+        <addForeignKeyConstraint baseColumnNames="reviewer_id"
+                                 baseTableName="user_system_role"
+                                 constraintName="fk_reviewer_id_table_user_system_role"
+                                 referencedColumnNames="id"
+                                 referencedTableName="reviewer"/>
+    </changeSet>
+
+    <changeSet author="Firas Khalife" id="09-14-24-add_fk_system_role_id_table_user_system_role">
+        <addForeignKeyConstraint baseColumnNames="system_role_id"
+                                 baseTableName="user_system_role"
+                                 constraintName="fk_system_role_id_table_user_system_role"
+                                 referencedColumnNames="id"
+                                 referencedTableName="system_role"/>
+    </changeSet>
+
+</databaseChangeLog>

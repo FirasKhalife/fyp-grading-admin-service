@@ -1,23 +1,24 @@
 package com.fypgrading.adminservice.service.dto;
 
-import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssessmentGradeDTO {
 
-    private Integer id;
+    private Long id;
 
     private AssessmentDTO assessment;
 
     private Float grade;
 
-    private Integer reviewerId;
+    private UUID reviewerId;
 
-    private Integer teamId;
+    private Long teamId;
 }
 

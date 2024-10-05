@@ -1,9 +1,9 @@
 package com.fypgrading.adminservice.service;
 
 import com.fypgrading.adminservice.entity.*;
-import com.fypgrading.adminservice.entity.idClass.ReviewerTeamId;
 import com.fypgrading.adminservice.repository.GradeRepository;
-import com.fypgrading.adminservice.repository.ReviewerTeamRepository;
+import com.fypgrading.adminservice.repository.TeamReviewerRepository;
+import com.fypgrading.adminservice.service.client.EvaluationClient;
 import com.fypgrading.adminservice.service.dto.*;
 import com.fypgrading.adminservice.service.enums.AssessmentEnum;
 import com.fypgrading.adminservice.service.event.EvaluationSubmittedEvent;
@@ -11,144 +11,105 @@ import com.fypgrading.adminservice.service.mapper.AssessmentMapper;
 import com.fypgrading.adminservice.service.mapper.GradeMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
+@AllArgsConstructor
 @Service
 public class GradeService {
 
-    private final com.fypgrading.adminservice.service.EventDispatcher eventDispatcher;
-    private final ReviewerTeamRepository reviewerTeamRepository;
-    private final AssessmentService assessmentService;
-    private final AssessmentMapper assessmentMapper;
-    private final ReviewerService reviewerService;
+    private final TeamReviewerRepository teamReviewerRepository;
     private final GradeRepository gradeRepository;
-    private final ReviewerMapper reviewerMapper;
-    private final RestTemplate restTemplate;
+
+    private final AssessmentService assessmentService;
+    private final ReviewerService reviewerService;
     private final TeamService teamService;
+
+    private final AssessmentMapper assessmentMapper;
+    private final ReviewerMapper reviewerMapper;
     private final GradeMapper gradeMapper;
     private final TeamMapper teamMapper;
 
-    public GradeService(
-            ReviewerTeamRepository reviewerTeamRepository,
-            AssessmentService assessmentService,
-            AssessmentMapper assessmentMapper,
-            GradeRepository gradeRepository,
-            EventDispatcher eventDispatcher,
-            ReviewerService reviewerService,
-            ReviewerMapper reviewerMapper,
-            RestTemplate restTemplate,
-            GradeMapper gradeMapper,
-            TeamService teamService,
-            TeamMapper teamMapper
-    ) {
-        this.reviewerTeamRepository = reviewerTeamRepository;
-        this.assessmentService = assessmentService;
-        this.assessmentMapper = assessmentMapper;
-        this.gradeRepository = gradeRepository;
-        this.eventDispatcher = eventDispatcher;
-        this.reviewerService = reviewerService;
-        this.reviewerMapper = reviewerMapper;
-        this.restTemplate = restTemplate;
-        this.gradeMapper = gradeMapper;
-        this.teamService = teamService;
-        this.teamMapper = teamMapper;
-    }
+    private final EventDispatcher eventDispatcher;
+    private final EvaluationClient evaluationClient;
 
     public List<GradeDTO> getGradesByAssessment(String assessmentStr) {
-        AssessmentEnum assessment = AssessmentEnum.valueOf(assessmentStr.toUpperCase());
-        List<Grade> reviewerTeamGrades = gradeRepository.findAllByAssessmentId(assessment.getEnumId());
-        return gradeMapper.toTeamGradeDTOList(reviewerTeamGrades);
+        Assessment assessment = assessmentService.getAssessmentByLowerCaseName(assessmentStr);
+        List<Grade> reviewerTeamGrades = gradeRepository.findAllByAssessmentId(assessment.getId());
+        return gradeMapper.toDTOList(reviewerTeamGrades);
     }
 
-    public List<GradedEvaluationDTO> getTeamEvaluationsByAssessment(String assessmentStr, Integer teamId) {
-        EvaluationDTOList teamEvaluationList = restTemplate.getForObject(
-                "http://api-gateway/api/evaluations/" + assessmentStr + "/" + teamId, EvaluationDTOList.class
-        );
+    public List<GradedEvaluationDTO> getTeamEvaluationsByAssessment(String assessmentStr, Long teamId) {
+        Team team = teamService.getTeamById(teamId);
 
-        if (teamEvaluationList == null) {
-            throw new IllegalStateException("Team evaluations not found!");
-        }
-        List<EvaluationDTO> teamEvaluations = teamEvaluationList.getEvaluations();
+        List<EvaluationDTO> teamEvaluations = evaluationClient.getTeamEvaluationsByAssessment(assessmentStr, teamId);
 
         Assessment assessment = assessmentService.getAssessmentByLowerCaseName(assessmentStr);
+        List<Grade> assessmentGrades = gradeRepository.findAllByTeamReviewer_TeamIdAndAssessmentId(teamId, assessment.getId());
+        List<Reviewer> assessmentReviewers =
+            teamReviewerRepository.findByTeamIdAndAssessmentId(teamId, assessment.getId())
+                .stream().map(TeamReviewer::getReviewer).toList();
 
-        List<Grade> gradeList =
-                gradeRepository.findAllByReviewerTeam_TeamIdAndAssessmentId(teamId, assessment.getId());
+        // reviewer -> grade
+        Map<Reviewer, Float> reviewerGradeMap = assessmentGrades.stream()
+            .collect(Collectors.toMap(
+                grade -> grade.getTeamReviewer().getReviewer(),
+                Grade::getGrade));
 
-        List<ReviewerTeam> teamReviewers =
-                reviewerTeamRepository.findByTeamIdAndAssessmentId(teamId, assessment.getId());
+        // reviewer ID -> graded rubrics
+        Map<UUID, List<GradedRubricDTO>> reviewerIdGradedRubricsMap = teamEvaluations.stream()
+            .collect(Collectors.toMap(
+                EvaluationDTO::getReviewerId,
+                EvaluationDTO::getGradedRubrics));
 
-        System.out.println("teamReviewers: " + teamReviewers);
-
-        if (teamReviewers.isEmpty()) {
-            throw new IllegalStateException("Team reviewers not found!");
-        }
-
-        Team team = teamReviewers.get(0).getTeam();
-        List<Reviewer> reviewers = teamReviewers.stream().map(ReviewerTeam::getReviewer).toList();
-
-        List<GradedEvaluationDTO> evaluations = new ArrayList<>();
-        reviewers.stream().map(reviewer -> {
-            Grade grade = gradeList.stream().filter(g -> g.getReviewerTeam().getReviewer().equals(reviewer)).findFirst().orElse(null);
-            EvaluationDTO evaluation = teamEvaluations.stream().filter(e -> e.getReviewerId().equals(reviewer.getId())).findFirst().orElse(null);
-            return new GradedEvaluationDTO(
+        return assessmentReviewers.stream().map(reviewer ->
+            new GradedEvaluationDTO(
                     reviewerMapper.toDTO(reviewer),
                     teamMapper.toDTO(team),
                     assessmentMapper.toDTO(assessment),
-                    evaluation != null ? evaluation.getGradedRubrics() : Collections.emptyList(),
-                    grade != null ? grade.getGrade() : null
-            );
-        }).forEach(evaluations::add);
-
-        return evaluations;
+                    reviewerIdGradedRubricsMap.getOrDefault(reviewer.getId(), List.of()),
+                    reviewerGradeMap.get(reviewer))).toList();
     }
 
-    public GradeDTO submitGrade(GradeIDsDTO gradeIDs) {
+    public GradeDTO submitGrade(GradeIdDTO gradeIdDTO) {
 
-        Assessment assessment = assessmentService.getAssessmentByUpperCaseName(gradeIDs.getAssessment());
-        Reviewer reviewer = reviewerService.getReviewerById(gradeIDs.getReviewerId());
-        Team team = teamService.getTeamById(gradeIDs.getTeamId());
+        Assessment assessment = assessmentService.getAssessmentByUpperCaseName(gradeIdDTO.getAssessment());
+        Reviewer reviewer = reviewerService.getReviewerById(gradeIdDTO.getReviewerId());
+        Team team = teamService.getTeamById(gradeIdDTO.getTeamId());
         TeamDTO teamDTO = teamMapper.toDTO(team);
 
-        ReviewerTeam reviewerTeam =
-                reviewerTeamRepository.findById(new ReviewerTeamId(reviewer, team))
+        TeamReviewer teamReviewer =
+                teamReviewerRepository.findByReviewerIdAndTeamId(reviewer.getId(), team.getId())
                         .orElseThrow(() -> new IllegalArgumentException("Reviewer and Team are not linked!"));
 
-        gradeRepository.findByReviewerTeam_ReviewerIdAndReviewerTeam_TeamIdAndAssessmentId(
-                gradeIDs.getReviewerId(), gradeIDs.getTeamId(), assessment.getId()
+        gradeRepository.findByTeamReviewer_ReviewerIdAndTeamReviewer_TeamIdAndAssessmentId(
+                gradeIdDTO.getReviewerId(), gradeIdDTO.getTeamId(), assessment.getId()
         ).ifPresent(foundGrade -> {
             throw new IllegalStateException("Reviewer already submitted evaluation for this team assessment!");
         });
 
-        Grade grade = new Grade(assessment, gradeIDs.getGrade(), reviewerTeam);
-
+        Grade grade = new Grade(assessment, gradeIdDTO.getGrade(), teamReviewer);
         Grade createdGrade = gradeRepository.save(grade);
 
         EvaluationSubmittedEvent event = new EvaluationSubmittedEvent(teamDTO, assessmentMapper.toDTO(assessment));
-        eventDispatcher.checkForAdminNotification(event);
+        eventDispatcher.aggregateGrades(event);
 
-        return gradeMapper.toTeamGradeDTO(createdGrade);
+        return gradeMapper.toDTO(createdGrade);
     }
 
-    public List<GradeDTO> getGrades(Integer reviewerId, Integer teamId) {
+    public List<GradeDTO> getTeamReviewerGrades(UUID reviewerId, Long teamId) {
         List<Grade> grades =
-                gradeRepository.findAllByReviewerTeam_ReviewerIdAndReviewerTeam_TeamId(
-                        reviewerId, teamId
-                );
-
-        return gradeMapper.toTeamGradeDTOList(grades);
+                gradeRepository.findAllByTeamReviewer_ReviewerIdAndTeamReviewer_TeamId(reviewerId, teamId);
+        return gradeMapper.toDTOList(grades);
     }
 
-    public List<GradeDTO> getTeamGradesByAssessment(String assessmentStr, Integer teamId) {
+    public List<GradeDTO> getTeamGradesByAssessment(String assessmentStr, Long teamId) {
         AssessmentEnum assessment = AssessmentEnum.valueOf(assessmentStr.toUpperCase());
         List<Grade> grades =
-                gradeRepository.findAllByReviewerTeam_TeamIdAndAssessmentId(teamId, assessment.getEnumId());
-
-        return gradeMapper.toTeamGradeDTOList(grades);
+                gradeRepository.findAllByTeamReviewer_TeamIdAndAssessmentId(teamId, assessment.getInstanceId());
+        return gradeMapper.toDTOList(grades);
     }
 }

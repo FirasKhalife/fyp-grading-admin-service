@@ -1,0 +1,8 @@
+logging:
+  level:
+    sql: DEBUG
+    web: DEBUG
+    feign.client: DEBUG
+    com.fypgrading.adminservice: DEBUG
+    org.springframework.cloud.stream: DEBUG
+    org.springframework.cloud.openfeign: DEBUG

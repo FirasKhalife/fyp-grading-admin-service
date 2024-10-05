@@ -6,13 +6,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Objects;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReviewerDTO {
 
-    private Integer id;
+    private UUID id;
 
     private String firstName;
 
@@ -22,19 +23,10 @@ public class ReviewerDTO {
 
     private Boolean isAdmin;
 
-    public ReviewerDTO(Reviewer reviewer) {
-        this.id = reviewer.getId();
-        this.firstName = reviewer.getFirstName();
-        this.lastName = reviewer.getLastName();
-        this.email = reviewer.getEmail();
-        this.isAdmin = reviewer.getIsAdmin();
-    }
-
     @Override
     public boolean equals(Object object) {
         if (!(object instanceof Reviewer reviewer))
             return false;
-
         return Objects.equals(id, reviewer.getId());
     }
 

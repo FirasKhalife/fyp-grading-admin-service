@@ -1,20 +1,21 @@
 package com.fypgrading.adminservice.service.dto;
 
-import com.fypgrading.adminservice.service.enums.RoleEnum;
+import com.fypgrading.adminservice.service.enums.ReviewerRoleEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class TeamReviewerRolesDTO {
 
-    private Integer reviewerId;
+    private UUID reviewerId;
 
-    private Integer teamId;
+    private Long teamId;
 
-    private List<RoleEnum> roles;
+    private List<ReviewerRoleEnum> roles;
 }

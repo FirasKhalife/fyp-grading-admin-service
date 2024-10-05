@@ -6,17 +6,18 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface TeamRepository extends JpaRepository<Team, Integer> {
+public interface TeamRepository extends JpaRepository<Team, Long> {
 
     @Query(
             value = "SELECT team.* " +
-                    "FROM team_reviewer_role trr " +
-                    "JOIN team ON trr.team_id = team.id " +
-                    "WHERE trr.reviewer_id = :reviewerId",
+                    "FROM team_reviewer tr " +
+                    "JOIN team ON tr.team_id = team.id " +
+                    "WHERE tr.reviewer_id = :reviewerId",
             nativeQuery = true)
-    List<Team> getAllReviewerTeams(Integer reviewerId);
+    List<Team> getAllReviewerTeams(UUID reviewerId);
 
     List<Team> findAllByOrderByIdAsc();
 

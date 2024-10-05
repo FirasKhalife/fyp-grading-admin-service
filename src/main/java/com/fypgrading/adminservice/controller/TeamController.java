@@ -27,13 +27,13 @@ public class TeamController {
     }
 
     @GetMapping("/{id}/reviewers/count")
-    public ResponseEntity<CountDTO> getTeamReviewersCount(@PathVariable Integer id) {
+    public ResponseEntity<CountDTO> getTeamReviewersCount(@PathVariable Long id) {
         CountDTO reviewersCount = teamService.getTeamReviewersCount(id);
         return ResponseEntity.ok().body(reviewersCount);
     }
 
     @GetMapping("/{id}/reviewers")
-    public ResponseEntity<List<ReviewerDTO>> getTeamReviewers(@PathVariable Integer id) {
+    public ResponseEntity<List<ReviewerDTO>> getTeamReviewers(@PathVariable Long id) {
         List<ReviewerDTO> reviewers = teamService.getTeamReviewers(id);
         return ResponseEntity.ok().body(reviewers);
     }
@@ -45,13 +45,13 @@ public class TeamController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TeamDTO> updateTeam(@PathVariable Integer id, @RequestBody TeamDTO teamDTO) {
+    public ResponseEntity<TeamDTO> updateTeam(@PathVariable Long id, @RequestBody TeamDTO teamDTO) {
         TeamDTO teams = teamService.updateTeam(id, teamDTO);
         return ResponseEntity.ok().body(teams);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<TeamDTO> deleteTeam(@PathVariable Integer id) {
+    public ResponseEntity<TeamDTO> deleteTeam(@PathVariable Long id) {
         TeamDTO teams = teamService.deleteTeam(id);
         return ResponseEntity.ok().body(teams);
     }

@@ -1,64 +1,98 @@
+info:
+  app:
+    name: ${SPRING_APPLICATION_NAME}
+    description: "FYP Grading project - Admin Microservice"
+    version: ${BUILD_VERSION}
+
+logging:
+  level:
+    root: INFO
+
+management:
+  metrics:
+    tags:
+      application: ${SPRING_APPLICATION_NAME}
+
+services:
+  evaluation-service-name: ${EVALUATION_SERVICE_NAME}
+  notification-service-name: ${NOTIFICATION_SERVICE_NAME}
+
 spring:
   datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/admin-db
-    username: admin
-    password: admin
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
 
-  application:
-    name: admin-service
+  # this will in fact not be used as the service will register with eureka
+  # and get its configuration from the config server dynamically in the bootstrap phase (bootstrap.yml)
+  config:
+    import: "optional:configserver:"
+
+  cloud:
+    config:
+      discovery:
+        enabled: true # config server reached via Eureka
+      name: config
+
+    openfeign:
+      circuitbreaker:
+        enabled: true # circuit breaker integrated with openfeign
+
+    function:
+      definition: aggregateGrades
+    stream:
+      bindings:
+        sendNotification-out-0:
+          destination: notification-queue
+          group: notification-group
+        aggregateGrades-out-0:
+          destination: check-notification-queue
+          group: check-notification-group
+
+        aggregateGrades-in-0:
+          destination: check-notification-queue
+          group: check-notification-group
+          consumer:
+            max-attempts: 5
+            back-off-initial-interval: 1000
+            back-off-multiplier: 2.0
+            back-off-max-interval: 10000
+
+      rabbit:
+        bindings:
+          default:
+            consumer:
+              auto-bind-dlq: true
+              dead-letter-queue-name: dead-letter-queue
+              dead-letter-exchange: dead-letter-exchange
+              dead-letter-routing-key: dead-letter-routing-key
 
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: admin
-    password: admin
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    connection-timeout: 10s
 
-    retry-queues-ttl: 2000
-    retry-max-count: 3
+  liquibase:
+    enabled: true
+    change-log: classpath:liquibase/master.xml
 
-    listener:
-      simple:
-        acknowledge-mode: manual
-
-    check-notification:
-      queue: "check-notification-queue"
-      exchange: "check-notification-exchange"
-      routing-key: "check-notification-key"
-
-    retry-check-notification:
-      queue: "retry-check-notification-queue"
-      exchange: "retry-check-notification-exchange"
-      routing-key: "retry-check-notification-key"
-
-    notification:
-      queue: "notification-queue"
-      exchange: "notification-exchange"
-      routing-key: "notification-key"
-
-    retry-notification:
-      queue: "retry-notification-queue"
-      exchange: "retry-notification-exchange"
-      routing-key: "retry-notification-key"
-
-    dead-letter:
-      queue: "dead-queue"
-      exchange: "dead-exchange"
-      routing-key: "dead-key"
-
-eureka:
-  client:
-    service-url:
-      default-zone: http://localhost:8761/eureka/
-    healthcheck:
-      enabled: true
-  instance:
-    lease-expiration-duration-in-seconds: 2
-    lease-renewal-interval-in-seconds: 1
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVER_URL}/protocol/openid-connect/certs
+      client:
+        registration:
+          master:
+            client-id: ${APPLICATION_CLIENT_ID}
+            client-secret: ${APPLICATION_CLIENT_SECRET}
+            scope: openid, profile, email
+            authorization-grant-type: client_credentials
+        provider:
+          master:
+            issuer-uri: ${AUTH_SERVER_URL}
 
 server:
-  port: 8081
+  port: ${PORT}

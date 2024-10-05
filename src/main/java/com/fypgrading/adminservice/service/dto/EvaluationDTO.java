@@ -5,15 +5,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class EvaluationDTO {
 
-    private Integer reviewerId;
+    private UUID reviewerId;
 
-    private Integer teamId;
+    private Long teamId;
 
     private List<GradedRubricDTO> gradedRubrics;
 
@@ -26,6 +27,6 @@ public class EvaluationDTO {
 
     @Override
     public int hashCode() {
-        return this.getReviewerId() + this.getTeamId();
+        return this.getReviewerId().hashCode() + this.getTeamId().hashCode();
     }
 }

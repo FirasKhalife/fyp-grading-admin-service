@@ -1,198 +1,125 @@
 package com.fypgrading.adminservice.service;
 
-import com.fypgrading.adminservice.entity.Assessment;
-import com.fypgrading.adminservice.entity.Grade;
-import com.fypgrading.adminservice.entity.Reviewer;
-import com.fypgrading.adminservice.entity.ReviewerTeam;
-import com.fypgrading.adminservice.exception.AuthException;
+import com.fypgrading.adminservice.config.security.SecurityUtils;
+import com.fypgrading.adminservice.entity.*;
 import com.fypgrading.adminservice.repository.AssessmentRepository;
 import com.fypgrading.adminservice.repository.ReviewerRepository;
-import com.fypgrading.adminservice.repository.RoleRepository;
+import com.fypgrading.adminservice.repository.ReviewerRoleRepository;
+import com.fypgrading.adminservice.service.client.NotificationClient;
 import com.fypgrading.adminservice.service.dto.*;
+import com.fypgrading.adminservice.service.enums.SystemRoleEnum;
 import com.fypgrading.adminservice.service.mapper.AssessmentMapper;
 import com.fypgrading.adminservice.service.mapper.ReviewerMapper;
 import com.fypgrading.adminservice.service.mapper.TeamMapper;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.AllArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+@AllArgsConstructor
 @Service
 public class ReviewerService {
 
+    private final ReviewerRoleRepository reviewerRoleRepository;
     private final AssessmentRepository assessmentRepository;
-    private final ReviewerTeamService reviewerTeamService;
     private final ReviewerRepository reviewerRepository;
+
+    private final TeamReviewerService teamReviewerService;
+    private final SystemRoleService systemRoleService;
+
     private final AssessmentMapper assessmentMapper;
-    private final RoleRepository roleRepository;
     private final ReviewerMapper reviewerMapper;
-    private final RestTemplate restTemplate;
     private final TeamMapper teamMapper;
 
-    public ReviewerService(
-            AssessmentRepository assessmentRepository,
-            ReviewerTeamService reviewerTeamService,
-            ReviewerRepository reviewerRepository,
-            AssessmentMapper assessmentMapper,
-            RoleRepository roleRepository,
-            ReviewerMapper reviewerMapper,
-            RestTemplate restTemplate,
-            TeamMapper teamMapper
-    ) {
-        this.assessmentRepository = assessmentRepository;
-        this.reviewerTeamService = reviewerTeamService;
-        this.reviewerRepository = reviewerRepository;
-        this.assessmentMapper = assessmentMapper;
-        this.roleRepository = roleRepository;
-        this.reviewerMapper = reviewerMapper;
-        this.restTemplate = restTemplate;
-        this.teamMapper = teamMapper;
-    }
+    private final NotificationClient notificationClient;
 
-    public JwtResponseDTO login(LoginDTO loginDTO) {
-        Reviewer reviewer = reviewerRepository.findByEmail(loginDTO.getEmail())
-                .orElseThrow(() -> new AuthException("Invalid credentials"));
-
-        if (!loginDTO.getPassword().equals(reviewer.getPassword()))
-            throw new AuthException("Invalid credentials");
-
-        JwtResponseDTO jwtResponse = new JwtResponseDTO(reviewer);
-        jwtResponse.setRoles(reviewerTeamService.getReviewerRoles(reviewer.getId()).getRoles());
-
-        return jwtResponse;
-    }
-
-    public ReviewerSignupDTO signup(ReviewerSignupDTO reviewerInfo) {
-        Optional<Reviewer> reviewerOpt = reviewerRepository.findByEmail(reviewerInfo.getEmail());
-        if (reviewerOpt.isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
-        }
-
-        Reviewer reviewer = new Reviewer(
-                reviewerInfo.getFirstName(),
-                reviewerInfo.getLastName(),
-                reviewerInfo.getEmail(),
-                reviewerInfo.getPassword(),
-                reviewerInfo.isAdmin()
-        );
-
-        Reviewer createdReviewer = reviewerRepository.save(reviewer);
-
-        reviewerInfo.getTeamRoleList().forEach(teamRoleDTO -> {
-            reviewerTeamService.createReviewerTeam(createdReviewer.getId(), teamRoleDTO.getTeamId());
-
-            reviewerTeamService.addReviewerTeamRole(reviewer.getId(), teamRoleDTO.getTeamId(), teamRoleDTO.getRole());
-        });
-
-        return reviewerInfo;
-    }
-
-    public List<ReviewerDTO> getReviewers() {
+    public List<ReviewerDTO> getAllReviewers() {
         List<Reviewer> reviewers = reviewerRepository.findAll();
         return reviewerMapper.toDTOList(reviewers);
     }
 
-    public ReviewerDTO createReviewer(ReviewerLoginDTO reviewerLoginDTO) {
-        Reviewer reviewer = reviewerMapper.toEntity(reviewerLoginDTO);
-        Reviewer createdEntity = reviewerRepository.save(reviewer);
-        return reviewerMapper.toDTO(createdEntity);
+    public Reviewer saveAuthorities(Reviewer reviewer, Collection<GrantedAuthority> authorities) {
+        List<String> authorityNames = authorities.stream().map(GrantedAuthority::getAuthority).toList();
+        List<SystemRole> roles = systemRoleService.findAllByNames(authorityNames);
+        reviewer.setRoles(roles);
+        return reviewerRepository.save(reviewer);
     }
 
-    public ReviewerDTO updateReviewer(Integer id, ReviewerLoginDTO reviewerLoginDTO) {
-        getReviewerById(id);
-        Reviewer reviewer = reviewerMapper.toEntity(reviewerLoginDTO);
-        reviewer.setId(id);
-        Reviewer updatedEntity = reviewerRepository.save(reviewer);
-        return reviewerMapper.toDTO(updatedEntity);
-    }
-
-    public ReviewerDTO deleteReviewer(Integer id) {
-        Reviewer reviewer = getReviewerById(id);
-        reviewerRepository.delete(reviewer);
-        return reviewerMapper.toDTO(reviewer);
-    }
-
-    public Reviewer getReviewerById(Integer id) {
+    public Reviewer getReviewerById(UUID id) {
         return reviewerRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Reviewer not found"));
     }
 
-    public ReviewerDTO getReviewerViewById(Integer id) {
+    public ReviewerDTO getReviewerViewById(UUID id) {
         Reviewer reviewer = getReviewerById(id);
         return reviewerMapper.toDTO(reviewer);
     }
 
-    public ReviewerTeamsAssessmentsDTO getReviewerTeamsAssessments(Integer id) {
-        List<ReviewerTeam> reviewerTeams = reviewerTeamService.getReviewerTeamListByReviewerId(id);
-
-        List<ReviewerTeamViewDTO> resList = new ArrayList<>();
-
+    public ReviewerTeamsAssessmentsDTO getReviewerTeamsAssessments(UUID reviewerId) {
+        List<ReviewerRole> reviewerRoles = reviewerRoleRepository.getReviewerRolesByReviewerId(reviewerId);
         List<AssessmentDTO> reviewerAssessments = assessmentMapper.toDTOList(
-                assessmentRepository.findAllByRoleInOrderById(roleRepository.getDistinctReviewerRoles(id))
-        );
+                assessmentRepository.findAllByReviewerRoleInOrderById(reviewerRoles));
 
-        //for every team
-        for(ReviewerTeam reviewerTeam : reviewerTeams) {
-            List<Assessment> allAssessments =
-                    reviewerTeam.getReviewerRoles().stream().flatMap(role -> role.getAssessments().stream())
-                            .sorted(Comparator.comparing(Assessment::getId))
-                            .toList();
+        List<TeamReviewer> reviewerTeams = teamReviewerService.getReviewerTeamListByReviewerId(reviewerId);
+        List<TeamGradedAssessmentsDTO> teamsGradedAssessments =
+            reviewerTeams.stream().map(reviewerTeam -> {
+                List<Assessment> reviewerTeamAssessments = reviewerTeam.getReviewerRoles()
+                    .stream().flatMap(role -> role.getAssessments().stream())
+                    .sorted(Comparator.comparing(Assessment::getId))
+                    .toList();
 
-            //returning corresponding assessments with grades for each team
-            List<TeamReviewerAssessmentDTO> teamReviewerAssessmentList = new ArrayList<>();
-            allAssessments.forEach(assessment -> {
-                TeamReviewerAssessmentDTO teamReviewerAssessmentDTO =
-                        new TeamReviewerAssessmentDTO(new AssessmentDTO(assessment));
+                List<GradedAssessmentDTO> teamGradedAssessments =
+                    reviewerTeamAssessments.stream().map(assessment -> {
+                        Optional<Grade> grade = reviewerTeam.getGrades()
+                            .stream().filter(teamGrade -> Objects.equals(teamGrade.getAssessment(), assessment))
+                            .findFirst();
 
-                List<Grade> gradeEntityList =
-                        reviewerTeam.getGrades().stream()
-                                .filter(grade -> grade.getAssessment().equals(assessment)).toList();
+                        return new GradedAssessmentDTO(
+                                assessmentMapper.toDTO(assessment),
+                                grade.map(Grade::getGrade).orElse(null));
+                    }).toList();
 
-                if (gradeEntityList.isEmpty()) {
-                    teamReviewerAssessmentDTO.setGrade(null);
-                } else {
-                    teamReviewerAssessmentDTO.setGrade(gradeEntityList.get(0).getGrade());
-                }
+                return new TeamGradedAssessmentsDTO(teamMapper.toDTO(reviewerTeam.getTeam()), teamGradedAssessments);
+            }).toList();
 
-                teamReviewerAssessmentList.add(teamReviewerAssessmentDTO);
-            });
-
-            ReviewerTeamViewDTO reviewerTeamViewDTO = new ReviewerTeamViewDTO();
-            reviewerTeamViewDTO.setTeam(teamMapper.toDTO(reviewerTeam.getTeam()));
-            reviewerTeamViewDTO.setTeamAssessments(teamReviewerAssessmentList);
-
-            resList.add(reviewerTeamViewDTO);
-        }
-
-        return new ReviewerTeamsAssessmentsDTO(reviewerAssessments, resList);
+        return new ReviewerTeamsAssessmentsDTO(reviewerAssessments, teamsGradedAssessments);
     }
 
-    public long countReviewersByTeamIdAndAssessmentId(Integer teamId, Integer assessmentId) {
+    public long countReviewersByTeamIdAndAssessmentId(Long teamId, Long assessmentId) {
         return reviewerRepository.countReviewersByTeamIdAndAssessmentId(teamId, assessmentId);
     }
 
-    public List<NotificationDTO> getAdminNotifications(Integer reviewerId) {
-        Optional<Reviewer> reviewerOpt = reviewerRepository.findById(reviewerId);
-        if (reviewerOpt.isEmpty() || !reviewerOpt.get().getIsAdmin()) {
-            return Collections.emptyList();
-        }
-
-        NotificationListDTO notificationList = restTemplate.getForObject(
-                "http://api-gateway/api/notifications/", NotificationListDTO.class
-        );
-
-        if (notificationList == null) {
-            throw new IllegalStateException("Error while fetching notifications");
-        }
-
-        List<NotificationDTO> notifications = notificationList.getNotifications();
-
-        assert notifications != null;
-        return notifications;
+    public Reviewer getById(UUID id) {
+        return reviewerRepository.findById(id)
+            .orElseThrow(EntityNotFoundException::new);
     }
 
-    public ReviewerHomeDTO getReviewerHome(Integer reviewerId) {
-        return new ReviewerHomeDTO(getReviewerTeamsAssessments(reviewerId), getAdminNotifications(reviewerId));
+    public Optional<Reviewer> findById(UUID id) {
+        return reviewerRepository.findById(id);
+    }
+
+    public Reviewer createReviewerFromAuthentication(Map<String, Object> claims) {
+        return Reviewer.builder()
+            .id(UUID.fromString((String) claims.get("sub")))
+            .email((String) claims.get("email"))
+            .firstName((String) claims.get("given_name"))
+            .lastName((String) claims.get("family_name"))
+            .build();
+    }
+
+    @RolesAllowed({ SystemRoleEnum.Names.ROLE_ADMIN })
+    public List<NotificationDTO> getNotifications() {
+        return notificationClient.getNotifications();
+    }
+
+    public ReviewerHomeDTO getReviewerHome() {
+        Reviewer reviewer = SecurityUtils.getCurrentUser();
+        ReviewerTeamsAssessmentsDTO assessments = getReviewerTeamsAssessments(reviewer.getId());
+        List<NotificationDTO> notifications =
+            SecurityUtils.isUserAdmin(reviewer) ? getNotifications() : List.of();
+        return new ReviewerHomeDTO(assessments, notifications);
     }
 }

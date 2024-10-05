@@ -9,22 +9,25 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class Grade {
+public class Grade extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne
+    @JoinColumn(nullable = false)
     private Assessment assessment;
 
+    @ManyToOne
+    @JoinColumn(nullable = false)
+    private TeamReviewer teamReviewer;
+
+    @Column(nullable = false)
     private Float grade;
 
-    @ManyToOne
-    private ReviewerTeam reviewerTeam;
-
-    public Grade(Assessment assessment, Float grade, ReviewerTeam reviewerTeam) {
-        this.reviewerTeam = reviewerTeam;
+    public Grade(Assessment assessment, Float grade, TeamReviewer teamReviewer) {
+        this.teamReviewer = teamReviewer;
         this.assessment = assessment;
         this.grade = grade;
     }

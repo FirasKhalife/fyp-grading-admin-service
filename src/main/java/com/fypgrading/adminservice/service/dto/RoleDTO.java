@@ -1,6 +1,6 @@
 package com.fypgrading.adminservice.service.dto;
 
-import com.fypgrading.adminservice.service.enums.RoleEnum;
+import com.fypgrading.adminservice.service.enums.ReviewerRoleEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,9 +12,9 @@ import java.util.List;
 @AllArgsConstructor
 public class RoleDTO {
 
-    private Integer id;
+    private Long id;
 
-    private RoleEnum name;
+    private ReviewerRoleEnum name;
 
     private List<AssessmentDTO> assessment;
 
@@ -26,7 +26,7 @@ public class RoleDTO {
 
     @Override
     public int hashCode() {
-        return this.getId();
+        return this.getId().hashCode();
     }
 
 }
