@@ -1,0 +1,122 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-15-01-drop-legacy-schema
+      author: assay
+      comment: >
+        The pre-Assay schema coupled ids to enum ordinals, mapped team reviewers to a join table that never existed,
+        and seeded reviewers with random ids that could never match a Keycloak user. It is replaced wholesale.
+      changes:
+        - sql:
+            sql: >
+              DROP TABLE IF EXISTS team_assessment, grade, team_reviewer_role, team_reviewer, user_system_role,
+              assessment, reviewer_role, system_role, reviewer, team CASCADE
+
+  - changeSet:
+      id: 2026-11-15-02-reviewer
+      author: assay
+      comment: Faculty, global (not part of a demo copy). The id is the Keycloak user id from the realm export.
+      changes:
+        - createTable:
+            tableName: reviewer
+            columns:
+              - column: {name: id, type: uuid, constraints: {primaryKey: true}}
+              - column: {name: first_name, type: varchar(80), constraints: {nullable: false}}
+              - column: {name: last_name, type: varchar(80), constraints: {nullable: false}}
+              - column: {name: email, type: varchar(200), constraints: {nullable: false, unique: true}}
+              - column: {name: coordinator, type: boolean, constraints: {nullable: false}}
+        - insert: {tableName: reviewer, columns: [{column: {name: id, value: 00000000-0000-4000-a000-000000000001}}, {column: {name: first_name, value: Rania}}, {column: {name: last_name, value: Haddad}}, {column: {name: email, value: rania.haddad@usj.edu.lb}}, {column: {name: coordinator, valueBoolean: true}}]}
+        - insert: {tableName: reviewer, columns: [{column: {name: id, value: 00000000-0000-4000-a000-000000000002}}, {column: {name: first_name, value: Jane}}, {column: {name: last_name, value: Smith}}, {column: {name: email, value: jane.smith@usj.edu.lb}}, {column: {name: coordinator, valueBoolean: false}}]}
+        - insert: {tableName: reviewer, columns: [{column: {name: id, value: 00000000-0000-4000-a000-000000000003}}, {column: {name: first_name, value: John}}, {column: {name: last_name, value: Doe}}, {column: {name: email, value: john.doe@usj.edu.lb}}, {column: {name: coordinator, valueBoolean: false}}]}
+        - insert: {tableName: reviewer, columns: [{column: {name: id, value: 00000000-0000-4000-a000-000000000004}}, {column: {name: first_name, value: Michael}}, {column: {name: last_name, value: Johnson}}, {column: {name: email, value: michael.johnson@usj.edu.lb}}, {column: {name: coordinator, valueBoolean: false}}]}
+        - insert: {tableName: reviewer, columns: [{column: {name: id, value: 00000000-0000-4000-a000-000000000005}}, {column: {name: first_name, value: Emily}}, {column: {name: last_name, value: Clark}}, {column: {name: email, value: emily.clark@usj.edu.lb}}, {column: {name: coordinator, valueBoolean: false}}]}
+        - insert: {tableName: reviewer, columns: [{column: {name: id, value: 00000000-0000-4000-a000-000000000006}}, {column: {name: first_name, value: Karim}}, {column: {name: last_name, value: Nassar}}, {column: {name: email, value: karim.nassar@usj.edu.lb}}, {column: {name: coordinator, valueBoolean: false}}]}
+        - insert: {tableName: reviewer, columns: [{column: {name: id, value: 00000000-0000-4000-a000-000000000007}}, {column: {name: first_name, value: Lea}}, {column: {name: last_name, value: Mansour}}, {column: {name: email, value: lea.mansour@usj.edu.lb}}, {column: {name: coordinator, valueBoolean: false}}]}
+
+  - changeSet:
+      id: 2026-11-15-03-demo-copies
+      author: assay
+      comment: Every table below holds visitors' demo copies, scoped by demo_session.
+      changes:
+        - createTable:
+            tableName: demo_copy
+            columns:
+              - column: {name: id, type: uuid, constraints: {primaryKey: true}}
+              - column: {name: created_at, type: timestamp with time zone, constraints: {nullable: false}}
+              - column: {name: anchor_date, type: date, constraints: {nullable: false}}
+        - createTable:
+            tableName: assessment_schedule
+            columns:
+              - column: {name: id, type: uuid, constraints: {primaryKey: true}}
+              - column: {name: demo_session, type: varchar(36), constraints: {nullable: false}}
+              - column: {name: assessment, type: varchar(32), constraints: {nullable: false}}
+              - column: {name: due_at, type: timestamp with time zone, constraints: {nullable: false}}
+        - addUniqueConstraint: {tableName: assessment_schedule, constraintName: uq_schedule, columnNames: 'demo_session, assessment'}
+        - createTable:
+            tableName: team
+            columns:
+              - column: {name: id, type: uuid, constraints: {primaryKey: true}}
+              - column: {name: demo_session, type: varchar(36), constraints: {nullable: false}}
+              - column: {name: name, type: varchar(60), constraints: {nullable: false}}
+              - column: {name: project_title, type: varchar(200), constraints: {nullable: false}}
+              - column: {name: description, type: varchar(2000)}
+              - column: {name: final_grade, type: double precision}
+              - column: {name: final_computed_at, type: timestamp with time zone}
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_team_name ON team (demo_session, lower(name))
+        - createTable:
+            tableName: student
+            columns:
+              - column: {name: id, type: uuid, constraints: {primaryKey: true}}
+              - column: {name: demo_session, type: varchar(36), constraints: {nullable: false}}
+              - column: {name: team_id, type: uuid, constraints: {nullable: false, foreignKeyName: fk_student_team, references: team(id)}}
+              - column: {name: first_name, type: varchar(80), constraints: {nullable: false}}
+              - column: {name: last_name, type: varchar(80), constraints: {nullable: false}}
+              - column: {name: email, type: varchar(200), constraints: {nullable: false}}
+              - column: {name: user_id, type: uuid}
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_student_email ON student (demo_session, lower(email))
+        - addUniqueConstraint: {tableName: student, constraintName: uq_student_user, columnNames: 'demo_session, user_id'}
+        - createTable:
+            tableName: team_reviewer
+            columns:
+              - column: {name: id, type: uuid, constraints: {primaryKey: true}}
+              - column: {name: demo_session, type: varchar(36), constraints: {nullable: false}}
+              - column: {name: team_id, type: uuid, constraints: {nullable: false, foreignKeyName: fk_team_reviewer_team, references: team(id)}}
+              - column: {name: reviewer_id, type: uuid, constraints: {nullable: false, foreignKeyName: fk_team_reviewer_reviewer, references: reviewer(id)}}
+              - column: {name: role, type: varchar(16), constraints: {nullable: false}}
+        - addUniqueConstraint: {tableName: team_reviewer, constraintName: uq_team_reviewer, columnNames: 'demo_session, team_id, reviewer_id'}
+        - createTable:
+            tableName: defense_slot
+            columns:
+              - column: {name: id, type: uuid, constraints: {primaryKey: true}}
+              - column: {name: demo_session, type: varchar(36), constraints: {nullable: false}}
+              - column: {name: team_id, type: uuid, constraints: {nullable: false, unique: true, foreignKeyName: fk_slot_team, references: team(id)}}
+              - column: {name: starts_at, type: timestamp with time zone, constraints: {nullable: false}}
+              - column: {name: ends_at, type: timestamp with time zone, constraints: {nullable: false}}
+              - column: {name: room, type: varchar(60), constraints: {nullable: false}}
+        - createTable:
+            tableName: grade
+            columns:
+              - column: {name: id, type: uuid, constraints: {primaryKey: true}}
+              - column: {name: demo_session, type: varchar(36), constraints: {nullable: false}}
+              - column: {name: evaluation_id, type: uuid, constraints: {nullable: false}}
+              - column: {name: team_id, type: uuid, constraints: {nullable: false, foreignKeyName: fk_grade_team, references: team(id)}}
+              - column: {name: assessment, type: varchar(32), constraints: {nullable: false}}
+              - column: {name: reviewer_id, type: uuid, constraints: {nullable: false, foreignKeyName: fk_grade_reviewer, references: reviewer(id)}}
+              - column: {name: score, type: double precision, constraints: {nullable: false}}
+              - column: {name: submitted_at, type: timestamp with time zone, constraints: {nullable: false}}
+        - addUniqueConstraint: {tableName: grade, constraintName: uq_grade_evaluation, columnNames: 'demo_session, evaluation_id'}
+        - addUniqueConstraint: {tableName: grade, constraintName: uq_grade_reviewer, columnNames: 'demo_session, team_id, assessment, reviewer_id'}
+        - sql:
+            sql: ALTER TABLE grade ADD CONSTRAINT ck_grade_score CHECK (score BETWEEN 0 AND 100)
+        - createTable:
+            tableName: team_assessment
+            columns:
+              - column: {name: id, type: uuid, constraints: {primaryKey: true}}
+              - column: {name: demo_session, type: varchar(36), constraints: {nullable: false}}
+              - column: {name: team_id, type: uuid, constraints: {nullable: false, foreignKeyName: fk_team_assessment_team, references: team(id)}}
+              - column: {name: assessment, type: varchar(32), constraints: {nullable: false}}
+              - column: {name: grade, type: double precision, constraints: {nullable: false}}
+              - column: {name: finalized_at, type: timestamp with time zone, constraints: {nullable: false}}
+              - column: {name: released_at, type: timestamp with time zone}
+        - addUniqueConstraint: {tableName: team_assessment, constraintName: uq_team_assessment, columnNames: 'demo_session, team_id, assessment'}

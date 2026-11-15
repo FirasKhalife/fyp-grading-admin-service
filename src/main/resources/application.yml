@@ -1,98 +1,99 @@
-info:
-  app:
-    name: ${SPRING_APPLICATION_NAME}
-    description: "FYP Grading project - Admin Microservice"
-    version: ${BUILD_VERSION}
-
-logging:
-  level:
-    root: INFO
-
-management:
-  metrics:
-    tags:
-      application: ${SPRING_APPLICATION_NAME}
-
-services:
-  evaluation-service-name: ${EVALUATION_SERVICE_NAME}
-  notification-service-name: ${NOTIFICATION_SERVICE_NAME}
-
 spring:
-  datasource:
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
-
-  # this will in fact not be used as the service will register with eureka
-  # and get its configuration from the config server dynamically in the bootstrap phase (bootstrap.yml)
+  application:
+    name: admin-service
   config:
     import: "optional:configserver:"
-
   cloud:
     config:
       discovery:
-        enabled: true # config server reached via Eureka
-      name: config
-
-    openfeign:
-      circuitbreaker:
-        enabled: true # circuit breaker integrated with openfeign
-
+        enabled: true
+        service-id: config-server
+      fail-fast: false
     function:
-      definition: aggregateGrades
+      definition: aggregate
     stream:
       bindings:
-        sendNotification-out-0:
-          destination: notification-queue
-          group: notification-group
-        aggregateGrades-out-0:
-          destination: check-notification-queue
-          group: check-notification-group
-
-        aggregateGrades-in-0:
-          destination: check-notification-queue
-          group: check-notification-group
-          consumer:
-            max-attempts: 5
-            back-off-initial-interval: 1000
-            back-off-multiplier: 2.0
-            back-off-max-interval: 10000
-
+        # A submitted grade, consumed by this service to aggregate team grades asynchronously.
+        grades-out-0:
+          destination: assay.grades
+          producer:
+            required-groups: admin-service
+        aggregate-in-0:
+          destination: assay.grades
+          group: admin-service
+          consumer: {max-attempts: 5, back-off-initial-interval: 500, back-off-multiplier: 2.0}
+        notifications-out-0:
+          destination: assay.notifications
+          producer:
+            required-groups: notification-service
+        activity-out-0:
+          destination: assay.activity
+          producer:
+            required-groups: notification-service
       rabbit:
-        bindings:
-          default:
-            consumer:
-              auto-bind-dlq: true
-              dead-letter-queue-name: dead-letter-queue
-              dead-letter-exchange: dead-letter-exchange
-              dead-letter-routing-key: dead-letter-routing-key
-
-  rabbitmq:
-    host: ${RABBITMQ_HOST}
-    port: ${RABBITMQ_PORT}
-    username: ${RABBITMQ_USERNAME}
-    password: ${RABBITMQ_PASSWORD}
-    connection-timeout: 10s
-
+        default:
+          consumer:
+            auto-bind-dlq: true   # each queue gets its own <queue>.dlq
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/admin-db}
+    username: ${DATABASE_USERNAME:admin}
+    password: ${DATABASE_PASSWORD:admin}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
   liquibase:
-    enabled: true
-    change-log: classpath:liquibase/master.xml
-
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
   security:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: ${AUTH_SERVER_URL}/protocol/openid-connect/certs
-      client:
-        registration:
-          master:
-            client-id: ${APPLICATION_CLIENT_ID}
-            client-secret: ${APPLICATION_CLIENT_SECRET}
-            scope: openid, profile, email
-            authorization-grant-type: client_credentials
-        provider:
-          master:
-            issuer-uri: ${AUTH_SERVER_URL}
+          jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:7080/realms/assay}/protocol/openid-connect/certs
+
+assay:
+  demo:
+    public-paths: /api/demo/personas
+  security:
+    public-paths: /api/demo/personas
+  clients:
+    evaluation: http://${EVALUATION_SERVICE_NAME:evaluation-service}
+    rubric: http://${RUBRIC_SERVICE_NAME:rubric-service}
+    notification: http://${NOTIFICATION_SERVICE_NAME:notification-service}
 
 server:
-  port: ${PORT}
+  port: ${PORT:8080}
+  shutdown: graceful
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${REGISTRY_SERVER_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: "Assay admin service: teams, people, schedule, grades, release, demo copies"
+    version: ${BUILD_VERSION:dev}

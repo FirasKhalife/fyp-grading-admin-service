@@ -1,0 +1,247 @@
+package com.fypgrading.adminservice;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.fypgrading.adminservice.clients.DemoCopyClient;
+import com.fypgrading.adminservice.clients.EvaluationClient;
+import com.jayway.jsonpath.JsonPath;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.amqp.core.AnonymousQueue;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.rabbitmq.RabbitMQContainer;
+
+/**
+ * Plan item 1.6: the event-driven grading pipeline end to end, on real Postgres and RabbitMQ. Every evaluation of
+ * a team is handed over; the aggregation consumer must produce each team grade, the final grade and the
+ * notifications, exactly once, even when a hand-off is retried. The other services are stubbed at the HTTP edge.
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Testcontainers
+class GradingPipelineTest {
+
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16");
+
+    @Container
+    @ServiceConnection
+    static RabbitMQContainer rabbit = new RabbitMQContainer("rabbitmq:4.0-management");
+
+    static final UUID RANIA = UUID.fromString("00000000-0000-4000-a000-000000000001");
+    static final UUID JANE = UUID.fromString("00000000-0000-4000-a000-000000000002");
+    static final UUID JOHN = UUID.fromString("00000000-0000-4000-a000-000000000003");
+    static final UUID EMILY = UUID.fromString("00000000-0000-4000-a000-000000000005");
+    static final UUID NOUR = UUID.fromString("00000000-0000-4000-a000-000000000101");
+
+    @Autowired
+    MockMvc mvc;
+
+    @Autowired
+    RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    RabbitAdmin rabbitAdmin;
+
+    @MockitoBean
+    EvaluationClient evaluations;
+
+    @MockitoBean
+    DemoCopyClient otherServices;
+
+    UUID session = UUID.randomUUID();
+    Queue notifications;
+
+    static JwtRequestPostProcessor as(UUID id, String... roles) {
+        SimpleGrantedAuthority[] authorities = java.util.Arrays.stream(roles)
+                .map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toArray(SimpleGrantedAuthority[]::new);
+        return jwt().jwt(j -> j.subject(id.toString()).claim("name", "Test User").claim("preferred_username", "x"))
+                .authorities(authorities);
+    }
+
+    @BeforeEach
+    void listenToNotifications() {
+        TopicExchange exchange = new TopicExchange("assay.notifications");
+        rabbitAdmin.declareExchange(exchange);
+        notifications = new AnonymousQueue();
+        rabbitAdmin.declareQueue(notifications);
+        Binding binding = BindingBuilder.bind(notifications).to(exchange).with("#");
+        rabbitAdmin.declareBinding(binding);
+    }
+
+    private List<String> drainNotifications(int atLeast) {
+        List<String> received = new ArrayList<>();
+        await().atMost(Duration.ofSeconds(20)).until(() -> {
+            Message m;
+            while ((m = rabbitTemplate.receive(notifications.getName())) != null) {
+                received.add(new String(m.getBody(), StandardCharsets.UTF_8));
+            }
+            return received.size() >= atLeast;
+        });
+        return received;
+    }
+
+    private void grade(UUID team, String assessment, UUID reviewer, double score, UUID evaluationId) throws Exception {
+        mvc.perform(post("/internal/grades").header("X-Demo-Session", session).with(as(reviewer, "REVIEWER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new tools.jackson.databind.json.JsonMapper().writeValueAsString(Map.of(
+                                "evaluationId", evaluationId, "teamId", team, "assessment", assessment,
+                                "reviewerId", reviewer, "score", score, "submittedAt", "2026-06-10T08:00:00Z"))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void everyEvaluationOfATeamFlowsIntoTeamGradesAFinalGradeAndNotificationsExactlyOnce() throws Exception {
+        String created = mvc.perform(post("/api/teams").header("X-Demo-Session", session).with(as(RANIA, "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Omega\", \"projectTitle\": \"Pipeline test\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.composition.valid").value(false))
+                .andReturn().getResponse().getContentAsString();
+        UUID team = UUID.fromString(JsonPath.read(created, "$.id"));
+
+        mvc.perform(put("/api/teams/" + team + "/reviewers").header("X-Demo-Session", session).with(as(RANIA, "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"assignments\": [{\"reviewerId\": \"%s\", \"role\": \"JURY\"}]}".formatted(JANE)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.code").value("composition-invalid"))
+                .andExpect(jsonPath("$.problems[0].code").value("NO_ADVISOR"));
+        mvc.perform(put("/api/teams/" + team + "/reviewers").header("X-Demo-Session", session).with(as(RANIA, "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"assignments": [{"reviewerId": "%s", "role": "ADVISOR"},
+                                                 {"reviewerId": "%s", "role": "JURY"},
+                                                 {"reviewerId": "%s", "role": "JURY"}]}""".formatted(EMILY, JANE, JOHN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.composition.valid").value(true));
+        drainNotifications(3); // the three assignment notices
+
+        // A jury member can't hand in the advisor's assessment.
+        mvc.perform(post("/internal/grades").header("X-Demo-Session", session).with(as(JANE, "REVIEWER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"evaluationId": "%s", "teamId": "%s", "assessment": "ADVISOR_ASSESSMENT",
+                                 "reviewerId": "%s", "score": 90, "submittedAt": "2026-06-10T08:00:00Z"}"""
+                                .formatted(UUID.randomUUID(), team, JANE)))
+                .andExpect(status().isForbidden());
+
+        for (String jury : List.of("PROPOSAL_PRESENTATION", "PROGRESS_REPORT", "FINAL_REPORT", "FINAL_PRESENTATION")) {
+            UUID janeEvaluation = UUID.randomUUID();
+            grade(team, jury, JANE, 80.0, janeEvaluation);
+            grade(team, jury, JANE, 80.0, janeEvaluation); // a retried hand-off: recognised, not counted twice
+            grade(team, jury, JOHN, 90.0, UUID.randomUUID());
+        }
+        grade(team, "ADVISOR_ASSESSMENT", EMILY, 70.0, UUID.randomUUID());
+
+        // 15% x 85 + 0% x 85 + 25% x 70 + 30% x 85 + 30% x 85 = 81.25, shown 81.3
+        await().atMost(Duration.ofSeconds(20)).untilAsserted(() ->
+                mvc.perform(get("/api/teams/" + team).header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
+                        .andExpect(jsonPath("$.finalGrade").value(81.3))
+                        .andExpect(jsonPath("$.finalState").value("COMPUTED"))
+                        .andExpect(jsonPath("$.assessments[0].grade").value(85.0))
+                        .andExpect(jsonPath("$.assessments[0].submittedCount").value(2))
+                        .andExpect(jsonPath("$.assessments[0].spread").value(10.0)));
+
+        List<String> sent = drainNotifications(6);
+        assertThat(sent.stream().filter(n -> n.contains("\"GRADE_FINAL\""))).hasSize(5);
+        assertThat(sent.stream().filter(n -> n.contains("\"FINAL_GRADE_COMPUTED\""))).hasSize(1);
+        assertThat(sent).anyMatch(n -> n.contains("Team Omega's final grade is computed: 81.3."))
+                .allMatch(n -> n.contains(RANIA.toString()) && n.contains(JANE.toString()));
+    }
+
+    @Test
+    void theSeedMatchesTheDesignAndTheReleaseFlowReachesStudents() throws Exception {
+        mvc.perform(get("/api/demo/personas")).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(4));
+        mvc.perform(put("/api/demo/session").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
+                .andExpect(status().isCreated());
+        mvc.perform(put("/api/demo/session").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
+                .andExpect(status().isOk());
+
+        String overview = mvc.perform(get("/api/overview").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Alpha')].finalGrade")).containsExactly(88.0);
+        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Gamma')].finalGrade")).containsExactly(92.2);
+        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Alpha')].cells[0].grade")).containsExactly(86.7);
+        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Beta')].cells[0].spread")).containsExactly(21.3);
+        assertThat(JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Beta')].cells[3].state")).containsExactly("WAITING");
+        assertThat(JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Alpha')].finalState")).containsExactly("VISIBLE");
+
+        mvc.perform(get("/api/me/assignments").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.teams.length()").value(3));
+
+        mvc.perform(get("/api/me/team").header("X-Demo-Session", session).with(as(NOUR, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.team.name").value("Alpha"))
+                .andExpect(jsonPath("$.finalGradeVisible").value(true))
+                .andExpect(jsonPath("$.finalGrade").value(88.0))
+                .andExpect(jsonPath("$.timeline[4].released").value(true));
+
+        mvc.perform(post("/api/assessments/ADVISOR_ASSESSMENT/release").header("X-Demo-Session", session)
+                        .with(as(RANIA, "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.releasedTeamIds.length()").value(2))   // Beta and Epsilon were final
+                .andExpect(jsonPath("$.alreadyReleasedTeamIds.length()").value(2));
+        mvc.perform(post("/api/assessments/ADVISOR_ASSESSMENT/release").header("X-Demo-Session", session)
+                        .with(as(RANIA, "ADMIN")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("nothing-to-release"));
+
+        mvc.perform(get("/api/schedule").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
+                .andExpect(jsonPath("$.slots.length()").value(6))
+                .andExpect(jsonPath("$.conflicts[0].reviewer.displayName").value("John Doe"));
+    }
+
+    @Test
+    void rolesAreEnforcedAndCopiesAreIsolated() throws Exception {
+        mvc.perform(put("/api/demo/session").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
+                .andExpect(status().isCreated());
+        mvc.perform(get("/api/overview").header("X-Demo-Session", session).with(as(NOUR, "STUDENT")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/overview").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/overview").header("X-Demo-Session", session))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/overview").header("X-Demo-Session", UUID.randomUUID()).with(as(RANIA, "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.teams.length()").value(0));
+        mvc.perform(get("/api/demo/session").header("X-Demo-Session", UUID.randomUUID()).with(as(RANIA, "ADMIN")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("demo-session-not-found"));
+    }
+}
