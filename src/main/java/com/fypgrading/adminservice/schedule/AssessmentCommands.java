@@ -105,7 +105,7 @@ public class AssessmentCommands {
     @Transactional
     public ReleaseResult release(Assessment assessment) {
         Map<UUID, Team> byId = teams.findAll().stream().collect(Collectors.toMap(Team::getId, Function.identity()));
-        Map<UUID, TeamAssessment> finals = teamAssessments.findByAssessment(assessment).stream()
+        Map<UUID, TeamAssessment> finals = teamAssessments.lockByAssessment(assessment).stream()
                 .collect(Collectors.toMap(TeamAssessment::getTeamId, Function.identity()));
         Instant now = clock.instant();
         CurrentUser me = CurrentUser.require();

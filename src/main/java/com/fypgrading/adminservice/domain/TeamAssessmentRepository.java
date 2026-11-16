@@ -13,5 +13,11 @@ public interface TeamAssessmentRepository extends JpaRepository<TeamAssessment, 
 
     List<TeamAssessment> findByAssessment(Assessment assessment);
 
+    /** Locks the rows, so two release clicks run one after the other. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select t from TeamAssessment t where t.assessment = :assessment")
+    List<TeamAssessment> lockByAssessment(
+            @org.springframework.data.repository.query.Param("assessment") Assessment assessment);
+
     void deleteByTeamId(UUID teamId);
 }

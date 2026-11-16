@@ -28,9 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Turns reviewers' grades into team grades. Runs from the {@code assay.grades} consumer (and inline when a demo
- * copy is seeded). Idempotent by construction: it recomputes from the stored grades and announces only state
- * changes, so a redelivered message can't double-count or notify twice. The team row is locked, so two last
+ * Turns reviewers' grades into team grades. Runs inside the grade hand-off's transaction (and when a demo copy
+ * is seeded). Idempotent by construction: it recomputes from the stored grades and announces only state changes,
+ * so a retried hand-off can't double-count or notify twice. The team row is locked, so two last
  * grades arriving together can't both finalise.
  */
 @Service
@@ -135,7 +135,7 @@ public class GradeAggregator {
 
     private void announceAssessment(
             Team team, Assessment assessment, double grade, List<Double> scores, List<TeamReviewer> onTeam) {
-        String shown = String.format("%.1f", GradeMath.display(grade));
+        String shown = String.format(java.util.Locale.ROOT, "%.1f", GradeMath.display(grade));
         // Plan 3.5: flag a large disagreement. The grade is still the plain average.
         String disagreement = GradeMath.disagree(scores, disagreementThreshold)
                 ? " Reviewers disagree by "
@@ -162,7 +162,7 @@ public class GradeAggregator {
     }
 
     private void announceFinal(Team team, double grade, List<TeamReviewer> onTeam) {
-        String shown = String.format("%.1f", GradeMath.display(grade));
+        String shown = String.format(java.util.Locale.ROOT, "%.1f", GradeMath.display(grade));
         Instant now = clock.instant();
         events.notify(
                 "final-grade:" + team.getId(),

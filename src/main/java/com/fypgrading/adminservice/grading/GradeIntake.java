@@ -1,28 +1,28 @@
 package com.fypgrading.adminservice.grading;
 
-import com.fypgrading.adminservice.common.demo.DemoSession;
+import com.fypgrading.adminservice.common.security.CurrentUser;
 import com.fypgrading.adminservice.common.web.ApiException;
 import com.fypgrading.adminservice.domain.Assessment;
 import com.fypgrading.adminservice.domain.Grade;
 import com.fypgrading.adminservice.domain.GradeRepository;
+import com.fypgrading.adminservice.domain.TeamAssessmentRepository;
 import com.fypgrading.adminservice.domain.TeamRepository;
 import com.fypgrading.adminservice.domain.TeamReviewer;
 import com.fypgrading.adminservice.domain.TeamReviewerRepository;
-import com.fypgrading.adminservice.events.Events;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Receives a submitted evaluation's score from evaluation-service. The reviewer must hold the assessment's role
- * on the team. Idempotent on the evaluation id. Aggregation happens asynchronously over {@code assay.grades}.
+ * Receives a submitted evaluation's score from evaluation-service and aggregates it in the same transaction, under
+ * the team lock: a grade can't be stored without its team grade being recomputed (review M1), two hand-offs for one
+ * team can't race (M2), and a reviewer-set change can't interleave (H1). The announcements (notifications, the
+ * activity feed) still go out over RabbitMQ after the commit.
  */
 @Service
 public class GradeIntake {
@@ -30,72 +30,93 @@ public class GradeIntake {
     private final TeamRepository teams;
     private final TeamReviewerRepository teamReviewers;
     private final GradeRepository grades;
-    private final Events events;
+    private final TeamAssessmentRepository teamAssessments;
+    private final GradeAggregator aggregator;
 
     public GradeIntake(
-            TeamRepository teams, TeamReviewerRepository teamReviewers, GradeRepository grades, Events events) {
+            TeamRepository teams,
+            TeamReviewerRepository teamReviewers,
+            GradeRepository grades,
+            TeamAssessmentRepository teamAssessments,
+            GradeAggregator aggregator) {
         this.teams = teams;
         this.teamReviewers = teamReviewers;
         this.grades = grades;
-        this.events = events;
+        this.teamAssessments = teamAssessments;
+        this.aggregator = aggregator;
     }
 
+    /**
+     * {@code submittedLate}: the evaluation was submitted after the due date in force at that moment. It's stored,
+     * so moving the due date later never clears it (review M12).
+     */
     public record GradeSubmission(
             @NotNull UUID evaluationId,
             @NotNull UUID teamId,
             @NotNull Assessment assessment,
             @NotNull UUID reviewerId,
             @DecimalMin("0") @DecimalMax("100") double score,
-            @NotNull Instant submittedAt) {}
+            @NotNull Instant submittedAt,
+            boolean submittedLate) {}
 
     public record Receipt(int submittedCount, int expectedCount) {}
 
     @Transactional
     public Receipt submit(GradeSubmission s) {
-        teams.findById(s.teamId()).orElseThrow(() -> ApiException.notFound("The team"));
+        // Review M8: the caller forwards the reviewer's own token; nobody hands in someone else's grade.
+        if (!CurrentUser.require().id().equals(s.reviewerId())) {
+            throw ApiException.forbidden("not-your-grade", "A reviewer can only hand in their own grade.");
+        }
+        teams.lockById(s.teamId()).orElseThrow(() -> ApiException.notFound("The team"));
         TeamReviewer assignment = teamReviewers
                 .findByTeamIdAndReviewerId(s.teamId(), s.reviewerId())
                 .filter(r -> r.getRole() == s.assessment().role())
                 .orElseThrow(() -> ApiException.forbidden(
                         "not-assigned",
                         "This reviewer doesn't grade the " + s.assessment().displayName() + " for this team."));
-        boolean alreadyStored = grades.findByEvaluationId(s.evaluationId()).isPresent();
-        if (!alreadyStored) {
-            grades.findByTeamIdAndAssessmentAndReviewerId(s.teamId(), s.assessment(), assignment.getReviewerId())
-                    .ifPresent(g -> {
-                        throw ApiException.conflict(
-                                "grade-exists",
-                                "This reviewer already submitted the "
-                                        + s.assessment().displayName() + ".");
-                    });
-            grades.save(new Grade(
-                    UUID.randomUUID(),
-                    s.evaluationId(),
-                    s.teamId(),
-                    s.assessment(),
-                    s.reviewerId(),
-                    s.score(),
-                    s.submittedAt()));
+
+        Optional<Grade> same = grades.findByEvaluationId(s.evaluationId());
+        if (same.isPresent()) {
+            // A retried hand-off: fine if it's the same grade, refused if the score changed in between (review H2).
+            if (Math.abs(same.get().getScore() - s.score()) > 1e-9) {
+                throw ApiException.conflict(
+                        "grade-mismatch", "This evaluation was already handed in with a different score.");
+            }
+            return receipt(s);
         }
-        // Published even on a retry: aggregation is idempotent and this heals a lost message.
-        events.gradeSubmitted(s.teamId(), s.assessment());
+        if (teamAssessments
+                .findByTeamIdAndAssessment(s.teamId(), s.assessment())
+                .isPresent()) {
+            throw ApiException.conflict(
+                    "assessment-final",
+                    "The " + s.assessment().displayName() + " grade for this team is already final.");
+        }
+        if (grades.findByTeamIdAndAssessmentAndReviewerId(s.teamId(), s.assessment(), assignment.getReviewerId())
+                .isPresent()) {
+            throw ApiException.conflict(
+                    "grade-exists",
+                    "This reviewer already submitted the " + s.assessment().displayName() + ".");
+        }
+        grades.save(new Grade(
+                UUID.randomUUID(),
+                s.evaluationId(),
+                s.teamId(),
+                s.assessment(),
+                s.reviewerId(),
+                s.score(),
+                s.submittedAt(),
+                s.submittedLate()));
+        grades.flush();
+        aggregator.aggregate(s.teamId(), s.assessment(), true);
+        return receipt(s);
+    }
+
+    private Receipt receipt(GradeSubmission s) {
         long expected = teamReviewers.findByTeamId(s.teamId()).stream()
                 .filter(r -> r.getRole() == s.assessment().role())
                 .count();
         int submitted =
                 grades.findByTeamIdAndAssessment(s.teamId(), s.assessment()).size();
         return new Receipt(submitted, (int) expected);
-    }
-
-    /** The {@code assay.grades} consumer. */
-    @Configuration
-    static class Consumers {
-
-        @Bean
-        Consumer<Events.GradeSubmitted> aggregate(GradeAggregator aggregator) {
-            return event -> DemoSession.runAs(
-                    UUID.fromString(event.demoSession()),
-                    () -> aggregator.aggregate(UUID.fromString(event.teamId()), event.assessment(), true));
-        }
     }
 }

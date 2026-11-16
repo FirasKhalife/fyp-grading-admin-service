@@ -16,7 +16,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /**
  * Publishes to RabbitMQ once the transaction commits:
  * <ul>
- *   <li>{@code assay.grades}: a grade arrived; consumed by this service to aggregate (see GradeAggregator).</li>
  *   <li>{@code assay.notifications}: personal notifications with their recipients resolved.</li>
  *   <li>{@code assay.activity}: the coordinator's feed.</li>
  * </ul>
@@ -30,11 +29,6 @@ public class Events {
 
     public Events(StreamBridge bridge) {
         this.bridge = bridge;
-    }
-
-    public void gradeSubmitted(UUID teamId, Assessment assessment) {
-        GradeSubmitted event = new GradeSubmitted(DemoSession.require().toString(), teamId.toString(), assessment);
-        afterCommit(() -> send("grades-out-0", event));
     }
 
     public void notify(String eventKey, String type, String text, Instant at, Link link, Collection<UUID> recipients) {
@@ -98,8 +92,6 @@ public class Events {
             return new Link(kind, teamId == null ? null : teamId.toString(), assessment);
         }
     }
-
-    public record GradeSubmitted(String demoSession, String teamId, Assessment assessment) {}
 
     public record NotificationEvent(
             String eventKey,

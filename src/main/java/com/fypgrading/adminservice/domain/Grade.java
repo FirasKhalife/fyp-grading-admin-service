@@ -41,6 +41,10 @@ public class Grade extends AssignedIdEntity {
     @Column(name = "submitted_at", nullable = false)
     private Instant submittedAt;
 
+    /** Submitted after the due date in force at the time; stored, so a later due-date change never clears it. */
+    @Column(name = "submitted_late", nullable = false)
+    private boolean submittedLate;
+
     protected Grade() {}
 
     public Grade(
@@ -50,7 +54,8 @@ public class Grade extends AssignedIdEntity {
             Assessment assessment,
             UUID reviewerId,
             double score,
-            Instant submittedAt) {
+            Instant submittedAt,
+            boolean submittedLate) {
         super(id);
         this.evaluationId = evaluationId;
         this.teamId = teamId;
@@ -58,6 +63,11 @@ public class Grade extends AssignedIdEntity {
         this.reviewerId = reviewerId;
         this.score = score;
         this.submittedAt = submittedAt;
+        this.submittedLate = submittedLate;
+    }
+
+    public boolean isSubmittedLate() {
+        return submittedLate;
     }
 
     public UUID getEvaluationId() {

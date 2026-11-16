@@ -28,10 +28,12 @@ This service is part of **Assay**, a final-year-project grading platform. The ar
 
 ## Events and calls
 
-- **Publishes** `assay.grades` when a grade arrives, and **consumes** it itself (`aggregate`):
-  - It locks the team.
+- **Aggregates** each grade as it arrives (`POST /internal/grades`), in the same transaction:
+  - It locks the team, checks the caller is the grade's reviewer and still holds the role, and refuses a changed
+    score for a known evaluation (409 `grade-mismatch`) or any grade once the assessment is final (409
+    `assessment-final`).
   - It recomputes the team grade (the plain average) and the final grade (weights 15/0/25/30/30; it needs all five).
-  - It announces only state changes, so a redelivered message can't count a grade twice.
+  - It announces only state changes, so a retried hand-off can't count a grade twice.
 - **Publishes** `assay.notifications` with the recipients resolved (coordinators, the team's reviewers, its
   students), and `assay.activity` for the coordinator's feed.
 

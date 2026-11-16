@@ -10,17 +10,19 @@ import org.springframework.stereotype.Component;
 
 /**
  * Hibernate's discriminator multi-tenancy, keyed on the demo session: every entity with a {@code @TenantId}
- * column is filtered and stamped automatically. Without a session (jobs) the resolver returns the root
- * tenant, which sees every copy; nothing is ever written as root.
+ * column is filtered and stamped automatically. Without a session (jobs) the resolver returns a sentinel that
+ * matches no copy (review M7): code that forgets to bind a session sees nothing and its writes land in no visitor's
+ * copy, instead of reading and changing everyone's. Cross-copy work (the midnight purge) uses plain SQL.
  */
 @Component
 public class DemoTenantResolver implements CurrentTenantIdentifierResolver<String>, HibernatePropertiesCustomizer {
 
-    public static final String ROOT = "root";
+    /** Not a UUID, so it never equals a session; and never the root tenant. */
+    public static final String NO_SESSION = "no-session";
 
     @Override
     public String resolveCurrentTenantIdentifier() {
-        return DemoSession.current().map(UUID::toString).orElse(ROOT);
+        return DemoSession.current().map(UUID::toString).orElse(NO_SESSION);
     }
 
     @Override
@@ -30,7 +32,7 @@ public class DemoTenantResolver implements CurrentTenantIdentifierResolver<Strin
 
     @Override
     public boolean isRoot(String tenantId) {
-        return ROOT.equals(tenantId);
+        return false;
     }
 
     @Override

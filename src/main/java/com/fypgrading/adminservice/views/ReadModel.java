@@ -5,6 +5,7 @@ import com.fypgrading.adminservice.common.demo.DemoSession;
 import com.fypgrading.adminservice.common.demo.SeedClock;
 import com.fypgrading.adminservice.common.web.ApiException;
 import com.fypgrading.adminservice.domain.Assessment;
+import com.fypgrading.adminservice.domain.AssessmentSchedule;
 import com.fypgrading.adminservice.domain.AssessmentScheduleRepository;
 import com.fypgrading.adminservice.domain.DefenseSlotRepository;
 import com.fypgrading.adminservice.domain.DemoCopy;
@@ -130,6 +131,40 @@ public class ReadModel {
                 disagreementThreshold);
     }
 
+    /** Internal, for evaluation-service: may this reviewer grade this assessment for this team? */
+    @Transactional(readOnly = true)
+    public Views.AssignmentCheck assignmentCheck(UUID teamId, Assessment assessment, UUID reviewerId) {
+        Team team = teams.findById(teamId).orElseThrow(() -> ApiException.notFound("The team"));
+        List<UUID> expected = assignments.findByTeamId(teamId).stream()
+                .filter(a -> a.getRole() == assessment.role())
+                .map(TeamReviewer::getReviewerId)
+                .toList();
+        int submitted = (int) grades.findByTeamIdAndAssessment(teamId, assessment).stream()
+                .filter(g -> expected.contains(g.getReviewerId()))
+                .count();
+        boolean isFinal =
+                teamAssessments.findByTeamIdAndAssessment(teamId, assessment).isPresent();
+        Views.InternalPerson person = reviewers
+                .findById(reviewerId)
+                .map(r -> new Views.InternalPerson(reviewerId, r.getFirstName(), r.getLastName()))
+                .orElse(new Views.InternalPerson(reviewerId, "", ""));
+        Instant due = schedules
+                .findByAssessment(assessment)
+                .map(AssessmentSchedule::getDueAt)
+                .orElse(null);
+        return new Views.AssignmentCheck(
+                teamId,
+                team.getName(),
+                assessment,
+                assessment.role(),
+                expected.contains(reviewerId),
+                person,
+                due,
+                isFinal,
+                submitted,
+                expected.size());
+    }
+
     // ------------------------------------------------------------------ assessments (P5 columns, P9 due dates)
 
     public List<AssessmentView> assessments(Snapshot s) {
@@ -158,6 +193,7 @@ public class ReadModel {
 
     // ------------------------------------------------------------------ P5 overview
 
+    @Transactional(readOnly = true)
     public Overview overview() {
         Snapshot s = snapshot(true);
         List<OverviewRow> rows = s.teamsByName().stream()
@@ -252,6 +288,7 @@ public class ReadModel {
 
     // ------------------------------------------------------------------ P6 / P8 teams
 
+    @Transactional(readOnly = true)
     public TeamDetail team(UUID teamId, UUID viewer, boolean admin) {
         Snapshot s = snapshot(true);
         Team team = s.team(teamId).orElseThrow(() -> ApiException.notFound("The team"));
@@ -281,6 +318,7 @@ public class ReadModel {
                 s.finalState(team));
     }
 
+    @Transactional(readOnly = true)
     public List<TeamSummary> teamSummaries() {
         Snapshot s = snapshot(false);
         return s.teamsByName().stream()
@@ -329,6 +367,7 @@ public class ReadModel {
 
     // ------------------------------------------------------------------ P3 my teams
 
+    @Transactional(readOnly = true)
     public MyAssignments myAssignments(UUID me) {
         Snapshot s = snapshot(true);
         List<MyTeam> mine = new ArrayList<>();
@@ -378,6 +417,7 @@ public class ReadModel {
 
     // ------------------------------------------------------------------ P9 schedule
 
+    @Transactional(readOnly = true)
     public Schedule schedule(UUID viewer, boolean admin, boolean student) {
         Snapshot s = snapshot(false);
         Set<UUID> visibleTeams;
@@ -412,6 +452,7 @@ public class ReadModel {
 
     // ------------------------------------------------------------------ P11 student home
 
+    @Transactional(readOnly = true)
     public StudentHome studentHome(UUID userId) {
         Snapshot s = snapshot(true);
         Student me = s.students().stream()

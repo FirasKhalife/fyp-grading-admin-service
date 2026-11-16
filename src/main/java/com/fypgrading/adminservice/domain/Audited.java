@@ -14,7 +14,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * Who created and last changed a row, and when. The user is the signed-in token's subject; rows written by the
- * system (the seed, the grade aggregation consumer) have no user. See {@link AuditConfig}.
+ * system (the seed, the grade aggregation) have no user. See {@link AuditConfig}.
  */
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)

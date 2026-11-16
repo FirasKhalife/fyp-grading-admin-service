@@ -133,10 +133,9 @@ public record Snapshot(
         Optional<Summary> evaluation = evaluation(teamId, assessment, reviewerId);
         EvaluationStatus status = grade.isPresent()
                 ? EvaluationStatus.SUBMITTED
-                : evaluation.map(e -> EvaluationStatus.valueOf(e.status())).orElse(EvaluationStatus.NOT_STARTED);
-        Instant due = due(assessment);
-        boolean late =
-                grade.isPresent() && due != null && grade.get().getSubmittedAt().isAfter(due);
+                : evaluation.map(e -> statusOf(e.status())).orElse(EvaluationStatus.NOT_STARTED);
+        // Stored at hand-off time, so moving a due date never clears it (review M12).
+        boolean late = grade.map(Grade::isSubmittedLate).orElse(false);
         return new ReviewerProgress(
                 person(reviewerId),
                 status,
@@ -149,6 +148,15 @@ public record Snapshot(
                         .orElse(null),
                 evaluation.map(Summary::scoredCount).orElse(null),
                 evaluation.map(Summary::criteriaCount).orElse(null));
+    }
+
+    /** A status evaluation-service doesn't name (e.g. a newer one) counts as a draft rather than failing. */
+    static EvaluationStatus statusOf(String status) {
+        try {
+            return EvaluationStatus.valueOf(status);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return EvaluationStatus.DRAFT;
+        }
     }
 
     public TeamAssessmentView assessmentView(UUID teamId, Assessment assessment) {

@@ -22,12 +22,17 @@ public class DemoCopy {
     @Column(name = "anchor_date", nullable = false)
     private LocalDate anchorDate;
 
+    /** CREATING until every service has its part of the copy, then READY (review M4). */
+    @Column(nullable = false, length = 16)
+    private String status;
+
     protected DemoCopy() {}
 
     public DemoCopy(UUID id, Instant createdAt, LocalDate anchorDate) {
         this.id = id;
         this.createdAt = createdAt;
         this.anchorDate = anchorDate;
+        this.status = "CREATING";
     }
 
     public UUID getId() {
@@ -40,5 +45,21 @@ public class DemoCopy {
 
     public LocalDate getAnchorDate() {
         return anchorDate;
+    }
+
+    public boolean isReady() {
+        return "READY".equals(status);
+    }
+
+    public void ready(Instant createdAt, LocalDate anchorDate) {
+        this.status = "READY";
+        this.createdAt = createdAt;
+        this.anchorDate = anchorDate;
+    }
+
+    public void restart(Instant createdAt, LocalDate anchorDate) {
+        this.status = "CREATING";
+        this.createdAt = createdAt;
+        this.anchorDate = anchorDate;
     }
 }

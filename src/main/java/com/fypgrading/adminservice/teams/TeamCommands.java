@@ -25,6 +25,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Clock;
 import java.time.Duration;
@@ -87,9 +88,17 @@ public class TeamCommands {
             @NotBlank @Size(max = 200) String projectTitle,
             @Size(max = 2000) String description) {}
 
+    /** Present but blank text is refused. */
+    static final String NOT_BLANK = "(?s).*\\S.*";
+
+    /** Absent fields are left alone; an empty {@code description} clears it. */
     public record TeamPatch(
-            @Size(min = 1, max = 60) String name,
-            @Size(min = 1, max = 200) String projectTitle,
+            @Size(min = 1, max = 60) @Pattern(regexp = NOT_BLANK, message = "must not be blank")
+            String name,
+
+            @Size(min = 1, max = 200) @Pattern(regexp = NOT_BLANK, message = "must not be blank")
+            String projectTitle,
+
             @Size(max = 2000) String description) {}
 
     public record StudentCreate(
@@ -98,8 +107,12 @@ public class TeamCommands {
             @NotBlank @Email @Size(max = 200) String email) {}
 
     public record StudentPatch(
-            @Size(min = 1, max = 80) String firstName,
-            @Size(min = 1, max = 80) String lastName,
+            @Size(min = 1, max = 80) @Pattern(regexp = NOT_BLANK, message = "must not be blank")
+            String firstName,
+
+            @Size(min = 1, max = 80) @Pattern(regexp = NOT_BLANK, message = "must not be blank")
+            String lastName,
+
             @Email @Size(max = 200) String email,
             UUID teamId) {}
 
@@ -121,13 +134,19 @@ public class TeamCommands {
         if (teams.existsByNameIgnoreCase(name)) {
             throw ApiException.conflict("team-name-taken", "A team called " + name + " already exists.");
         }
-        Team team =
-                teams.save(new Team(UUID.randomUUID(), name, body.projectTitle().strip(), body.description()));
+        Team team = flushed(
+                () -> teams.saveAndFlush(
+                        new Team(UUID.randomUUID(), name, body.projectTitle().strip(), body.description())),
+                "team-name-taken",
+                "A team called " + name + " already exists.");
         return team.getId();
     }
 
     @Transactional
     public void update(UUID teamId, TeamPatch body) {
+        if (body.name() == null && body.projectTitle() == null && body.description() == null) {
+            throw ApiException.badRequest("validation-failed", "Send at least one field to change.");
+        }
         Team team = team(teamId);
         if (body.name() != null && !body.name().strip().equalsIgnoreCase(team.getName())) {
             if (teams.existsByNameIgnoreCase(body.name().strip())) {
@@ -140,8 +159,9 @@ public class TeamCommands {
             team.setProjectTitle(body.projectTitle().strip());
         }
         if (body.description() != null) {
-            team.setDescription(body.description());
+            team.setDescription(body.description().isBlank() ? null : body.description());
         }
+        flushed(() -> teams.saveAndFlush(team), "team-name-taken", "A team with that name already exists.");
     }
 
     @Transactional
@@ -172,17 +192,23 @@ public class TeamCommands {
         if (students.existsByEmailIgnoreCase(email)) {
             throw ApiException.conflict("student-email-taken", email + " is already on a team.");
         }
-        return students.save(new Student(
-                UUID.randomUUID(),
-                teamId,
-                body.firstName().strip(),
-                body.lastName().strip(),
-                email,
-                null));
+        return flushed(
+                () -> students.saveAndFlush(new Student(
+                        UUID.randomUUID(),
+                        teamId,
+                        body.firstName().strip(),
+                        body.lastName().strip(),
+                        email,
+                        null)),
+                "student-email-taken",
+                email + " is already on a team.");
     }
 
     @Transactional
     public Student updateStudent(UUID teamId, UUID studentId, StudentPatch body) {
+        if (body.firstName() == null && body.lastName() == null && body.email() == null && body.teamId() == null) {
+            throw ApiException.badRequest("validation-failed", "Send at least one field to change.");
+        }
         Student student =
                 students.findByIdAndTeamId(studentId, teamId).orElseThrow(() -> ApiException.notFound("The student"));
         String email = body.email() == null ? null : body.email().strip().toLowerCase();
@@ -192,8 +218,12 @@ public class TeamCommands {
         if (body.teamId() != null) {
             team(body.teamId());
         }
-        student.update(body.firstName(), body.lastName(), email, body.teamId());
-        return student;
+        student.update(
+                body.firstName() == null ? null : body.firstName().strip(),
+                body.lastName() == null ? null : body.lastName().strip(),
+                email,
+                body.teamId());
+        return flushed(() -> students.saveAndFlush(student), "student-email-taken", email + " is already on a team.");
     }
 
     @Transactional
@@ -232,9 +262,32 @@ public class TeamCommands {
                                     .collect(Collectors.joining(" ")))
                     .with("problems", result.problems());
         }
+        // Serialises with grade intake, which takes the same lock.
+        teams.lockById(teamId);
         List<TeamReviewer> current = assignments.findByTeamId(teamId);
         Map<UUID, ReviewerRole> next = wanted.stream()
                 .collect(Collectors.toMap(Composition.Assignment::reviewerId, Composition.Assignment::role));
+        // Review H1: no reopening, ever. Once an assessment's team grade is final, the set of reviewers it averages
+        // can't change: adding one would reopen it, removing one would change a grade students may have seen.
+        for (Assessment a : Assessment.values()) {
+            if (teamAssessments.findByTeamIdAndAssessment(teamId, a).isEmpty()) {
+                continue;
+            }
+            Set<UUID> before = current.stream()
+                    .filter(r -> r.getRole() == a.role())
+                    .map(TeamReviewer::getReviewerId)
+                    .collect(Collectors.toSet());
+            Set<UUID> after = next.entrySet().stream()
+                    .filter(e -> e.getValue() == a.role())
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
+            if (!before.equals(after)) {
+                throw ApiException.conflict(
+                        "assessment-final",
+                        "The " + a.displayName() + " grade for Team " + team.getName() + " is final, so its "
+                                + label(a.role()) + "s can't change.");
+            }
+        }
         for (TeamReviewer existing : current) {
             ReviewerRole role = next.get(existing.getReviewerId());
             if ((role == null || role != existing.getRole())
@@ -246,12 +299,10 @@ public class TeamCommands {
             }
         }
         Instant now = clock.instant();
-        Set<UUID> affectedRoles = new LinkedHashSet<>();
         for (TeamReviewer existing : current) {
             ReviewerRole role = next.remove(existing.getReviewerId());
             if (role == null) {
                 assignments.delete(existing);
-                affectedRoles.add(existing.getReviewerId());
             } else if (role != existing.getRole()) {
                 existing.changeRole(role);
                 events.notify(
@@ -261,7 +312,6 @@ public class TeamCommands {
                         now,
                         Events.Link.of("MY_TEAMS", teamId, null),
                         List.of(existing.getReviewerId()));
-                affectedRoles.add(existing.getReviewerId());
             }
         }
         next.forEach((reviewerId, role) -> {
@@ -365,6 +415,15 @@ public class TeamCommands {
         }
         return " " + String.join(" and ", clashes) + (clashes.size() == 1 ? " is" : " are") + " now in two defenses at "
                 + Dates.time(mine.getStartsAt()) + ".";
+    }
+
+    /** Turns a unique-constraint race (two clicks, two tabs) into the same 409 the pre-check gives (review M2). */
+    private static <T> T flushed(java.util.function.Supplier<T> write, String code, String detail) {
+        try {
+            return write.get();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw ApiException.conflict(code, detail);
+        }
     }
 
     private Team team(UUID id) {

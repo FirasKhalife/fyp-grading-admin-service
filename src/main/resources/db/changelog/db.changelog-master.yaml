@@ -172,3 +172,23 @@ databaseChangeLog:
             tableName: team_assessment
             columns:
               - column: {name: released_by, type: uuid}
+
+  - changeSet:
+      id: 2026-11-16-02-grade-submitted-late
+      author: assay
+      comment: Review M12. Whether the grade was handed in after the due date in force at the time.
+      changes:
+        - addColumn:
+            tableName: grade
+            columns:
+              - column: {name: submitted_late, type: boolean, defaultValueBoolean: false, constraints: {nullable: false}}
+
+  - changeSet:
+      id: 2026-11-16-03-demo-copy-status
+      author: assay
+      comment: Review M4. A copy is CREATING until every service has its part, then READY.
+      changes:
+        - addColumn:
+            tableName: demo_copy
+            columns:
+              - column: {name: status, type: varchar(16), defaultValue: READY, constraints: {nullable: false}}

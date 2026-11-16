@@ -7,19 +7,8 @@ spring:
   cloud:
     config:
       fail-fast: false
-    function:
-      definition: aggregate
     stream:
       bindings:
-        # A submitted grade, consumed by this service to aggregate team grades asynchronously.
-        grades-out-0:
-          destination: assay.grades
-          producer:
-            required-groups: admin-service
-        aggregate-in-0:
-          destination: assay.grades
-          group: admin-service
-          consumer: {max-attempts: 5, back-off-initial-interval: 500, back-off-multiplier: 2.0}
         notifications-out-0:
           destination: assay.notifications
           producer:
@@ -40,6 +29,8 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/admin-db}
     username: ${DATABASE_USERNAME:admin}
     password: ${DATABASE_PASSWORD:admin}
+    hikari:
+      maximum-pool-size: 5
   jpa:
     open-in-view: false
     hibernate:
@@ -51,6 +42,8 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+    connection-timeout: 5s
+    publisher-confirm-type: correlated   # a lost broker connection is reported, not silent
   security:
     oauth2:
       resourceserver:
@@ -63,6 +56,7 @@ assay:
     disagreement-threshold: 15
   demo:
     public-paths: /api/demo/personas
+    max-copies: 2000   # review M7: above this, new visitors get 503 demo-capacity until the midnight purge
   security:
     public-paths: /api/demo/personas
   clients:
@@ -73,6 +67,9 @@ assay:
 server:
   port: ${PORT:8080}
   shutdown: graceful
+  tomcat:
+    threads:
+      max: 40   # review H5: a demo needs few threads, and each costs stack memory
 
 eureka:
   client:

@@ -30,13 +30,19 @@ import java.io.InputStream;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -106,6 +112,10 @@ public class DemoService {
     private final TransactionTemplate tx;
     private final Clock clock;
     private final DemoSeed seed;
+    private final int maxCopies;
+
+    /** A CREATING copy older than this is treated as a failed attempt and rebuilt. */
+    static final Duration CREATING_TIMEOUT = Duration.ofSeconds(30);
 
     public DemoService(
             DemoCopyRepository copies,
@@ -121,7 +131,8 @@ public class DemoService {
             JdbcTemplate jdbc,
             TransactionTemplate tx,
             Clock clock,
-            JsonMapper json)
+            JsonMapper json,
+            @Value("${assay.demo.max-copies:2000}") int maxCopies)
             throws IOException {
         this.copies = copies;
         this.schedules = schedules;
@@ -136,6 +147,7 @@ public class DemoService {
         this.jdbc = jdbc;
         this.tx = tx;
         this.clock = clock;
+        this.maxCopies = maxCopies;
         try (InputStream in = new ClassPathResource("demo/seed.json").getInputStream()) {
             this.seed = json.readValue(in, DemoSeed.class);
         }
@@ -145,29 +157,112 @@ public class DemoService {
         return PERSONAS;
     }
 
+    /** Only a complete copy counts: one still being created, or never created, is "not found". */
     public Optional<DemoSessionView> find(UUID session) {
-        return copies.findById(session).map(DemoService::view);
+        return copies.findById(session).filter(DemoCopy::isReady).map(DemoService::view);
+    }
+
+    public boolean isReady(UUID session) {
+        return copies.findById(session).map(DemoCopy::isReady).orElse(false);
     }
 
     public record Ensured(DemoSessionView session, boolean created) {}
 
-    /** Creates the visitor's copy if it doesn't exist yet. Idempotent; switching persona keeps the copy. */
+    /**
+     * Creates the visitor's copy if it doesn't exist yet. Idempotent; switching persona keeps the copy. The
+     * {@code demo_copy} row is the lock: CREATING while the four services build their parts, READY after. A second
+     * tab waits for the first instead of building a second copy.
+     */
     public Ensured ensure(UUID session) {
-        Optional<DemoSessionView> existing = find(session);
-        if (existing.isPresent()) {
-            return new Ensured(existing.get(), false);
+        Optional<DemoCopy> existing = copies.findById(session);
+        if (existing.isPresent() && existing.get().isReady()) {
+            return new Ensured(view(existing.get()), false);
         }
         SeedClock at = SeedClock.startingNow(clock);
-        try {
-            tx.executeWithoutResult(s -> copies.saveAndFlush(new DemoCopy(session, at.now(), at.anchor())));
-        } catch (DataIntegrityViolationException racedWithAnotherTab) {
-            return new Ensured(find(session).orElseThrow(), false);
+        if (existing.isPresent()) {
+            boolean stale = existing.get().getCreatedAt().isBefore(at.now().minus(CREATING_TIMEOUT));
+            if (!stale) {
+                return new Ensured(waitUntilReady(session), false);
+            }
+            tx.executeWithoutResult(s -> copies.findById(session).ifPresent(c -> c.restart(at.now(), at.anchor())));
+        } else {
+            if (copies.count() >= maxCopies) {
+                throw new ApiException(
+                        HttpStatus.SERVICE_UNAVAILABLE,
+                        "demo-capacity",
+                        "The demo is full right now. Try again after midnight (Paris time).");
+            }
+            try {
+                tx.executeWithoutResult(s -> copies.saveAndFlush(new DemoCopy(session, at.now(), at.anchor())));
+            } catch (DataIntegrityViolationException racedWithAnotherTab) {
+                return new Ensured(waitUntilReady(session), false);
+            }
         }
+        build(session, at);
+        tx.executeWithoutResult(s -> copies.findById(session).ifPresent(c -> c.ready(at.now(), at.anchor())));
+        return new Ensured(view(copies.findById(session).orElseThrow()), true);
+    }
+
+    /**
+     * "Reset my demo": a fresh copy under a <b>new</b> session id, which the browser must store (review M6). Seeded
+     * ids derive from the session, so reusing it would let events still in flight from the old copy land in the
+     * new one. The old copy is then deleted.
+     */
+    public DemoSessionView reset(UUID oldSession) {
+        UUID fresh = UUID.randomUUID();
+        DemoSessionView created = DemoSession.callAs(fresh, () -> ensure(fresh).session());
+        DemoSession.runAs(oldSession, () -> {
+            remote.deleteEverywhere(oldSession);
+            deleteOwnData(oldSession);
+            tx.executeWithoutResult(s -> copies.deleteById(oldSession));
+        });
+        return created;
+    }
+
+    /**
+     * Midnight purge: one TRUNCATE of every copy table, which is atomic and waits for transactions in flight (review
+     * M4). The other services purge their own parts; whatever they keep is replaced when the session's copy is
+     * created again.
+     */
+    @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Paris")
+    public void purgeAll() {
+        tx.executeWithoutResult(s -> jdbc.execute("TRUNCATE " + String.join(", ", COPY_TABLES) + ", demo_copy"));
+        log.info("Midnight purge: every demo copy deleted");
+    }
+
+    /** If the service was down at midnight, the copies from before it are purged on the next start. */
+    @EventListener(ApplicationReadyEvent.class)
+    public void purgeCopiesFromBeforeLastMidnight() {
+        Instant lastMidnight = SeedClock.nextPurge(clock.instant()).minus(Duration.ofDays(1));
+        if (copies.existsByCreatedAtBefore(lastMidnight)) {
+            purgeAll();
+        }
+    }
+
+    private DemoSessionView waitUntilReady(UUID session) {
+        long deadline = System.nanoTime() + CREATING_TIMEOUT.toNanos();
+        while (System.nanoTime() < deadline) {
+            Optional<DemoCopy> copy = copies.findById(session);
+            if (copy.isPresent() && copy.get().isReady()) {
+                return view(copy.get());
+            }
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        throw ApiException.conflict(
+                "demo-copy-in-progress", "Your demo copy is still being created. Try again in a few seconds.");
+    }
+
+    private void build(UUID session, SeedClock at) {
         try {
-            remote.replaceEverywhere(session);
-            seedOwnData(session, at);
+            remote.replaceEverywhere(session, at.now());
+            replaceOwnData(session, at);
         } catch (RuntimeException e) {
-            log.warn("Creating demo copy {} failed, rolling back: {}", session, e.getMessage());
+            log.warn("Creating demo copy {} failed, rolling back: {}", fingerprint(session), e.getMessage());
             remote.deleteEverywhere(session);
             deleteOwnData(session);
             tx.executeWithoutResult(s -> copies.deleteById(session));
@@ -175,36 +270,39 @@ public class DemoService {
                     ? api
                     : ApiException.unavailable("The demo is starting up, try again in a minute.");
         }
-        return new Ensured(view(copies.findById(session).orElseThrow()), true);
-    }
-
-    /** "Reset my demo": a fresh copy under the same id. */
-    public DemoSessionView reset(UUID session) {
-        remote.deleteEverywhere(session);
-        deleteOwnData(session);
-        tx.executeWithoutResult(s -> copies.deleteById(session));
-        return ensure(session).session();
-    }
-
-    @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Paris")
-    public void purgeAll() {
-        tx.executeWithoutResult(s -> {
-            COPY_TABLES.forEach(table -> jdbc.update("delete from " + table));
-            jdbc.update("delete from demo_copy");
-        });
-        log.info("Midnight purge: every demo copy deleted");
     }
 
     private void deleteOwnData(UUID session) {
-        tx.executeWithoutResult(s -> COPY_TABLES.forEach(
-                table -> jdbc.update("delete from " + table + " where demo_session = ?", session.toString())));
+        tx.executeWithoutResult(s -> deleteRows(session));
     }
 
-    /** Writes the seed under the session, then runs the real aggregation so grades match the live maths. */
-    void seedOwnData(UUID session, SeedClock at) {
+    private void deleteRows(UUID session) {
+        COPY_TABLES.forEach(
+                table -> jdbc.update("delete from " + table + " where demo_session = ?", session.toString()));
+    }
+
+    /** The session id is a bearer-like secret: logs only show a short hash of it. */
+    static String fingerprint(UUID session) {
+        try {
+            byte[] hash = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(session.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(hash, 0, 4);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            return "session";
+        }
+    }
+
+    /**
+     * Deletes the session's own rows and writes the seed in one transaction, then runs the real aggregation so the
+     * grades match the live maths.
+     */
+    void replaceOwnData(UUID session, SeedClock at) {
+        Map<Assessment, Instant> due = new EnumMap<>(Assessment.class);
+        seed.assessments().forEach(a -> due.put(a.code(), at.resolve(a.dueAt())));
         DemoSession.runAs(
                 session,
                 () -> tx.executeWithoutResult(s -> {
+                    deleteRows(session);
                     for (DemoSeed.SeedAssessment a : seed.assessments()) {
                         schedules.save(new AssessmentSchedule(
                                 SeedIds.of(session, "schedule:" + a.code()), a.code(), at.resolve(a.dueAt())));
@@ -239,6 +337,7 @@ public class DemoService {
                                     t.defenseSlot().room()));
                         }
                         for (DemoSeed.SeedGrade g : t.grades()) {
+                            Instant submittedAt = at.resolve(g.submittedAt());
                             grades.save(new Grade(
                                     SeedIds.of(session, g.evaluationKey() + "/grade"),
                                     SeedIds.of(session, g.evaluationKey()),
@@ -246,7 +345,8 @@ public class DemoService {
                                     g.assessment(),
                                     g.reviewerId(),
                                     g.score(),
-                                    at.resolve(g.submittedAt())));
+                                    submittedAt,
+                                    submittedAt.isAfter(due.get(g.assessment()))));
                         }
                     }
                     grades.flush();

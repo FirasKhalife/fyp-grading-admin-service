@@ -29,13 +29,17 @@ public class DemoCopyClient {
                         loadBalanced.clone().baseUrl(notification).build()));
     }
 
-    public void replaceEverywhere(UUID session) {
+    /**
+     * {@code createdAt} is the copy's creation instant: every service derives "today" from it, so a copy created
+     * around midnight gets the same dates everywhere.
+     */
+    public void replaceEverywhere(UUID session, java.time.Instant createdAt) {
         for (Target t : targets) {
             Remote.call(
                     t.name(),
                     () -> t.http()
                             .put()
-                            .uri("/internal/demo-sessions/{s}", session)
+                            .uri("/internal/demo-sessions/{s}?createdAt={at}", session, createdAt)
                             .retrieve()
                             .toBodilessEntity());
         }

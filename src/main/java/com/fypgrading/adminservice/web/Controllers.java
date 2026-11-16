@@ -12,17 +12,14 @@ import com.fypgrading.adminservice.me.MeService;
 import com.fypgrading.adminservice.schedule.AssessmentCommands;
 import com.fypgrading.adminservice.teams.TeamCommands;
 import com.fypgrading.adminservice.views.ReadModel;
-import com.fypgrading.adminservice.views.Snapshot;
 import com.fypgrading.adminservice.views.Views;
 import com.fypgrading.adminservice.views.Views.AssessmentView;
 import com.fypgrading.adminservice.views.Views.AssignmentCheck;
 import com.fypgrading.adminservice.views.Views.DemoSessionView;
-import com.fypgrading.adminservice.views.Views.InternalPerson;
 import com.fypgrading.adminservice.views.Views.PageView;
 import com.fypgrading.adminservice.views.Views.ReviewerView;
 import com.fypgrading.adminservice.views.Views.StudentView;
 import com.fypgrading.adminservice.views.Views.TeamAssessmentState;
-import com.fypgrading.adminservice.views.Views.TeamAssessmentView;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -193,10 +190,13 @@ public final class Controllers {
                                 .append(
                                         c.state() == TeamAssessmentState.FINAL
                                                         || c.state() == TeamAssessmentState.RELEASED
-                                                ? String.format("%.1f", c.grade())
+                                                ? String.format(java.util.Locale.ROOT, "%.1f", c.grade())
                                                 : ""));
                 csv.append(',')
-                        .append(row.finalGrade() == null ? "" : String.format("%.1f", row.finalGrade()))
+                        .append(
+                                row.finalGrade() == null
+                                        ? ""
+                                        : String.format(java.util.Locale.ROOT, "%.1f", row.finalGrade()))
                         .append(',')
                         .append(row.finalState())
                         .append('\n');
@@ -373,33 +373,27 @@ public final class Controllers {
 
         private final ReadModel read;
         private final GradeIntake intake;
+        private final DemoService demo;
 
-        public Internal(ReadModel read, GradeIntake intake) {
+        public Internal(ReadModel read, GradeIntake intake, DemoService demo) {
             this.read = read;
             this.intake = intake;
+            this.demo = demo;
+        }
+
+        /** For the gateway (review M5): 204 when the copy exists and is complete, 404 otherwise. */
+        @GetMapping("/demo-sessions/{session}")
+        public ResponseEntity<Void> copyReady(@PathVariable UUID session) {
+            return demo.isReady(session)
+                    ? ResponseEntity.noContent().build()
+                    : ResponseEntity.notFound().build();
         }
 
         @GetMapping("/assignments/{teamId}/{assessment}")
         public AssignmentCheck assignment(
                 @PathVariable UUID teamId, @PathVariable Assessment assessment, @RequestParam UUID reviewerId) {
-            Snapshot s = read.snapshot(false);
-            var team = s.team(teamId).orElseThrow(() -> ApiException.notFound("The team"));
-            boolean assigned = s.expected(teamId, assessment).contains(reviewerId);
-            var reviewer = s.reviewers().get(reviewerId);
-            TeamAssessmentView v = s.assessmentView(teamId, assessment);
-            return new AssignmentCheck(
-                    teamId,
-                    team.getName(),
-                    assessment,
-                    assessment.role(),
-                    assigned,
-                    reviewer == null
-                            ? new InternalPerson(reviewerId, "", "")
-                            : new InternalPerson(reviewerId, reviewer.getFirstName(), reviewer.getLastName()),
-                    s.due(assessment),
-                    v.state() == TeamAssessmentState.FINAL || v.state() == TeamAssessmentState.RELEASED,
-                    v.submittedCount(),
-                    v.expectedCount());
+            // Called on every autosave: a few targeted queries, not the whole copy (review M11).
+            return read.assignmentCheck(teamId, assessment, reviewerId);
         }
 
         @PostMapping("/grades")

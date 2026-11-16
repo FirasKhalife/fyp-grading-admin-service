@@ -55,7 +55,8 @@ public final class GradeMath {
      * default). Informational only: the grade is always the plain average.
      */
     public static boolean disagree(Collection<Double> scores, double threshold) {
-        return spread(scores).map(s -> s > threshold).orElse(false);
+        // Compare what people see: a spread shown as "15.0" is not flagged.
+        return spread(scores).map(s -> display(s) > threshold).orElse(false);
     }
 
     public static Double display(Double score) {
