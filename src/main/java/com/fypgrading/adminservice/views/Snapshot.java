@@ -107,8 +107,10 @@ public record Snapshot(Instant now, LocalDate anchor, List<Team> teams, List<Stu
         Optional<Summary> evaluation = evaluation(teamId, assessment, reviewerId);
         EvaluationStatus status = grade.isPresent() ? EvaluationStatus.SUBMITTED
                 : evaluation.map(e -> EvaluationStatus.valueOf(e.status())).orElse(EvaluationStatus.NOT_STARTED);
+        Instant due = due(assessment);
+        boolean late = grade.isPresent() && due != null && grade.get().getSubmittedAt().isAfter(due);
         return new ReviewerProgress(person(reviewerId), status,
-                status != EvaluationStatus.SUBMITTED && pastDue(assessment),
+                status != EvaluationStatus.SUBMITTED && pastDue(assessment), late,
                 grade.map(g -> GradeMath.display(g.getScore())).orElse(null),
                 grade.map(Grade::getSubmittedAt).orElse(null),
                 grade.map(Grade::getEvaluationId).or(() -> evaluation.map(Summary::evaluationId)).orElse(null),

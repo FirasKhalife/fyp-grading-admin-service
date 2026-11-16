@@ -2,12 +2,10 @@ spring:
   application:
     name: admin-service
   config:
-    import: "optional:configserver:"
+    # Shared settings from config-server (fyp-grading-config). Optional: this file is complete on its own.
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8071}/config"
   cloud:
     config:
-      discovery:
-        enabled: true
-        service-id: config-server
       fail-fast: false
     function:
       definition: aggregate
@@ -32,8 +30,12 @@ spring:
             required-groups: notification-service
       rabbit:
         default:
+          # Each queue gets its own <queue>.dlq. Producers declare the queues too (required-groups), so they
+          # must declare them with the same dead-letter arguments as the consumers.
           consumer:
-            auto-bind-dlq: true   # each queue gets its own <queue>.dlq
+            auto-bind-dlq: true
+          producer:
+            auto-bind-dlq: true
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/admin-db}
     username: ${DATABASE_USERNAME:admin}
@@ -71,6 +73,9 @@ server:
 
 eureka:
   client:
+    # Register and refresh quickly: the services start together and find each other (and the config server) by name.
+    initial-instance-info-replication-interval-seconds: 2
+    registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: ${REGISTRY_SERVER_URL:http://localhost:8761/eureka/}
   instance:
@@ -97,3 +102,7 @@ info:
     name: ${spring.application.name}
     description: "Assay admin service: teams, people, schedule, grades, release, demo copies"
     version: ${BUILD_VERSION:dev}
+
+springdoc:
+  # Service-to-service endpoints aren't part of the public API (the gateway doesn't route them).
+  paths-to-exclude: /internal/**

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
@@ -20,7 +21,7 @@ public class EvaluationClient {
 
     private final RestClient http;
 
-    public EvaluationClient(RestClient.Builder loadBalanced,
+    public EvaluationClient(@Qualifier(ClientConfig.LOAD_BALANCED) RestClient.Builder loadBalanced,
             @Value("${assay.clients.evaluation:http://evaluation-service}") String base) {
         this.http = loadBalanced.baseUrl(base).build();
     }

@@ -88,7 +88,8 @@ public final class Views {
                                  int finalTeamCount, int releasedTeamCount) {
     }
 
-    public record ReviewerProgress(PersonView reviewer, EvaluationStatus status, boolean overdue, Double score,
+    public record ReviewerProgress(PersonView reviewer, EvaluationStatus status, boolean overdue, boolean submittedLate,
+                                   Double score,
                                    Instant submittedAt, UUID evaluationId, Integer scoredCount, Integer criteriaCount) {
     }
 
@@ -109,7 +110,7 @@ public final class Views {
     }
 
     public record MyTask(Assessment assessment, String name, int weight, Instant dueAt, EvaluationStatus status,
-                         boolean overdue, Double score, int scoredCount, int criteriaCount, UUID evaluationId,
+                         boolean overdue, boolean submittedLate, Double score, int scoredCount, int criteriaCount, UUID evaluationId,
                          Instant updatedAt, Instant submittedAt) {
     }
 

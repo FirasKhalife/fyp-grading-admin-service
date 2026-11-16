@@ -2,6 +2,7 @@ package com.fypgrading.adminservice.clients;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -12,7 +13,7 @@ public class DemoCopyClient {
 
     private final List<Target> targets;
 
-    public DemoCopyClient(RestClient.Builder loadBalanced,
+    public DemoCopyClient(@Qualifier(ClientConfig.LOAD_BALANCED) RestClient.Builder loadBalanced,
             @Value("${assay.clients.rubric:http://rubric-service}") String rubric,
             @Value("${assay.clients.evaluation:http://evaluation-service}") String evaluation,
             @Value("${assay.clients.notification:http://notification-service}") String notification) {

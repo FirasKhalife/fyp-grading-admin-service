@@ -186,7 +186,8 @@ public class ReadModel {
 
     private static TeamAssessmentView hideOthers(TeamAssessmentView v, UUID viewer) {
         List<ReviewerProgress> reviewers = v.reviewers().stream().map(r -> r.reviewer().id().equals(viewer) ? r
-                : new ReviewerProgress(r.reviewer(), r.status(), r.overdue(), null, r.submittedAt(), null, null, null))
+                : new ReviewerProgress(r.reviewer(), r.status(), r.overdue(), r.submittedLate(), null, r.submittedAt(),
+                        null, null, null))
                 .toList();
         return new TeamAssessmentView(v.assessment(), v.weight(), v.reviewerRole(), v.dueAt(), v.state(), v.grade(),
                 v.submittedCount(), v.expectedCount(), null, v.overdue(), v.finalizedAt(), v.releasedAt(), reviewers);
@@ -208,7 +209,7 @@ public class ReadModel {
                 ReviewerProgress p = s.progress(team.getId(), assessment, me);
                 var evaluation = s.evaluation(team.getId(), assessment, me);
                 tasks.add(new MyTask(assessment, assessment.displayName(), assessment.weight(), s.due(assessment),
-                        p.status(), p.overdue(), p.score(), evaluation.map(e -> e.scoredCount()).orElse(0),
+                        p.status(), p.overdue(), p.submittedLate(), p.score(), evaluation.map(e -> e.scoredCount()).orElse(0),
                         evaluation.map(e -> e.criteriaCount()).orElse(0), p.evaluationId(),
                         evaluation.map(e -> e.updatedAt()).orElse(p.submittedAt()), p.submittedAt()));
                 expected++;

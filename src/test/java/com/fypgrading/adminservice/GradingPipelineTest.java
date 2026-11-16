@@ -150,6 +150,13 @@ class GradingPipelineTest {
                 .andExpect(jsonPath("$.composition.valid").value(true));
         drainNotifications(3); // the three assignment notices
 
+        // A due date in the past: every grade handed in below is a late submission, and stays marked as one.
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch("/api/assessments/ADVISOR_ASSESSMENT").header("X-Demo-Session", session)
+                        .with(as(RANIA, "ADMIN")).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dueAt\": \"2026-06-01T21:59:00Z\"}"))
+                .andExpect(status().isOk());
+
         // A jury member can't hand in the advisor's assessment.
         mvc.perform(post("/internal/grades").header("X-Demo-Session", session).with(as(JANE, "REVIEWER"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -174,13 +181,18 @@ class GradingPipelineTest {
                         .andExpect(jsonPath("$.finalState").value("COMPUTED"))
                         .andExpect(jsonPath("$.assessments[0].grade").value(85.0))
                         .andExpect(jsonPath("$.assessments[0].submittedCount").value(2))
-                        .andExpect(jsonPath("$.assessments[0].spread").value(10.0)));
+                        .andExpect(jsonPath("$.assessments[0].spread").value(10.0))
+                        .andExpect(jsonPath("$.assessments[2].reviewers[0].submittedLate").value(true))
+                        .andExpect(jsonPath("$.assessments[2].reviewers[0].overdue").value(false)));
 
-        List<String> sent = drainNotifications(6);
+        List<String> sent = drainNotifications(7); // 1 overdue + 5 grades final + the final grade
         assertThat(sent.stream().filter(n -> n.contains("\"GRADE_FINAL\""))).hasSize(5);
         assertThat(sent.stream().filter(n -> n.contains("\"FINAL_GRADE_COMPUTED\""))).hasSize(1);
-        assertThat(sent).anyMatch(n -> n.contains("Team Omega's final grade is computed: 81.3."))
+        assertThat(sent).anyMatch(n -> n.contains("Team Omega's final grade is computed: 81.3."));
+        assertThat(sent.stream().filter(n -> n.contains("GRADE_FINAL") || n.contains("FINAL_GRADE_COMPUTED")))
                 .allMatch(n -> n.contains(RANIA.toString()) && n.contains(JANE.toString()));
+        // The past due date told the one reviewer still owing an evaluation at that moment (Emily) it's overdue.
+        assertThat(sent).anyMatch(n -> n.contains("\"OVERDUE\"") && n.contains(EMILY.toString()));
     }
 
     @Test
@@ -204,6 +216,26 @@ class GradingPipelineTest {
         mvc.perform(get("/api/me/assignments").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.teams.length()").value(3));
+
+        // A reviewer opens a team they're on: other reviewers' scores stay hidden until the grade is final.
+        String beta = JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Beta')].team.id").getFirst();
+        String gamma = JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Gamma')].team.id").getFirst();
+        String asJane = mvc.perform(get("/api/teams/" + beta).header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        List<Object> hiddenFinalReport = JsonPath.read(asJane, "$.assessments[3].reviewers[?(@.status == 'SUBMITTED')].score");
+        assertThat(hiddenFinalReport).hasSize(2).containsOnlyNulls();
+        assertThat(JsonPath.<Object>read(asJane, "$.assessments[3].spread")).isNull();
+        List<Object> visibleProposal = JsonPath.read(asJane, "$.assessments[0].reviewers[*].score");
+        assertThat(visibleProposal).hasSize(3).doesNotContainNull();
+        mvc.perform(get("/api/teams/" + gamma).header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
+                .andExpect(status().isForbidden());
+
+        // Late submissions stay marked: Delta's progress report was handed in before its due date, so it isn't late.
+        String delta = JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Delta')].team.id").getFirst();
+        mvc.perform(get("/api/teams/" + delta).header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
+                .andExpect(jsonPath("$.assessments[1].reviewers[0].submittedLate").value(false))
+                .andExpect(jsonPath("$.assessments[2].reviewers[0].overdue").value(true));
 
         mvc.perform(get("/api/me/team").header("X-Demo-Session", session).with(as(NOUR, "STUDENT")))
                 .andExpect(status().isOk())
