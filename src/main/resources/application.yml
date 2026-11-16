@@ -58,6 +58,9 @@ spring:
           jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:7080/realms/assay}/protocol/openid-connect/certs
 
 assay:
+  insights:
+    # Plan 3.5: flag an assessment when its reviewers' scores are more than this many points apart.
+    disagreement-threshold: 15
   demo:
     public-paths: /api/demo/personas
   security:

@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.domain;
 
-import com.fypgrading.adminservice.common.jpa.AssignedIdEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,7 +12,7 @@ import org.hibernate.annotations.TenantId;
 /** The due date of one assessment, the same for every team. Late submissions are allowed and marked overdue. */
 @Entity
 @Table(name = "assessment_schedule")
-public class AssessmentSchedule extends AssignedIdEntity {
+public class AssessmentSchedule extends Audited {
 
     @TenantId
     @Column(name = "demo_session", nullable = false, updatable = false)

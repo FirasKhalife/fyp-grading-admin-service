@@ -259,7 +259,7 @@ public class DemoService {
                         for (DemoSeed.SeedRelease r : t.releases()) {
                             teamAssessments
                                     .findByTeamIdAndAssessment(teamId, r.assessment())
-                                    .ifPresent(ta -> ta.release(at.resolve(r.releasedAt())));
+                                    .ifPresent(ta -> ta.release(at.resolve(r.releasedAt()), null));
                         }
                     }
                 }));

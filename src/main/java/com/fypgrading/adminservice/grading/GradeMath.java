@@ -50,6 +50,14 @@ public final class GradeMath {
         return Optional.of(max - min);
     }
 
+    /**
+     * Plan 3.5: the reviewers disagree when their scores are more than {@code threshold} points apart (15 by
+     * default). Informational only: the grade is always the plain average.
+     */
+    public static boolean disagree(Collection<Double> scores, double threshold) {
+        return spread(scores).map(s -> s > threshold).orElse(false);
+    }
+
     public static Double display(Double score) {
         return score == null
                 ? null

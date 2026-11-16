@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +43,7 @@ public class GradeAggregator {
     private final ReviewerRepository reviewers;
     private final Events events;
     private final Clock clock;
+    private final double disagreementThreshold;
 
     public GradeAggregator(
             TeamRepository teams,
@@ -50,7 +52,8 @@ public class GradeAggregator {
             TeamAssessmentRepository teamAssessments,
             ReviewerRepository reviewers,
             Events events,
-            Clock clock) {
+            Clock clock,
+            @Value("${assay.insights.disagreement-threshold:15}") double disagreementThreshold) {
         this.teams = teams;
         this.teamReviewers = teamReviewers;
         this.grades = grades;
@@ -58,6 +61,7 @@ public class GradeAggregator {
         this.reviewers = reviewers;
         this.events = events;
         this.clock = clock;
+        this.disagreementThreshold = disagreementThreshold;
     }
 
     public record Outcome(boolean assessmentBecameFinal, boolean finalGradeComputed) {}
@@ -96,7 +100,12 @@ public class GradeAggregator {
                         finalizedAt));
                 becameFinal = true;
                 if (announce) {
-                    announceAssessment(team, assessment, grade, onTeam);
+                    announceAssessment(
+                            team,
+                            assessment,
+                            grade,
+                            submitted.stream().map(Grade::getScore).toList(),
+                            onTeam);
                 }
             }
         }
@@ -124,13 +133,22 @@ public class GradeAggregator {
         return new Outcome(becameFinal, computed);
     }
 
-    private void announceAssessment(Team team, Assessment assessment, double grade, List<TeamReviewer> onTeam) {
+    private void announceAssessment(
+            Team team, Assessment assessment, double grade, List<Double> scores, List<TeamReviewer> onTeam) {
         String shown = String.format("%.1f", GradeMath.display(grade));
+        // Plan 3.5: flag a large disagreement. The grade is still the plain average.
+        String disagreement = GradeMath.disagree(scores, disagreementThreshold)
+                ? " Reviewers disagree by "
+                        + String.format(
+                                "%.1f",
+                                GradeMath.display(GradeMath.spread(scores).orElseThrow()))
+                        + " points."
+                : "";
         Instant now = clock.instant();
         events.notify(
                 "grade-final:" + team.getId() + ":" + assessment,
                 "GRADE_FINAL",
-                assessment.displayName() + " for Team " + team.getName() + " is final: " + shown + ".",
+                assessment.displayName() + " for Team " + team.getName() + " is final: " + shown + "." + disagreement,
                 now,
                 Events.Link.team(team.getId(), assessment),
                 staffOf(onTeam));
@@ -138,7 +156,7 @@ public class GradeAggregator {
                 "GRADE_FINAL",
                 null,
                 "Team " + team.getName(),
-                assessment.displayName() + " grade is final: " + shown + ".",
+                assessment.displayName() + " grade is final: " + shown + "." + disagreement,
                 now,
                 Events.Link.team(team.getId(), assessment));
     }

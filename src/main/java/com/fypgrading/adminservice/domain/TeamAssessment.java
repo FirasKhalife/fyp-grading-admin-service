@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.domain;
 
-import com.fypgrading.adminservice.common.jpa.AssignedIdEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,7 +12,7 @@ import org.hibernate.annotations.TenantId;
 /** A team's grade on one assessment: final once every expected reviewer submitted, then released to students. */
 @Entity
 @Table(name = "team_assessment")
-public class TeamAssessment extends AssignedIdEntity {
+public class TeamAssessment extends Audited {
 
     @TenantId
     @Column(name = "demo_session", nullable = false, updatable = false)
@@ -35,6 +34,9 @@ public class TeamAssessment extends AssignedIdEntity {
     @Column(name = "released_at")
     private Instant releasedAt;
 
+    @Column(name = "released_by")
+    private UUID releasedBy;
+
     protected TeamAssessment() {}
 
     public TeamAssessment(UUID id, UUID teamId, Assessment assessment, double grade, Instant finalizedAt) {
@@ -49,8 +51,14 @@ public class TeamAssessment extends AssignedIdEntity {
         this.grade = grade;
     }
 
-    public void release(Instant at) {
+    /** {@code by} is the coordinator who released it; null for the seed. */
+    public void release(Instant at, UUID by) {
         this.releasedAt = at;
+        this.releasedBy = by;
+    }
+
+    public UUID getReleasedBy() {
+        return releasedBy;
     }
 
     public boolean isReleased() {

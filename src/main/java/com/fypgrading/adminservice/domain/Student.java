@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.domain;
 
-import com.fypgrading.adminservice.common.jpa.AssignedIdEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -10,7 +9,7 @@ import org.hibernate.annotations.TenantId;
 /** A team member. {@code userId} links the row to a Keycloak account (only the student persona has one). */
 @Entity
 @Table(name = "student")
-public class Student extends AssignedIdEntity {
+public class Student extends Audited {
 
     @TenantId
     @Column(name = "demo_session", nullable = false, updatable = false)

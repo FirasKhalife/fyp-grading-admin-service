@@ -75,6 +75,7 @@ public class ReadModel {
     private final DemoCopyRepository copies;
     private final EvaluationClient evaluations;
     private final Clock clock;
+    private final double disagreementThreshold;
 
     public ReadModel(
             TeamRepository teams,
@@ -87,7 +88,9 @@ public class ReadModel {
             ReviewerRepository reviewers,
             DemoCopyRepository copies,
             EvaluationClient evaluations,
-            Clock clock) {
+            Clock clock,
+            @org.springframework.beans.factory.annotation.Value("${assay.insights.disagreement-threshold:15}")
+                    double disagreementThreshold) {
         this.teams = teams;
         this.students = students;
         this.assignments = assignments;
@@ -99,6 +102,7 @@ public class ReadModel {
         this.copies = copies;
         this.evaluations = evaluations;
         this.clock = clock;
+        this.disagreementThreshold = disagreementThreshold;
     }
 
     @Transactional(readOnly = true)
@@ -122,7 +126,8 @@ public class ReadModel {
                 slots.findAll(),
                 due,
                 people,
-                withEvaluations ? evaluations.summaries() : List.of());
+                withEvaluations ? evaluations.summaries() : List.of(),
+                disagreementThreshold);
     }
 
     // ------------------------------------------------------------------ assessments (P5 columns, P9 due dates)
@@ -173,6 +178,7 @@ public class ReadModel {
                                 drafts,
                                 overdue,
                                 v.spread(),
+                                v.disagreement(),
                                 v.releasedAt()));
                         pending += v.expectedCount() - v.submittedCount();
                     }
@@ -217,7 +223,31 @@ public class ReadModel {
                 released,
                 s.teamAssessments().size() - released,
                 finals.isEmpty() ? null : GradeMath.display(GradeMath.average(finals)));
-        return new Overview(kpis, assessments(s), rows);
+        return new Overview(kpis, assessments(s), rows, insights(s, rows, finals));
+    }
+
+    private Views.Insights insights(Snapshot s, List<OverviewRow> rows, List<Double> finals) {
+        List<Views.GradeBand> bands = new ArrayList<>();
+        for (int from = 0; from < 100; from += 10) {
+            int lo = from;
+            int hi = from + 10;
+            int count = (int) finals.stream()
+                    .filter(g -> g >= lo && (g < hi || (hi == 100 && g <= 100)))
+                    .count();
+            bands.add(new Views.GradeBand(lo, hi, count));
+        }
+        List<Views.Disagreement> disagreements = new ArrayList<>();
+        for (OverviewRow row : rows) {
+            for (OverviewCell c : row.cells()) {
+                if (c.disagreement()) {
+                    disagreements.add(
+                            new Views.Disagreement(row.team(), c.assessment(), c.spread(), c.submittedCount()));
+                }
+            }
+        }
+        disagreements.sort(
+                Comparator.comparingDouble(Views.Disagreement::spread).reversed());
+        return new Views.Insights(s.disagreementThreshold(), bands, disagreements);
     }
 
     // ------------------------------------------------------------------ P6 / P8 teams
@@ -290,6 +320,7 @@ public class ReadModel {
                 v.submittedCount(),
                 v.expectedCount(),
                 null,
+                false,
                 v.overdue(),
                 v.finalizedAt(),
                 v.releasedAt(),

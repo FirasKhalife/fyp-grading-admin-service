@@ -108,6 +108,7 @@ public class AssessmentCommands {
         Map<UUID, TeamAssessment> finals = teamAssessments.findByAssessment(assessment).stream()
                 .collect(Collectors.toMap(TeamAssessment::getTeamId, Function.identity()));
         Instant now = clock.instant();
+        CurrentUser me = CurrentUser.require();
         List<UUID> released = new ArrayList<>();
         List<UUID> already = new ArrayList<>();
         List<UUID> notFinal = new ArrayList<>();
@@ -120,7 +121,7 @@ public class AssessmentCommands {
             } else if (ta.isReleased()) {
                 already.add(team.getId());
             } else {
-                ta.release(now);
+                ta.release(now, me.id());
                 released.add(team.getId());
             }
         }
@@ -142,16 +143,17 @@ public class AssessmentCommands {
                     Events.Link.of("STUDENT_RESULTS", teamId, assessment),
                     recipients);
         }
-        CurrentUser me = CurrentUser.require();
-        String names =
-                released.stream().map(id -> "Team " + byId.get(id).getName()).collect(Collectors.joining(", "));
-        events.activity(
-                "RELEASED",
-                me.id(),
-                me.displayName(),
-                "released " + assessment.displayName() + " results to " + names + ".",
-                now,
-                Events.Link.of("OVERVIEW", null, assessment));
+        // One feed line per team, so each team's history (GET /api/activity?teamId=) shows its own release.
+        for (UUID teamId : released) {
+            events.activity(
+                    "RELEASED",
+                    me.id(),
+                    me.displayName(),
+                    "released " + assessment.displayName() + " results to Team "
+                            + byId.get(teamId).getName() + ".",
+                    now,
+                    Events.Link.team(teamId, assessment));
+        }
         return new ReleaseResult(assessment, now, released, already, notFinal);
     }
 }

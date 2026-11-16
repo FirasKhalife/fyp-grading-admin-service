@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.domain;
 
-import com.fypgrading.adminservice.common.jpa.AssignedIdEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,7 +11,7 @@ import org.hibernate.annotations.TenantId;
 /** A reviewer on a team, with one role (jury or advisor) on that team. */
 @Entity
 @Table(name = "team_reviewer")
-public class TeamReviewer extends AssignedIdEntity {
+public class TeamReviewer extends Audited {
 
     @TenantId
     @Column(name = "demo_session", nullable = false, updatable = false)

@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.domain;
 
-import com.fypgrading.adminservice.common.jpa.AssignedIdEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -11,7 +10,7 @@ import org.hibernate.annotations.TenantId;
 /** When and where a team presents its final defense. The jury is the team's jury members. */
 @Entity
 @Table(name = "defense_slot")
-public class DefenseSlot extends AssignedIdEntity {
+public class DefenseSlot extends Audited {
 
     @TenantId
     @Column(name = "demo_session", nullable = false, updatable = false)

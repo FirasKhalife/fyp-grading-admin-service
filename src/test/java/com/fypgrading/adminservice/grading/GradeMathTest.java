@@ -40,4 +40,16 @@ class GradeMathTest {
                 .isEqualTo(21.3);
         assertThat(GradeMath.spread(List.of(70.0))).isEmpty();
     }
+
+    @Test
+    void reviewersDisagreeWhenMoreThanTheThresholdApart() {
+        assertThat(GradeMath.disagree(List.of(85.0, 63.75, 73.75), 15)).isTrue();
+        assertThat(GradeMath.disagree(List.of(80.0, 95.0), 15))
+                .as("exactly 15 is not a disagreement")
+                .isFalse();
+        assertThat(GradeMath.disagree(List.of(80.0, 90.0), 15)).isFalse();
+        assertThat(GradeMath.disagree(List.of(35.0), 15))
+                .as("one reviewer can't disagree")
+                .isFalse();
+    }
 }

@@ -142,6 +142,7 @@ public final class Views {
             int submittedCount,
             int expectedCount,
             Double spread,
+            boolean disagreement,
             boolean overdue,
             Instant finalizedAt,
             Instant releasedAt,
@@ -204,6 +205,7 @@ public final class Views {
             int draftCount,
             boolean overdue,
             Double spread,
+            boolean disagreement,
             Instant releasedAt) {}
 
     public record OverviewRow(
@@ -225,7 +227,16 @@ public final class Views {
             int resultsReleasable,
             Double averageFinalGrade) {}
 
-    public record Overview(Kpis kpis, List<AssessmentView> assessments, List<OverviewRow> teams) {}
+    public record Overview(Kpis kpis, List<AssessmentView> assessments, List<OverviewRow> teams, Insights insights) {}
+
+    /** Plan 3.5: where reviewers disagree, and how the final grades spread. Informational only. */
+    public record Insights(
+            double disagreementThreshold, List<GradeBand> finalGradeDistribution, List<Disagreement> disagreements) {}
+
+    /** Final grades in [from, to); the last band includes 100. */
+    public record GradeBand(int from, int to, int count) {}
+
+    public record Disagreement(TeamRef team, Assessment assessment, double spread, int submittedCount) {}
 
     public record DueDate(Assessment assessment, String name, Instant dueAt) {}
 

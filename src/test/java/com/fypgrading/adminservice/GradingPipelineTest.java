@@ -77,6 +77,9 @@ class GradingPipelineTest {
     @Autowired
     RabbitAdmin rabbitAdmin;
 
+    @Autowired
+    org.springframework.jdbc.core.JdbcTemplate jdbc;
+
     @MockitoBean
     EvaluationClient evaluations;
 
@@ -152,6 +155,9 @@ class GradingPipelineTest {
                 .getResponse()
                 .getContentAsString();
         UUID team = UUID.fromString(JsonPath.read(created, "$.id"));
+        // Plan 3.4: the row records the coordinator who created it, from the token (it used to say SYSTEM).
+        assertThat(jdbc.queryForObject("select created_by from team where id = ?", UUID.class, team))
+                .isEqualTo(RANIA);
 
         mvc.perform(put("/api/teams/" + team + "/reviewers")
                         .header("X-Demo-Session", session)
@@ -255,6 +261,8 @@ class GradingPipelineTest {
         assertThat(JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Alpha')].finalState"))
                 .containsExactly("VISIBLE");
 
+        assertInsights(overview);
+
         mvc.perform(get("/api/me/assignments").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.teams.length()").value(3));
@@ -301,6 +309,11 @@ class GradingPipelineTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.releasedTeamIds.length()").value(2)) // Beta and Epsilon were final
                 .andExpect(jsonPath("$.alreadyReleasedTeamIds.length()").value(2));
+        assertThat(jdbc.queryForObject(
+                        "select released_by from team_assessment where team_id = ? and assessment = 'ADVISOR_ASSESSMENT'",
+                        UUID.class,
+                        UUID.fromString(beta)))
+                .isEqualTo(RANIA);
         mvc.perform(post("/api/assessments/ADVISOR_ASSESSMENT/release")
                         .header("X-Demo-Session", session)
                         .with(as(RANIA, "ADMIN")))
@@ -331,5 +344,21 @@ class GradingPipelineTest {
                         .with(as(RANIA, "ADMIN")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("demo-session-not-found"));
+    }
+
+    /** Plan 3.5: reviewers more than 15 points apart are flagged; the grade stays the plain average. */
+    private static void assertInsights(String overview) {
+        assertThat(JsonPath.<List<Boolean>>read(overview, "$.teams[?(@.team.name == 'Beta')].cells[0].disagreement"))
+                .containsExactly(true);
+        assertThat(JsonPath.<List<Boolean>>read(overview, "$.teams[?(@.team.name == 'Alpha')].cells[0].disagreement"))
+                .containsExactly(false);
+        assertThat(JsonPath.<Double>read(overview, "$.insights.disagreementThreshold"))
+                .isEqualTo(15.0);
+        assertThat(JsonPath.<List<String>>read(overview, "$.insights.disagreements[*].team.name"))
+                .contains("Beta", "Delta");
+        assertThat(JsonPath.<List<Integer>>read(overview, "$.insights.finalGradeDistribution[*].count"))
+                .hasSize(10);
+        assertThat(JsonPath.<Integer>read(overview, "$.insights.finalGradeDistribution[8].count"))
+                .isEqualTo(1); // Alpha's 88.0 sits in [80, 90)
     }
 }

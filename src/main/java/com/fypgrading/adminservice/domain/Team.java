@@ -1,6 +1,5 @@
 package com.fypgrading.adminservice.domain;
 
-import com.fypgrading.adminservice.common.jpa.AssignedIdEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -11,7 +10,7 @@ import org.hibernate.annotations.TenantId;
 /** A group of students doing one project, with the final grade once all five assessments are final. */
 @Entity
 @Table(name = "team")
-public class Team extends AssignedIdEntity {
+public class Team extends Audited {
 
     @TenantId
     @Column(name = "demo_session", nullable = false, updatable = false)

@@ -50,7 +50,8 @@ public record Snapshot(
         List<DefenseSlot> slots,
         Map<Assessment, Instant> dueDates,
         Map<UUID, Reviewer> reviewers,
-        List<Summary> evaluations) {
+        List<Summary> evaluations,
+        double disagreementThreshold) {
 
     public Optional<Team> team(UUID id) {
         return teams.stream().filter(t -> t.getId().equals(id)).findFirst();
@@ -173,6 +174,7 @@ public record Snapshot(
                 scores.size(),
                 expected.size(),
                 GradeMath.display(GradeMath.spread(scores).orElse(null)),
+                GradeMath.disagree(scores, disagreementThreshold),
                 ta.isEmpty() && pastDue(assessment),
                 ta.map(TeamAssessment::getFinalizedAt).orElse(null),
                 ta.map(TeamAssessment::getReleasedAt).orElse(null),
