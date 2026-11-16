@@ -11,8 +11,7 @@ public final class Dates {
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH);
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH);
 
-    private Dates() {
-    }
+    private Dates() {}
 
     public static String day(Instant at) {
         return DAY.format(at.atZone(SeedClock.ZONE));

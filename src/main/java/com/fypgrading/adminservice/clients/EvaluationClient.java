@@ -21,7 +21,8 @@ public class EvaluationClient {
 
     private final RestClient http;
 
-    public EvaluationClient(@Qualifier(ClientConfig.LOAD_BALANCED) RestClient.Builder loadBalanced,
+    public EvaluationClient(
+            @Qualifier(ClientConfig.LOAD_BALANCED) RestClient.Builder loadBalanced,
             @Value("${assay.clients.evaluation:http://evaluation-service}") String base) {
         this.http = loadBalanced.baseUrl(base).build();
     }
@@ -32,9 +33,10 @@ public class EvaluationClient {
      */
     public List<Summary> summaries() {
         try {
-            List<Summary> body = http.get().uri("/internal/evaluations/summary").retrieve()
-                    .body(new ParameterizedTypeReference<>() {
-                    });
+            List<Summary> body = http.get()
+                    .uri("/internal/evaluations/summary")
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {});
             return body == null ? List.of() : body;
         } catch (RuntimeException e) {
             log.warn("Evaluation summaries unavailable, showing grades only: {}", e.getMessage());
@@ -44,25 +46,43 @@ public class EvaluationClient {
 
     /** Submitted evaluations with levels and comments, for the student's released results. */
     public List<Submitted> submitted(UUID teamId, Assessment assessment) {
-        return Remote.call("evaluation service", () -> http.get()
-                .uri("/internal/evaluations/submitted?teamId={team}&assessment={a}", teamId, assessment)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<Submitted>>() {
-                }));
+        return Remote.call(
+                "evaluation service",
+                () -> http.get()
+                        .uri("/internal/evaluations/submitted?teamId={team}&assessment={a}", teamId, assessment)
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<List<Submitted>>() {}));
     }
 
-    public record Summary(UUID evaluationId, UUID teamId, Assessment assessment, UUID reviewerId, String status,
-                          int scoredCount, int criteriaCount, Double score, Instant updatedAt, Instant submittedAt) {
-    }
+    public record Summary(
+            UUID evaluationId,
+            UUID teamId,
+            Assessment assessment,
+            UUID reviewerId,
+            String status,
+            int scoredCount,
+            int criteriaCount,
+            Double score,
+            Instant updatedAt,
+            Instant submittedAt) {}
 
-    public record Submitted(UUID id, UUID teamId, Assessment assessment, Person reviewer, String overallComment,
-                            Double score, List<Criterion> criteria) {
-    }
+    public record Submitted(
+            UUID id,
+            UUID teamId,
+            Assessment assessment,
+            Person reviewer,
+            String overallComment,
+            Double score,
+            List<Criterion> criteria) {}
 
-    public record Person(UUID id, String firstName, String lastName) {
-    }
+    public record Person(UUID id, String firstName, String lastName) {}
 
-    public record Criterion(UUID criterionId, int position, String name, int weight, Map<String, String> descriptions,
-                            Integer level, String comment) {
-    }
+    public record Criterion(
+            UUID criterionId,
+            int position,
+            String name,
+            int weight,
+            Map<String, String> descriptions,
+            Integer level,
+            String comment) {}
 }

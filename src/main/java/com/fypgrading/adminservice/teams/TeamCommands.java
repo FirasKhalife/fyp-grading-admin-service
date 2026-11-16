@@ -59,9 +59,17 @@ public class TeamCommands {
     private final Events events;
     private final Clock clock;
 
-    public TeamCommands(TeamRepository teams, StudentRepository students, TeamReviewerRepository assignments,
-            GradeRepository grades, TeamAssessmentRepository teamAssessments, DefenseSlotRepository slots,
-            ReviewerRepository reviewers, GradeAggregator aggregator, Events events, Clock clock) {
+    public TeamCommands(
+            TeamRepository teams,
+            StudentRepository students,
+            TeamReviewerRepository assignments,
+            GradeRepository grades,
+            TeamAssessmentRepository teamAssessments,
+            DefenseSlotRepository slots,
+            ReviewerRepository reviewers,
+            GradeAggregator aggregator,
+            Events events,
+            Clock clock) {
         this.teams = teams;
         this.students = students;
         this.assignments = assignments;
@@ -74,31 +82,36 @@ public class TeamCommands {
         this.clock = clock;
     }
 
-    public record TeamCreate(@NotBlank @Size(max = 60) String name, @NotBlank @Size(max = 200) String projectTitle,
-                             @Size(max = 2000) String description) {
-    }
+    public record TeamCreate(
+            @NotBlank @Size(max = 60) String name,
+            @NotBlank @Size(max = 200) String projectTitle,
+            @Size(max = 2000) String description) {}
 
-    public record TeamPatch(@Size(min = 1, max = 60) String name, @Size(min = 1, max = 200) String projectTitle,
-                            @Size(max = 2000) String description) {
-    }
+    public record TeamPatch(
+            @Size(min = 1, max = 60) String name,
+            @Size(min = 1, max = 200) String projectTitle,
+            @Size(max = 2000) String description) {}
 
-    public record StudentCreate(@NotBlank @Size(max = 80) String firstName, @NotBlank @Size(max = 80) String lastName,
-                                @NotBlank @Email @Size(max = 200) String email) {
-    }
+    public record StudentCreate(
+            @NotBlank @Size(max = 80) String firstName,
+            @NotBlank @Size(max = 80) String lastName,
+            @NotBlank @Email @Size(max = 200) String email) {}
 
-    public record StudentPatch(@Size(min = 1, max = 80) String firstName, @Size(min = 1, max = 80) String lastName,
-                               @Email @Size(max = 200) String email, UUID teamId) {
-    }
+    public record StudentPatch(
+            @Size(min = 1, max = 80) String firstName,
+            @Size(min = 1, max = 80) String lastName,
+            @Email @Size(max = 200) String email,
+            UUID teamId) {}
 
-    public record AssignmentInput(@NotNull UUID reviewerId, @NotNull ReviewerRole role) {
-    }
+    public record AssignmentInput(
+            @NotNull UUID reviewerId, @NotNull ReviewerRole role) {}
 
-    public record ReviewersPut(@NotNull @Size(max = 10) List<@Valid @NotNull AssignmentInput> assignments) {
-    }
+    public record ReviewersPut(@NotNull @Size(max = 10) List<@Valid @NotNull AssignmentInput> assignments) {}
 
-    public record SlotPut(@NotNull Instant startsAt, @Min(10) @Max(240) Integer durationMinutes,
-                          @NotBlank @Size(max = 60) String room) {
-    }
+    public record SlotPut(
+            @NotNull Instant startsAt,
+            @Min(10) @Max(240) Integer durationMinutes,
+            @NotBlank @Size(max = 60) String room) {}
 
     // ------------------------------------------------------------------ teams
 
@@ -108,7 +121,8 @@ public class TeamCommands {
         if (teams.existsByNameIgnoreCase(name)) {
             throw ApiException.conflict("team-name-taken", "A team called " + name + " already exists.");
         }
-        Team team = teams.save(new Team(UUID.randomUUID(), name, body.projectTitle().strip(), body.description()));
+        Team team =
+                teams.save(new Team(UUID.randomUUID(), name, body.projectTitle().strip(), body.description()));
         return team.getId();
     }
 
@@ -117,7 +131,8 @@ public class TeamCommands {
         Team team = team(teamId);
         if (body.name() != null && !body.name().strip().equalsIgnoreCase(team.getName())) {
             if (teams.existsByNameIgnoreCase(body.name().strip())) {
-                throw ApiException.conflict("team-name-taken", "A team called " + body.name().strip() + " already exists.");
+                throw ApiException.conflict(
+                        "team-name-taken", "A team called " + body.name().strip() + " already exists.");
             }
             team.rename(body.name().strip());
         }
@@ -133,7 +148,8 @@ public class TeamCommands {
     public void delete(UUID teamId) {
         Team team = team(teamId);
         if (grades.existsByTeamId(teamId)) {
-            throw ApiException.conflict("team-has-submissions",
+            throw ApiException.conflict(
+                    "team-has-submissions",
                     "Team " + team.getName() + " has submitted evaluations, which are permanent.");
         }
         if (students.findByTeamIdOrderByLastNameAscFirstNameAsc(teamId).stream()
@@ -156,14 +172,19 @@ public class TeamCommands {
         if (students.existsByEmailIgnoreCase(email)) {
             throw ApiException.conflict("student-email-taken", email + " is already on a team.");
         }
-        return students.save(new Student(UUID.randomUUID(), teamId, body.firstName().strip(), body.lastName().strip(),
-                email, null));
+        return students.save(new Student(
+                UUID.randomUUID(),
+                teamId,
+                body.firstName().strip(),
+                body.lastName().strip(),
+                email,
+                null));
     }
 
     @Transactional
     public Student updateStudent(UUID teamId, UUID studentId, StudentPatch body) {
-        Student student = students.findByIdAndTeamId(studentId, teamId)
-                .orElseThrow(() -> ApiException.notFound("The student"));
+        Student student =
+                students.findByIdAndTeamId(studentId, teamId).orElseThrow(() -> ApiException.notFound("The student"));
         String email = body.email() == null ? null : body.email().strip().toLowerCase();
         if (email != null && !email.equalsIgnoreCase(student.getEmail()) && students.existsByEmailIgnoreCase(email)) {
             throw ApiException.conflict("student-email-taken", email + " is already on a team.");
@@ -177,11 +198,13 @@ public class TeamCommands {
 
     @Transactional
     public void removeStudent(UUID teamId, UUID studentId) {
-        Student student = students.findByIdAndTeamId(studentId, teamId)
-                .orElseThrow(() -> ApiException.notFound("The student"));
+        Student student =
+                students.findByIdAndTeamId(studentId, teamId).orElseThrow(() -> ApiException.notFound("The student"));
         if (PERSONA_STUDENT.equals(student.getUserId())) {
-            throw ApiException.conflict("student-is-demo-persona",
-                    student.getFirstName() + " " + student.getLastName() + " is the student demo persona and stays on a team.");
+            throw ApiException.conflict(
+                    "student-is-demo-persona",
+                    student.getFirstName() + " " + student.getLastName()
+                            + " is the student demo persona and stays on a team.");
         }
         students.delete(student);
     }
@@ -195,14 +218,18 @@ public class TeamCommands {
     @Transactional
     public void replaceReviewers(UUID teamId, ReviewersPut body) {
         Team team = team(teamId);
-        Map<UUID, Reviewer> known = reviewers.findAll().stream()
-                .collect(Collectors.toMap(Reviewer::getId, Function.identity()));
+        Map<UUID, Reviewer> known =
+                reviewers.findAll().stream().collect(Collectors.toMap(Reviewer::getId, Function.identity()));
         List<Composition.Assignment> wanted = body.assignments().stream()
-                .map(a -> new Composition.Assignment(a.reviewerId(), a.role())).toList();
+                .map(a -> new Composition.Assignment(a.reviewerId(), a.role()))
+                .toList();
         Composition.Result result = Composition.check(wanted, known.keySet());
         if (!result.valid()) {
-            throw ApiException.unprocessable("composition-invalid",
-                    result.problems().stream().map(Composition.Problem::message).collect(Collectors.joining(" ")))
+            throw ApiException.unprocessable(
+                            "composition-invalid",
+                            result.problems().stream()
+                                    .map(Composition.Problem::message)
+                                    .collect(Collectors.joining(" ")))
                     .with("problems", result.problems());
         }
         List<TeamReviewer> current = assignments.findByTeamId(teamId);
@@ -212,7 +239,8 @@ public class TeamCommands {
             ReviewerRole role = next.get(existing.getReviewerId());
             if ((role == null || role != existing.getRole())
                     && grades.existsByTeamIdAndReviewerId(teamId, existing.getReviewerId())) {
-                throw ApiException.conflict("reviewer-has-submissions",
+                throw ApiException.conflict(
+                        "reviewer-has-submissions",
                         known.get(existing.getReviewerId()).displayName() + " already submitted for Team "
                                 + team.getName() + ", so they stay on it with the same role.");
             }
@@ -226,22 +254,37 @@ public class TeamCommands {
                 affectedRoles.add(existing.getReviewerId());
             } else if (role != existing.getRole()) {
                 existing.changeRole(role);
-                events.notify("role:" + teamId + ":" + existing.getReviewerId() + ":" + role + ":" + now, "ROLE_CHANGED",
-                        "Your role on Team " + team.getName() + " is now " + label(role) + ".", now,
-                        Events.Link.of("MY_TEAMS", teamId, null), List.of(existing.getReviewerId()));
+                events.notify(
+                        "role:" + teamId + ":" + existing.getReviewerId() + ":" + role + ":" + now,
+                        "ROLE_CHANGED",
+                        "Your role on Team " + team.getName() + " is now " + label(role) + ".",
+                        now,
+                        Events.Link.of("MY_TEAMS", teamId, null),
+                        List.of(existing.getReviewerId()));
                 affectedRoles.add(existing.getReviewerId());
             }
         }
         next.forEach((reviewerId, role) -> {
             assignments.save(new TeamReviewer(UUID.randomUUID(), teamId, reviewerId, role));
-            events.notify("assigned:" + teamId + ":" + reviewerId + ":" + now, "ASSIGNED",
-                    "You were assigned to Team " + team.getName() + " as " + article(role) + ".", now,
-                    Events.Link.of("MY_TEAMS", teamId, null), List.of(reviewerId));
+            events.notify(
+                    "assigned:" + teamId + ":" + reviewerId + ":" + now,
+                    "ASSIGNED",
+                    "You were assigned to Team " + team.getName() + " as " + article(role) + ".",
+                    now,
+                    Events.Link.of("MY_TEAMS", teamId, null),
+                    List.of(reviewerId));
         });
         CurrentUser me = CurrentUser.require();
-        events.activity("ASSIGNMENT", me.id(), me.displayName(), "updated the reviewers of Team " + team.getName() + ": "
-                + result.reviewerCount() + " reviewers, " + result.juryCount() + " jury, " + result.advisorCount()
-                + " advisor" + (result.advisorCount() == 1 ? "" : "s") + ".", now, Events.Link.team(teamId, null));
+        events.activity(
+                "ASSIGNMENT",
+                me.id(),
+                me.displayName(),
+                "updated the reviewers of Team " + team.getName() + ": "
+                        + result.reviewerCount() + " reviewers, " + result.juryCount() + " jury, "
+                        + result.advisorCount()
+                        + " advisor" + (result.advisorCount() == 1 ? "" : "s") + ".",
+                now,
+                Events.Link.team(teamId, null));
         // A changed set can complete an assessment (e.g. a reviewer who never graded was removed).
         assignments.flush();
         for (Assessment a : Assessment.values()) {
@@ -258,23 +301,42 @@ public class TeamCommands {
         Instant ends = body.startsAt().plus(Duration.ofMinutes(minutes));
         Optional<DefenseSlot> existing = slots.findByTeamId(teamId);
         boolean moved = existing.isPresent();
-        existing.ifPresentOrElse(s -> s.move(body.startsAt(), ends, body.room().strip()),
-                () -> slots.save(new DefenseSlot(UUID.randomUUID(), teamId, body.startsAt(), ends, body.room().strip())));
+        existing.ifPresentOrElse(
+                s -> s.move(body.startsAt(), ends, body.room().strip()),
+                () -> slots.save(new DefenseSlot(
+                        UUID.randomUUID(),
+                        teamId,
+                        body.startsAt(),
+                        ends,
+                        body.room().strip())));
         slots.flush();
 
         Instant now = clock.instant();
         String when = Dates.dayAndTime(body.startsAt()) + ", " + body.room().strip();
         List<UUID> recipients = new ArrayList<>();
         reviewers.findByCoordinatorTrue().forEach(r -> recipients.add(r.getId()));
-        assignments.findByTeamId(teamId).stream().filter(a -> a.getRole() == ReviewerRole.JURY)
+        assignments.findByTeamId(teamId).stream()
+                .filter(a -> a.getRole() == ReviewerRole.JURY)
                 .forEach(a -> recipients.add(a.getReviewerId()));
-        students.findByTeamIdOrderByLastNameAscFirstNameAsc(teamId).stream().map(Student::getUserId)
-                .filter(java.util.Objects::nonNull).forEach(recipients::add);
-        events.notify("defense:" + teamId + ":" + body.startsAt() + ":" + now, "DEFENSE_SCHEDULED",
-                (moved ? "Defense moved: Team " : "Defense scheduled: Team ") + team.getName() + ", " + when + ".", now,
-                Events.Link.of("SCHEDULE", teamId, null), recipients);
-        events.activity("SCHEDULE", null, "Schedule", "Team " + team.getName() + (moved ? " moved to " : " scheduled for ")
-                + when + "." + conflictNote(teamId), now, Events.Link.of("SCHEDULE", teamId, null));
+        students.findByTeamIdOrderByLastNameAscFirstNameAsc(teamId).stream()
+                .map(Student::getUserId)
+                .filter(java.util.Objects::nonNull)
+                .forEach(recipients::add);
+        events.notify(
+                "defense:" + teamId + ":" + body.startsAt() + ":" + now,
+                "DEFENSE_SCHEDULED",
+                (moved ? "Defense moved: Team " : "Defense scheduled: Team ") + team.getName() + ", " + when + ".",
+                now,
+                Events.Link.of("SCHEDULE", teamId, null),
+                recipients);
+        events.activity(
+                "SCHEDULE",
+                null,
+                "Schedule",
+                "Team " + team.getName() + (moved ? " moved to " : " scheduled for ") + when + "."
+                        + conflictNote(teamId),
+                now,
+                Events.Link.of("SCHEDULE", teamId, null));
     }
 
     @Transactional
@@ -285,8 +347,10 @@ public class TeamCommands {
 
     private String conflictNote(UUID teamId) {
         DefenseSlot mine = slots.findByTeamId(teamId).orElseThrow();
-        Set<UUID> jury = assignments.findByTeamId(teamId).stream().filter(a -> a.getRole() == ReviewerRole.JURY)
-                .map(TeamReviewer::getReviewerId).collect(Collectors.toSet());
+        Set<UUID> jury = assignments.findByTeamId(teamId).stream()
+                .filter(a -> a.getRole() == ReviewerRole.JURY)
+                .map(TeamReviewer::getReviewerId)
+                .collect(Collectors.toSet());
         Set<String> clashes = new LinkedHashSet<>();
         for (DefenseSlot other : slots.findAll()) {
             if (other.getTeamId().equals(teamId) || !other.overlaps(mine)) {

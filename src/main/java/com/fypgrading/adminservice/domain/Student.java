@@ -31,8 +31,7 @@ public class Student extends AssignedIdEntity {
     @Column(name = "user_id")
     private UUID userId;
 
-    protected Student() {
-    }
+    protected Student() {}
 
     public Student(UUID id, UUID teamId, String firstName, String lastName, String email, UUID userId) {
         super(id);

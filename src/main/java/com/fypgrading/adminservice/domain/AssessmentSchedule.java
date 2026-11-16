@@ -26,8 +26,7 @@ public class AssessmentSchedule extends AssignedIdEntity {
     @Column(name = "due_at", nullable = false)
     private Instant dueAt;
 
-    protected AssessmentSchedule() {
-    }
+    protected AssessmentSchedule() {}
 
     public AssessmentSchedule(UUID id, Assessment assessment, Instant dueAt) {
         super(id);

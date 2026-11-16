@@ -54,21 +54,43 @@ public class DemoService {
     private static final Logger log = LoggerFactory.getLogger(DemoService.class);
 
     /** Tables holding demo copies, children first. */
-    private static final List<String> COPY_TABLES = List.of("grade", "team_assessment", "defense_slot", "team_reviewer",
-            "student", "team", "assessment_schedule");
+    private static final List<String> COPY_TABLES = List.of(
+            "grade", "team_assessment", "defense_slot", "team_reviewer", "student", "team", "assessment_schedule");
 
     private static final List<Persona> PERSONAS = List.of(
-            new Persona("coordinator", "rania.haddad", "Rania Haddad", "Coordinator", List.of("ADMIN", "REVIEWER"),
-                    List.of("Release the advisor assessment results", "Fix the defense conflict on day 3",
+            new Persona(
+                    "coordinator",
+                    "rania.haddad",
+                    "Rania Haddad",
+                    "Coordinator",
+                    List.of("ADMIN", "REVIEWER"),
+                    List.of(
+                            "Release the advisor assessment results",
+                            "Fix the defense conflict on day 3",
                             "Open Team Beta's reviewer spread")),
-            new Persona("jury", "jane.smith", "Jane Smith", "Jury member", List.of("REVIEWER"),
+            new Persona(
+                    "jury",
+                    "jane.smith",
+                    "Jane Smith",
+                    "Jury member",
+                    List.of("REVIEWER"),
                     List.of("Finish the Team Beta final report draft", "Grade Team Epsilon's final presentation")),
-            new Persona("advisor", "karim.nassar", "Karim Nassar", "Advisor", List.of("REVIEWER"),
-                    List.of("Submit the overdue advisor assessment for Team Delta",
+            new Persona(
+                    "advisor",
+                    "karim.nassar",
+                    "Karim Nassar",
+                    "Advisor",
+                    List.of("REVIEWER"),
+                    List.of(
+                            "Submit the overdue advisor assessment for Team Delta",
                             "Check your defenses as a jury member")),
-            new Persona("student", "nour.khoury", "Nour Khoury", "Student", List.of("STUDENT"),
-                    List.of("Read the jury's comments on your final presentation",
-                            "Follow your team's timeline")));
+            new Persona(
+                    "student",
+                    "nour.khoury",
+                    "Nour Khoury",
+                    "Student",
+                    List.of("STUDENT"),
+                    List.of("Read the jury's comments on your final presentation", "Follow your team's timeline")));
 
     private final DemoCopyRepository copies;
     private final AssessmentScheduleRepository schedules;
@@ -85,10 +107,21 @@ public class DemoService {
     private final Clock clock;
     private final DemoSeed seed;
 
-    public DemoService(DemoCopyRepository copies, AssessmentScheduleRepository schedules, TeamRepository teams,
-            StudentRepository students, TeamReviewerRepository assignments, DefenseSlotRepository slots,
-            GradeRepository grades, TeamAssessmentRepository teamAssessments, GradeAggregator aggregator,
-            DemoCopyClient remote, JdbcTemplate jdbc, TransactionTemplate tx, Clock clock, JsonMapper json)
+    public DemoService(
+            DemoCopyRepository copies,
+            AssessmentScheduleRepository schedules,
+            TeamRepository teams,
+            StudentRepository students,
+            TeamReviewerRepository assignments,
+            DefenseSlotRepository slots,
+            GradeRepository grades,
+            TeamAssessmentRepository teamAssessments,
+            GradeAggregator aggregator,
+            DemoCopyClient remote,
+            JdbcTemplate jdbc,
+            TransactionTemplate tx,
+            Clock clock,
+            JsonMapper json)
             throws IOException {
         this.copies = copies;
         this.schedules = schedules;
@@ -116,8 +149,7 @@ public class DemoService {
         return copies.findById(session).map(DemoService::view);
     }
 
-    public record Ensured(DemoSessionView session, boolean created) {
-    }
+    public record Ensured(DemoSessionView session, boolean created) {}
 
     /** Creates the visitor's copy if it doesn't exist yet. Idempotent; switching persona keeps the copy. */
     public Ensured ensure(UUID session) {
@@ -139,7 +171,8 @@ public class DemoService {
             remote.deleteEverywhere(session);
             deleteOwnData(session);
             tx.executeWithoutResult(s -> copies.deleteById(session));
-            throw e instanceof ApiException api ? api
+            throw e instanceof ApiException api
+                    ? api
                     : ApiException.unavailable("The demo is starting up, try again in a minute.");
         }
         return new Ensured(view(copies.findById(session).orElseThrow()), true);
@@ -163,85 +196,109 @@ public class DemoService {
     }
 
     private void deleteOwnData(UUID session) {
-        tx.executeWithoutResult(s ->
-                COPY_TABLES.forEach(table -> jdbc.update("delete from " + table + " where demo_session = ?",
-                        session.toString())));
+        tx.executeWithoutResult(s -> COPY_TABLES.forEach(
+                table -> jdbc.update("delete from " + table + " where demo_session = ?", session.toString())));
     }
 
     /** Writes the seed under the session, then runs the real aggregation so grades match the live maths. */
     void seedOwnData(UUID session, SeedClock at) {
-        DemoSession.runAs(session, () -> tx.executeWithoutResult(s -> {
-            for (DemoSeed.SeedAssessment a : seed.assessments()) {
-                schedules.save(new AssessmentSchedule(SeedIds.of(session, "schedule:" + a.code()), a.code(),
-                        at.resolve(a.dueAt())));
-            }
-            for (DemoSeed.SeedTeam t : seed.teams()) {
-                UUID teamId = SeedIds.of(session, t.key());
-                teams.save(new Team(teamId, t.name(), t.projectTitle(), t.description()));
-                for (DemoSeed.SeedStudent st : t.students()) {
-                    students.save(new Student(SeedIds.of(session, st.key()), teamId, st.firstName(), st.lastName(),
-                            st.email(), st.userId()));
-                }
-                for (DemoSeed.SeedReviewer r : t.reviewers()) {
-                    assignments.save(new TeamReviewer(SeedIds.of(session, t.key() + "/reviewer:" + r.reviewerId()),
-                            teamId, r.reviewerId(), r.role()));
-                }
-                if (t.defenseSlot() != null) {
-                    Instant starts = at.resolve(t.defenseSlot().startsAt());
-                    slots.save(new DefenseSlot(SeedIds.of(session, t.key() + "/slot"), teamId, starts,
-                            starts.plus(Duration.ofMinutes(t.defenseSlot().durationMinutes())), t.defenseSlot().room()));
-                }
-                for (DemoSeed.SeedGrade g : t.grades()) {
-                    grades.save(new Grade(SeedIds.of(session, g.evaluationKey() + "/grade"),
-                            SeedIds.of(session, g.evaluationKey()), teamId, g.assessment(), g.reviewerId(), g.score(),
-                            at.resolve(g.submittedAt())));
-                }
-            }
-            grades.flush();
-            for (DemoSeed.SeedTeam t : seed.teams()) {
-                UUID teamId = SeedIds.of(session, t.key());
-                for (Assessment a : Assessment.values()) {
-                    aggregator.aggregate(teamId, a, false);
-                }
-                teamAssessments.flush();
-                for (DemoSeed.SeedRelease r : t.releases()) {
-                    teamAssessments.findByTeamIdAndAssessment(teamId, r.assessment())
-                            .ifPresent(ta -> ta.release(at.resolve(r.releasedAt())));
-                }
-            }
-        }));
+        DemoSession.runAs(
+                session,
+                () -> tx.executeWithoutResult(s -> {
+                    for (DemoSeed.SeedAssessment a : seed.assessments()) {
+                        schedules.save(new AssessmentSchedule(
+                                SeedIds.of(session, "schedule:" + a.code()), a.code(), at.resolve(a.dueAt())));
+                    }
+                    for (DemoSeed.SeedTeam t : seed.teams()) {
+                        UUID teamId = SeedIds.of(session, t.key());
+                        teams.save(new Team(teamId, t.name(), t.projectTitle(), t.description()));
+                        for (DemoSeed.SeedStudent st : t.students()) {
+                            students.save(new Student(
+                                    SeedIds.of(session, st.key()),
+                                    teamId,
+                                    st.firstName(),
+                                    st.lastName(),
+                                    st.email(),
+                                    st.userId()));
+                        }
+                        for (DemoSeed.SeedReviewer r : t.reviewers()) {
+                            assignments.save(new TeamReviewer(
+                                    SeedIds.of(session, t.key() + "/reviewer:" + r.reviewerId()),
+                                    teamId,
+                                    r.reviewerId(),
+                                    r.role()));
+                        }
+                        if (t.defenseSlot() != null) {
+                            Instant starts = at.resolve(t.defenseSlot().startsAt());
+                            slots.save(new DefenseSlot(
+                                    SeedIds.of(session, t.key() + "/slot"),
+                                    teamId,
+                                    starts,
+                                    starts.plus(
+                                            Duration.ofMinutes(t.defenseSlot().durationMinutes())),
+                                    t.defenseSlot().room()));
+                        }
+                        for (DemoSeed.SeedGrade g : t.grades()) {
+                            grades.save(new Grade(
+                                    SeedIds.of(session, g.evaluationKey() + "/grade"),
+                                    SeedIds.of(session, g.evaluationKey()),
+                                    teamId,
+                                    g.assessment(),
+                                    g.reviewerId(),
+                                    g.score(),
+                                    at.resolve(g.submittedAt())));
+                        }
+                    }
+                    grades.flush();
+                    for (DemoSeed.SeedTeam t : seed.teams()) {
+                        UUID teamId = SeedIds.of(session, t.key());
+                        for (Assessment a : Assessment.values()) {
+                            aggregator.aggregate(teamId, a, false);
+                        }
+                        teamAssessments.flush();
+                        for (DemoSeed.SeedRelease r : t.releases()) {
+                            teamAssessments
+                                    .findByTeamIdAndAssessment(teamId, r.assessment())
+                                    .ifPresent(ta -> ta.release(at.resolve(r.releasedAt())));
+                        }
+                    }
+                }));
     }
 
     private static DemoSessionView view(DemoCopy copy) {
-        return new DemoSessionView(copy.getId(), copy.getCreatedAt(), SeedClock.nextPurge(copy.getCreatedAt()),
-                copy.getAnchorDate(), SeedClock.ZONE.getId());
+        return new DemoSessionView(
+                copy.getId(),
+                copy.getCreatedAt(),
+                SeedClock.nextPurge(copy.getCreatedAt()),
+                copy.getAnchorDate(),
+                SeedClock.ZONE.getId());
     }
 
     /** The shape of {@code demo/seed.json} (generated by fyp-grading-docker-compose/seed/generate.py). */
     record DemoSeed(List<SeedAssessment> assessments, List<SeedTeam> teams) {
 
-        record SeedAssessment(Assessment code, String dueAt) {
-        }
+        record SeedAssessment(Assessment code, String dueAt) {}
 
-        record SeedTeam(String key, String name, String projectTitle, String description, List<SeedStudent> students,
-                        List<SeedReviewer> reviewers, SeedSlot defenseSlot, List<SeedGrade> grades,
-                        List<SeedRelease> releases) {
-        }
+        record SeedTeam(
+                String key,
+                String name,
+                String projectTitle,
+                String description,
+                List<SeedStudent> students,
+                List<SeedReviewer> reviewers,
+                SeedSlot defenseSlot,
+                List<SeedGrade> grades,
+                List<SeedRelease> releases) {}
 
-        record SeedStudent(String key, String firstName, String lastName, String email, UUID userId) {
-        }
+        record SeedStudent(String key, String firstName, String lastName, String email, UUID userId) {}
 
-        record SeedReviewer(UUID reviewerId, ReviewerRole role) {
-        }
+        record SeedReviewer(UUID reviewerId, ReviewerRole role) {}
 
-        record SeedSlot(String startsAt, int durationMinutes, String room) {
-        }
+        record SeedSlot(String startsAt, int durationMinutes, String room) {}
 
-        record SeedGrade(Assessment assessment, UUID reviewerId, String evaluationKey, double score,
-                         String submittedAt) {
-        }
+        record SeedGrade(
+                Assessment assessment, UUID reviewerId, String evaluationKey, double score, String submittedAt) {}
 
-        record SeedRelease(Assessment assessment, String releasedAt) {
-        }
+        record SeedRelease(Assessment assessment, String releasedAt) {}
     }
 }

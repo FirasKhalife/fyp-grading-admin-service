@@ -13,20 +13,31 @@ public class DemoCopyClient {
 
     private final List<Target> targets;
 
-    public DemoCopyClient(@Qualifier(ClientConfig.LOAD_BALANCED) RestClient.Builder loadBalanced,
+    public DemoCopyClient(
+            @Qualifier(ClientConfig.LOAD_BALANCED) RestClient.Builder loadBalanced,
             @Value("${assay.clients.rubric:http://rubric-service}") String rubric,
             @Value("${assay.clients.evaluation:http://evaluation-service}") String evaluation,
             @Value("${assay.clients.notification:http://notification-service}") String notification) {
         this.targets = List.of(
-                new Target("rubric service", loadBalanced.clone().baseUrl(rubric).build()),
-                new Target("evaluation service", loadBalanced.clone().baseUrl(evaluation).build()),
-                new Target("notification service", loadBalanced.clone().baseUrl(notification).build()));
+                new Target(
+                        "rubric service", loadBalanced.clone().baseUrl(rubric).build()),
+                new Target(
+                        "evaluation service",
+                        loadBalanced.clone().baseUrl(evaluation).build()),
+                new Target(
+                        "notification service",
+                        loadBalanced.clone().baseUrl(notification).build()));
     }
 
     public void replaceEverywhere(UUID session) {
         for (Target t : targets) {
-            Remote.call(t.name(), () -> t.http().put().uri("/internal/demo-sessions/{s}", session).retrieve()
-                    .toBodilessEntity());
+            Remote.call(
+                    t.name(),
+                    () -> t.http()
+                            .put()
+                            .uri("/internal/demo-sessions/{s}", session)
+                            .retrieve()
+                            .toBodilessEntity());
         }
     }
 
@@ -34,13 +45,16 @@ public class DemoCopyClient {
     public void deleteEverywhere(UUID session) {
         for (Target t : targets) {
             try {
-                t.http().delete().uri("/internal/demo-sessions/{s}", session).retrieve().toBodilessEntity();
+                t.http()
+                        .delete()
+                        .uri("/internal/demo-sessions/{s}", session)
+                        .retrieve()
+                        .toBodilessEntity();
             } catch (RuntimeException ignored) {
                 // nothing else to do
             }
         }
     }
 
-    private record Target(String name, RestClient http) {
-    }
+    private record Target(String name, RestClient http) {}
 }

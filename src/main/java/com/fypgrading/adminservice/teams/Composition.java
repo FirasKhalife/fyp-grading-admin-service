@@ -15,18 +15,19 @@ public final class Composition {
 
     public static final int MAX_REVIEWERS = 5;
 
-    private Composition() {
-    }
+    private Composition() {}
 
-    public record Assignment(UUID reviewerId, ReviewerRole role) {
-    }
+    public record Assignment(UUID reviewerId, ReviewerRole role) {}
 
-    public record Problem(String code, String message) {
-    }
+    public record Problem(String code, String message) {}
 
-    public record Result(boolean valid, int reviewerCount, int maxReviewers, int juryCount, int advisorCount,
-                         List<Problem> problems) {
-    }
+    public record Result(
+            boolean valid,
+            int reviewerCount,
+            int maxReviewers,
+            int juryCount,
+            int advisorCount,
+            List<Problem> problems) {}
 
     public static Result check(List<Assignment> assignments, Set<UUID> knownReviewers) {
         List<Problem> problems = new ArrayList<>();

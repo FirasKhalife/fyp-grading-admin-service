@@ -12,7 +12,8 @@ class GradeMathTest {
 
     @Test
     void teamGradeIsThePlainAverage() {
-        assertThat(GradeMath.display(GradeMath.average(List.of(88.75, 85.0, 86.25)))).isEqualTo(86.7);
+        assertThat(GradeMath.display(GradeMath.average(List.of(88.75, 85.0, 86.25))))
+                .isEqualTo(86.7);
     }
 
     @Test
@@ -27,12 +28,16 @@ class GradeMathTest {
         alpha.put(Assessment.PROGRESS_REPORT, 10.0);
         assertThat(GradeMath.display(GradeMath.finalGrade(alpha).orElseThrow())).isEqualTo(88.0);
         alpha.put(Assessment.PROGRESS_REPORT, 95.0);
-        assertThat(GradeMath.display(GradeMath.finalGrade(alpha).orElseThrow())).as("0% weight").isEqualTo(88.0);
+        assertThat(GradeMath.display(GradeMath.finalGrade(alpha).orElseThrow()))
+                .as("0% weight")
+                .isEqualTo(88.0);
     }
 
     @Test
     void spreadIsMaxMinusMinAndNeedsTwoScores() {
-        assertThat(GradeMath.display(GradeMath.spread(List.of(85.0, 63.75, 73.75)).orElseThrow())).isEqualTo(21.3);
+        assertThat(GradeMath.display(
+                        GradeMath.spread(List.of(85.0, 63.75, 73.75)).orElseThrow()))
+                .isEqualTo(21.3);
         assertThat(GradeMath.spread(List.of(70.0))).isEmpty();
     }
 }

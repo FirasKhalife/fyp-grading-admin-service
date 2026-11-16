@@ -41,14 +41,27 @@ public class Events {
         if (recipients.isEmpty()) {
             return;
         }
-        NotificationEvent event = new NotificationEvent(eventKey, DemoSession.require().toString(), type, text, at, link,
+        NotificationEvent event = new NotificationEvent(
+                eventKey,
+                DemoSession.require().toString(),
+                type,
+                text,
+                at,
+                link,
                 recipients.stream().distinct().map(UUID::toString).toList());
         afterCommit(() -> send("notifications-out-0", event));
     }
 
     public void activity(String kind, UUID actorId, String actorName, String text, Instant at, Link link) {
-        ActivityEvent event = new ActivityEvent(UUID.randomUUID().toString(), DemoSession.require().toString(), kind,
-                actorId == null ? null : actorId.toString(), actorName, text, at, link);
+        ActivityEvent event = new ActivityEvent(
+                UUID.randomUUID().toString(),
+                DemoSession.require().toString(),
+                kind,
+                actorId == null ? null : actorId.toString(),
+                actorName,
+                text,
+                at,
+                link);
         afterCommit(() -> send("activity-out-0", event));
     }
 
@@ -86,14 +99,24 @@ public class Events {
         }
     }
 
-    public record GradeSubmitted(String demoSession, String teamId, Assessment assessment) {
-    }
+    public record GradeSubmitted(String demoSession, String teamId, Assessment assessment) {}
 
-    public record NotificationEvent(String eventKey, String demoSession, String type, String text, Instant at,
-                                    Link link, List<String> recipients) {
-    }
+    public record NotificationEvent(
+            String eventKey,
+            String demoSession,
+            String type,
+            String text,
+            Instant at,
+            Link link,
+            List<String> recipients) {}
 
-    public record ActivityEvent(String eventId, String demoSession, String kind, String actorId, String actorName,
-                                String text, Instant at, Link link) {
-    }
+    public record ActivityEvent(
+            String eventId,
+            String demoSession,
+            String kind,
+            String actorId,
+            String actorName,
+            String text,
+            Instant at,
+            Link link) {}
 }

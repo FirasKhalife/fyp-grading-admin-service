@@ -29,8 +29,7 @@ public class DefenseSlot extends AssignedIdEntity {
     @Column(nullable = false, length = 60)
     private String room;
 
-    protected DefenseSlot() {
-    }
+    protected DefenseSlot() {}
 
     public DefenseSlot(UUID id, UUID teamId, Instant startsAt, Instant endsAt, String room) {
         super(id);

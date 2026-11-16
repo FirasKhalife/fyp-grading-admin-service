@@ -30,8 +30,7 @@ public class Reviewer {
     @Column(nullable = false)
     private boolean coordinator;
 
-    protected Reviewer() {
-    }
+    protected Reviewer() {}
 
     public Reviewer(UUID id, String firstName, String lastName, String email, boolean coordinator) {
         this.id = id;

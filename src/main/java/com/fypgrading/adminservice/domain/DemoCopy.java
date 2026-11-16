@@ -22,8 +22,7 @@ public class DemoCopy {
     @Column(name = "anchor_date", nullable = false)
     private LocalDate anchorDate;
 
-    protected DemoCopy() {
-    }
+    protected DemoCopy() {}
 
     public DemoCopy(UUID id, Instant createdAt, LocalDate anchorDate) {
         this.id = id;

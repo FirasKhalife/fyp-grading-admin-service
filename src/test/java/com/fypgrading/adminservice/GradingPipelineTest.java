@@ -88,8 +88,10 @@ class GradingPipelineTest {
 
     static JwtRequestPostProcessor as(UUID id, String... roles) {
         SimpleGrantedAuthority[] authorities = java.util.Arrays.stream(roles)
-                .map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toArray(SimpleGrantedAuthority[]::new);
-        return jwt().jwt(j -> j.subject(id.toString()).claim("name", "Test User").claim("preferred_username", "x"))
+                .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                .toArray(SimpleGrantedAuthority[]::new);
+        return jwt().jwt(
+                        j -> j.subject(id.toString()).claim("name", "Test User").claim("preferred_username", "x"))
                 .authorities(authorities);
     }
 
@@ -116,31 +118,52 @@ class GradingPipelineTest {
     }
 
     private void grade(UUID team, String assessment, UUID reviewer, double score, UUID evaluationId) throws Exception {
-        mvc.perform(post("/internal/grades").header("X-Demo-Session", session).with(as(reviewer, "REVIEWER"))
+        mvc.perform(post("/internal/grades")
+                        .header("X-Demo-Session", session)
+                        .with(as(reviewer, "REVIEWER"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(new tools.jackson.databind.json.JsonMapper().writeValueAsString(Map.of(
-                                "evaluationId", evaluationId, "teamId", team, "assessment", assessment,
-                                "reviewerId", reviewer, "score", score, "submittedAt", "2026-06-10T08:00:00Z"))))
+                        .content(new tools.jackson.databind.json.JsonMapper()
+                                .writeValueAsString(Map.of(
+                                        "evaluationId",
+                                        evaluationId,
+                                        "teamId",
+                                        team,
+                                        "assessment",
+                                        assessment,
+                                        "reviewerId",
+                                        reviewer,
+                                        "score",
+                                        score,
+                                        "submittedAt",
+                                        "2026-06-10T08:00:00Z"))))
                 .andExpect(status().isOk());
     }
 
     @Test
     void everyEvaluationOfATeamFlowsIntoTeamGradesAFinalGradeAndNotificationsExactlyOnce() throws Exception {
-        String created = mvc.perform(post("/api/teams").header("X-Demo-Session", session).with(as(RANIA, "ADMIN"))
+        String created = mvc.perform(post("/api/teams")
+                        .header("X-Demo-Session", session)
+                        .with(as(RANIA, "ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\": \"Omega\", \"projectTitle\": \"Pipeline test\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.composition.valid").value(false))
-                .andReturn().getResponse().getContentAsString();
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
         UUID team = UUID.fromString(JsonPath.read(created, "$.id"));
 
-        mvc.perform(put("/api/teams/" + team + "/reviewers").header("X-Demo-Session", session).with(as(RANIA, "ADMIN"))
+        mvc.perform(put("/api/teams/" + team + "/reviewers")
+                        .header("X-Demo-Session", session)
+                        .with(as(RANIA, "ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"assignments\": [{\"reviewerId\": \"%s\", \"role\": \"JURY\"}]}".formatted(JANE)))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.code").value("composition-invalid"))
                 .andExpect(jsonPath("$.problems[0].code").value("NO_ADVISOR"));
-        mvc.perform(put("/api/teams/" + team + "/reviewers").header("X-Demo-Session", session).with(as(RANIA, "ADMIN"))
+        mvc.perform(put("/api/teams/" + team + "/reviewers")
+                        .header("X-Demo-Session", session)
+                        .with(as(RANIA, "ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"assignments": [{"reviewerId": "%s", "role": "ADVISOR"},
@@ -151,19 +174,22 @@ class GradingPipelineTest {
         drainNotifications(3); // the three assignment notices
 
         // A due date in the past: every grade handed in below is a late submission, and stays marked as one.
-        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .patch("/api/assessments/ADVISOR_ASSESSMENT").header("X-Demo-Session", session)
-                        .with(as(RANIA, "ADMIN")).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
+                                "/api/assessments/ADVISOR_ASSESSMENT")
+                        .header("X-Demo-Session", session)
+                        .with(as(RANIA, "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dueAt\": \"2026-06-01T21:59:00Z\"}"))
                 .andExpect(status().isOk());
 
         // A jury member can't hand in the advisor's assessment.
-        mvc.perform(post("/internal/grades").header("X-Demo-Session", session).with(as(JANE, "REVIEWER"))
+        mvc.perform(post("/internal/grades")
+                        .header("X-Demo-Session", session)
+                        .with(as(JANE, "REVIEWER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"evaluationId": "%s", "teamId": "%s", "assessment": "ADVISOR_ASSESSMENT",
-                                 "reviewerId": "%s", "score": 90, "submittedAt": "2026-06-10T08:00:00Z"}"""
-                                .formatted(UUID.randomUUID(), team, JANE)))
+                                 "reviewerId": "%s", "score": 90, "submittedAt": "2026-06-10T08:00:00Z"}""".formatted(UUID.randomUUID(), team, JANE)))
                 .andExpect(status().isForbidden());
 
         for (String jury : List.of("PROPOSAL_PRESENTATION", "PROGRESS_REPORT", "FINAL_REPORT", "FINAL_PRESENTATION")) {
@@ -175,19 +201,24 @@ class GradingPipelineTest {
         grade(team, "ADVISOR_ASSESSMENT", EMILY, 70.0, UUID.randomUUID());
 
         // 15% x 85 + 0% x 85 + 25% x 70 + 30% x 85 + 30% x 85 = 81.25, shown 81.3
-        await().atMost(Duration.ofSeconds(20)).untilAsserted(() ->
-                mvc.perform(get("/api/teams/" + team).header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
+        await().atMost(Duration.ofSeconds(20))
+                .untilAsserted(() -> mvc.perform(get("/api/teams/" + team)
+                                .header("X-Demo-Session", session)
+                                .with(as(RANIA, "ADMIN")))
                         .andExpect(jsonPath("$.finalGrade").value(81.3))
                         .andExpect(jsonPath("$.finalState").value("COMPUTED"))
                         .andExpect(jsonPath("$.assessments[0].grade").value(85.0))
                         .andExpect(jsonPath("$.assessments[0].submittedCount").value(2))
                         .andExpect(jsonPath("$.assessments[0].spread").value(10.0))
-                        .andExpect(jsonPath("$.assessments[2].reviewers[0].submittedLate").value(true))
-                        .andExpect(jsonPath("$.assessments[2].reviewers[0].overdue").value(false)));
+                        .andExpect(jsonPath("$.assessments[2].reviewers[0].submittedLate")
+                                .value(true))
+                        .andExpect(jsonPath("$.assessments[2].reviewers[0].overdue")
+                                .value(false)));
 
         List<String> sent = drainNotifications(7); // 1 overdue + 5 grades final + the final grade
         assertThat(sent.stream().filter(n -> n.contains("\"GRADE_FINAL\""))).hasSize(5);
-        assertThat(sent.stream().filter(n -> n.contains("\"FINAL_GRADE_COMPUTED\""))).hasSize(1);
+        assertThat(sent.stream().filter(n -> n.contains("\"FINAL_GRADE_COMPUTED\"")))
+                .hasSize(1);
         assertThat(sent).anyMatch(n -> n.contains("Team Omega's final grade is computed: 81.3."));
         assertThat(sent.stream().filter(n -> n.contains("GRADE_FINAL") || n.contains("FINAL_GRADE_COMPUTED")))
                 .allMatch(n -> n.contains(RANIA.toString()) && n.contains(JANE.toString()));
@@ -197,33 +228,51 @@ class GradingPipelineTest {
 
     @Test
     void theSeedMatchesTheDesignAndTheReleaseFlowReachesStudents() throws Exception {
-        mvc.perform(get("/api/demo/personas")).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(4));
+        mvc.perform(get("/api/demo/personas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(4));
         mvc.perform(put("/api/demo/session").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
                 .andExpect(status().isCreated());
         mvc.perform(put("/api/demo/session").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
                 .andExpect(status().isOk());
 
-        String overview = mvc.perform(get("/api/overview").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
+        String overview = mvc.perform(
+                        get("/api/overview").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
                 .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Alpha')].finalGrade")).containsExactly(88.0);
-        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Gamma')].finalGrade")).containsExactly(92.2);
-        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Alpha')].cells[0].grade")).containsExactly(86.7);
-        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Beta')].cells[0].spread")).containsExactly(21.3);
-        assertThat(JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Beta')].cells[3].state")).containsExactly("WAITING");
-        assertThat(JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Alpha')].finalState")).containsExactly("VISIBLE");
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Alpha')].finalGrade"))
+                .containsExactly(88.0);
+        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Gamma')].finalGrade"))
+                .containsExactly(92.2);
+        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Alpha')].cells[0].grade"))
+                .containsExactly(86.7);
+        assertThat(JsonPath.<List<Double>>read(overview, "$.teams[?(@.team.name == 'Beta')].cells[0].spread"))
+                .containsExactly(21.3);
+        assertThat(JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Beta')].cells[3].state"))
+                .containsExactly("WAITING");
+        assertThat(JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Alpha')].finalState"))
+                .containsExactly("VISIBLE");
 
         mvc.perform(get("/api/me/assignments").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.teams.length()").value(3));
 
         // A reviewer opens a team they're on: other reviewers' scores stay hidden until the grade is final.
-        String beta = JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Beta')].team.id").getFirst();
-        String gamma = JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Gamma')].team.id").getFirst();
-        String asJane = mvc.perform(get("/api/teams/" + beta).header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
+        String beta = JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Beta')].team.id")
+                .getFirst();
+        String gamma = JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Gamma')].team.id")
+                .getFirst();
+        String asJane = mvc.perform(get("/api/teams/" + beta)
+                        .header("X-Demo-Session", session)
+                        .with(as(JANE, "REVIEWER")))
                 .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        List<Object> hiddenFinalReport = JsonPath.read(asJane, "$.assessments[3].reviewers[?(@.status == 'SUBMITTED')].score");
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        List<Object> hiddenFinalReport =
+                JsonPath.read(asJane, "$.assessments[3].reviewers[?(@.status == 'SUBMITTED')].score");
         assertThat(hiddenFinalReport).hasSize(2).containsOnlyNulls();
         assertThat(JsonPath.<Object>read(asJane, "$.assessments[3].spread")).isNull();
         List<Object> visibleProposal = JsonPath.read(asJane, "$.assessments[0].reviewers[*].score");
@@ -232,9 +281,11 @@ class GradingPipelineTest {
                 .andExpect(status().isForbidden());
 
         // Late submissions stay marked: Delta's progress report was handed in before its due date, so it isn't late.
-        String delta = JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Delta')].team.id").getFirst();
+        String delta = JsonPath.<List<String>>read(overview, "$.teams[?(@.team.name == 'Delta')].team.id")
+                .getFirst();
         mvc.perform(get("/api/teams/" + delta).header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
-                .andExpect(jsonPath("$.assessments[1].reviewers[0].submittedLate").value(false))
+                .andExpect(
+                        jsonPath("$.assessments[1].reviewers[0].submittedLate").value(false))
                 .andExpect(jsonPath("$.assessments[2].reviewers[0].overdue").value(true));
 
         mvc.perform(get("/api/me/team").header("X-Demo-Session", session).with(as(NOUR, "STUDENT")))
@@ -244,12 +295,14 @@ class GradingPipelineTest {
                 .andExpect(jsonPath("$.finalGrade").value(88.0))
                 .andExpect(jsonPath("$.timeline[4].released").value(true));
 
-        mvc.perform(post("/api/assessments/ADVISOR_ASSESSMENT/release").header("X-Demo-Session", session)
+        mvc.perform(post("/api/assessments/ADVISOR_ASSESSMENT/release")
+                        .header("X-Demo-Session", session)
                         .with(as(RANIA, "ADMIN")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.releasedTeamIds.length()").value(2))   // Beta and Epsilon were final
+                .andExpect(jsonPath("$.releasedTeamIds.length()").value(2)) // Beta and Epsilon were final
                 .andExpect(jsonPath("$.alreadyReleasedTeamIds.length()").value(2));
-        mvc.perform(post("/api/assessments/ADVISOR_ASSESSMENT/release").header("X-Demo-Session", session)
+        mvc.perform(post("/api/assessments/ADVISOR_ASSESSMENT/release")
+                        .header("X-Demo-Session", session)
                         .with(as(RANIA, "ADMIN")))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("nothing-to-release"));
@@ -267,12 +320,15 @@ class GradingPipelineTest {
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/overview").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
                 .andExpect(status().isForbidden());
-        mvc.perform(get("/api/overview").header("X-Demo-Session", session))
-                .andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/overview").header("X-Demo-Session", UUID.randomUUID()).with(as(RANIA, "ADMIN")))
+        mvc.perform(get("/api/overview").header("X-Demo-Session", session)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/overview")
+                        .header("X-Demo-Session", UUID.randomUUID())
+                        .with(as(RANIA, "ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.teams.length()").value(0));
-        mvc.perform(get("/api/demo/session").header("X-Demo-Session", UUID.randomUUID()).with(as(RANIA, "ADMIN")))
+        mvc.perform(get("/api/demo/session")
+                        .header("X-Demo-Session", UUID.randomUUID())
+                        .with(as(RANIA, "ADMIN")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("demo-session-not-found"));
     }

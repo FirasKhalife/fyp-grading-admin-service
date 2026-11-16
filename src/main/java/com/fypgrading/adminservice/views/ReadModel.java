@@ -76,10 +76,18 @@ public class ReadModel {
     private final EvaluationClient evaluations;
     private final Clock clock;
 
-    public ReadModel(TeamRepository teams, StudentRepository students, TeamReviewerRepository assignments,
-            GradeRepository grades, TeamAssessmentRepository teamAssessments, DefenseSlotRepository slots,
-            AssessmentScheduleRepository schedules, ReviewerRepository reviewers, DemoCopyRepository copies,
-            EvaluationClient evaluations, Clock clock) {
+    public ReadModel(
+            TeamRepository teams,
+            StudentRepository students,
+            TeamReviewerRepository assignments,
+            GradeRepository grades,
+            TeamAssessmentRepository teamAssessments,
+            DefenseSlotRepository slots,
+            AssessmentScheduleRepository schedules,
+            ReviewerRepository reviewers,
+            DemoCopyRepository copies,
+            EvaluationClient evaluations,
+            Clock clock) {
         this.teams = teams;
         this.students = students;
         this.assignments = assignments;
@@ -96,44 +104,88 @@ public class ReadModel {
     @Transactional(readOnly = true)
     public Snapshot snapshot(boolean withEvaluations) {
         Instant now = clock.instant();
-        LocalDate anchor = copies.findById(DemoSession.require()).map(DemoCopy::getAnchorDate)
+        LocalDate anchor = copies.findById(DemoSession.require())
+                .map(DemoCopy::getAnchorDate)
                 .orElse(LocalDate.ofInstant(now, SeedClock.ZONE));
         Map<Assessment, Instant> due = new EnumMap<>(Assessment.class);
         schedules.findAll().forEach(s -> due.put(s.getAssessment(), s.getDueAt()));
-        Map<UUID, Reviewer> people = reviewers.findAll().stream()
-                .collect(Collectors.toMap(Reviewer::getId, Function.identity()));
-        return new Snapshot(now, anchor, teams.findAll(), students.findAll(), assignments.findAll(), grades.findAll(),
-                teamAssessments.findAll(), slots.findAll(), due, people,
+        Map<UUID, Reviewer> people =
+                reviewers.findAll().stream().collect(Collectors.toMap(Reviewer::getId, Function.identity()));
+        return new Snapshot(
+                now,
+                anchor,
+                teams.findAll(),
+                students.findAll(),
+                assignments.findAll(),
+                grades.findAll(),
+                teamAssessments.findAll(),
+                slots.findAll(),
+                due,
+                people,
                 withEvaluations ? evaluations.summaries() : List.of());
     }
 
     // ------------------------------------------------------------------ assessments (P5 columns, P9 due dates)
 
     public List<AssessmentView> assessments(Snapshot s) {
-        return Arrays.stream(Assessment.values()).map(a -> {
-            List<TeamAssessment> forA = s.teamAssessments().stream().filter(t -> t.getAssessment() == a).toList();
-            return new AssessmentView(a, a.displayName(), a.shortName(), a.position(), a.weight(), true, a.role(),
-                    s.due(a), s.teams().size(), forA.size(), (int) forA.stream().filter(TeamAssessment::isReleased).count());
-        }).toList();
+        return Arrays.stream(Assessment.values())
+                .map(a -> {
+                    List<TeamAssessment> forA = s.teamAssessments().stream()
+                            .filter(t -> t.getAssessment() == a)
+                            .toList();
+                    return new AssessmentView(
+                            a,
+                            a.displayName(),
+                            a.shortName(),
+                            a.position(),
+                            a.weight(),
+                            true,
+                            a.role(),
+                            s.due(a),
+                            s.teams().size(),
+                            forA.size(),
+                            (int) forA.stream()
+                                    .filter(TeamAssessment::isReleased)
+                                    .count());
+                })
+                .toList();
     }
 
     // ------------------------------------------------------------------ P5 overview
 
     public Overview overview() {
         Snapshot s = snapshot(true);
-        List<OverviewRow> rows = s.teamsByName().stream().map(t -> {
-            List<OverviewCell> cells = new ArrayList<>();
-            int pending = 0;
-            for (TeamAssessmentView v : s.assessmentViews(t.getId())) {
-                int drafts = (int) v.reviewers().stream().filter(r -> r.status() == EvaluationStatus.DRAFT).count();
-                boolean overdue = v.reviewers().stream().anyMatch(ReviewerProgress::overdue);
-                cells.add(new OverviewCell(v.assessment(), v.state(), v.grade(), v.submittedCount(), v.expectedCount(),
-                        drafts, overdue, v.spread(), v.releasedAt()));
-                pending += v.expectedCount() - v.submittedCount();
-            }
-            return new OverviewRow(TeamRef.of(t), cells, GradeMath.display(t.getFinalGrade()), s.finalState(t), pending,
-                    s.composition(t.getId()), s.slotView(t.getId()));
-        }).toList();
+        List<OverviewRow> rows = s.teamsByName().stream()
+                .map(t -> {
+                    List<OverviewCell> cells = new ArrayList<>();
+                    int pending = 0;
+                    for (TeamAssessmentView v : s.assessmentViews(t.getId())) {
+                        int drafts = (int) v.reviewers().stream()
+                                .filter(r -> r.status() == EvaluationStatus.DRAFT)
+                                .count();
+                        boolean overdue = v.reviewers().stream().anyMatch(ReviewerProgress::overdue);
+                        cells.add(new OverviewCell(
+                                v.assessment(),
+                                v.state(),
+                                v.grade(),
+                                v.submittedCount(),
+                                v.expectedCount(),
+                                drafts,
+                                overdue,
+                                v.spread(),
+                                v.releasedAt()));
+                        pending += v.expectedCount() - v.submittedCount();
+                    }
+                    return new OverviewRow(
+                            TeamRef.of(t),
+                            cells,
+                            GradeMath.display(t.getFinalGrade()),
+                            s.finalState(t),
+                            pending,
+                            s.composition(t.getId()),
+                            s.slotView(t.getId()));
+                })
+                .toList();
 
         int submitted = 0;
         int expected = 0;
@@ -146,12 +198,23 @@ public class ReadModel {
         }
         for (Team t : s.teams()) {
             for (TeamAssessmentView v : s.assessmentViews(t.getId())) {
-                overdue += (int) v.reviewers().stream().filter(ReviewerProgress::overdue).count();
+                overdue += (int)
+                        v.reviewers().stream().filter(ReviewerProgress::overdue).count();
             }
         }
-        List<Double> finals = s.teams().stream().map(Team::getFinalGrade).filter(Objects::nonNull).toList();
-        int released = (int) s.teamAssessments().stream().filter(TeamAssessment::isReleased).count();
-        Kpis kpis = new Kpis(submitted, expected, overdue, finals.size(), s.teams().size(), released,
+        List<Double> finals = s.teams().stream()
+                .map(Team::getFinalGrade)
+                .filter(Objects::nonNull)
+                .toList();
+        int released = (int)
+                s.teamAssessments().stream().filter(TeamAssessment::isReleased).count();
+        Kpis kpis = new Kpis(
+                submitted,
+                expected,
+                overdue,
+                finals.size(),
+                s.teams().size(),
+                released,
                 s.teamAssessments().size() - released,
                 finals.isEmpty() ? null : GradeMath.display(GradeMath.average(finals)));
         return new Overview(kpis, assessments(s), rows);
@@ -168,29 +231,69 @@ public class ReadModel {
         List<TeamAssessmentView> assessments = s.assessmentViews(teamId);
         if (!admin) {
             // Reviewers see each other's scores only once the team grade is final.
-            assessments = assessments.stream().map(v -> v.state() == TeamAssessmentState.FINAL
-                    || v.state() == TeamAssessmentState.RELEASED ? v : hideOthers(v, viewer)).toList();
+            assessments = assessments.stream()
+                    .map(v -> v.state() == TeamAssessmentState.FINAL || v.state() == TeamAssessmentState.RELEASED
+                            ? v
+                            : hideOthers(v, viewer))
+                    .toList();
         }
-        return new TeamDetail(team.getId(), team.getName(), team.getProjectTitle(), team.getDescription(),
-                s.studentsOf(teamId).stream().map(StudentView::of).toList(), s.reviewerViews(teamId),
-                s.composition(teamId), s.slotView(teamId), assessments, GradeMath.display(team.getFinalGrade()),
+        return new TeamDetail(
+                team.getId(),
+                team.getName(),
+                team.getProjectTitle(),
+                team.getDescription(),
+                s.studentsOf(teamId).stream().map(StudentView::of).toList(),
+                s.reviewerViews(teamId),
+                s.composition(teamId),
+                s.slotView(teamId),
+                assessments,
+                GradeMath.display(team.getFinalGrade()),
                 s.finalState(team));
     }
 
     public List<TeamSummary> teamSummaries() {
         Snapshot s = snapshot(false);
-        return s.teamsByName().stream().map(t -> new TeamSummary(t.getId(), t.getName(), t.getProjectTitle(),
-                s.studentsOf(t.getId()).size(), s.composition(t.getId()), GradeMath.display(t.getFinalGrade()),
-                s.finalState(t))).toList();
+        return s.teamsByName().stream()
+                .map(t -> new TeamSummary(
+                        t.getId(),
+                        t.getName(),
+                        t.getProjectTitle(),
+                        s.studentsOf(t.getId()).size(),
+                        s.composition(t.getId()),
+                        GradeMath.display(t.getFinalGrade()),
+                        s.finalState(t)))
+                .toList();
     }
 
     private static TeamAssessmentView hideOthers(TeamAssessmentView v, UUID viewer) {
-        List<ReviewerProgress> reviewers = v.reviewers().stream().map(r -> r.reviewer().id().equals(viewer) ? r
-                : new ReviewerProgress(r.reviewer(), r.status(), r.overdue(), r.submittedLate(), null, r.submittedAt(),
-                        null, null, null))
+        List<ReviewerProgress> reviewers = v.reviewers().stream()
+                .map(r -> r.reviewer().id().equals(viewer)
+                        ? r
+                        : new ReviewerProgress(
+                                r.reviewer(),
+                                r.status(),
+                                r.overdue(),
+                                r.submittedLate(),
+                                null,
+                                r.submittedAt(),
+                                null,
+                                null,
+                                null))
                 .toList();
-        return new TeamAssessmentView(v.assessment(), v.weight(), v.reviewerRole(), v.dueAt(), v.state(), v.grade(),
-                v.submittedCount(), v.expectedCount(), null, v.overdue(), v.finalizedAt(), v.releasedAt(), reviewers);
+        return new TeamAssessmentView(
+                v.assessment(),
+                v.weight(),
+                v.reviewerRole(),
+                v.dueAt(),
+                v.state(),
+                v.grade(),
+                v.submittedCount(),
+                v.expectedCount(),
+                null,
+                v.overdue(),
+                v.finalizedAt(),
+                v.releasedAt(),
+                reviewers);
     }
 
     // ------------------------------------------------------------------ P3 my teams
@@ -202,27 +305,42 @@ public class ReadModel {
         int submitted = 0;
         int drafts = 0;
         int overdue = 0;
-        for (TeamReviewer a : s.assignments().stream().filter(x -> x.getReviewerId().equals(me)).toList()) {
+        for (TeamReviewer a : s.assignments().stream()
+                .filter(x -> x.getReviewerId().equals(me))
+                .toList()) {
             Team team = s.team(a.getTeamId()).orElseThrow();
             List<MyTask> tasks = new ArrayList<>();
             for (Assessment assessment : Assessment.forRole(a.getRole())) {
                 ReviewerProgress p = s.progress(team.getId(), assessment, me);
                 var evaluation = s.evaluation(team.getId(), assessment, me);
-                tasks.add(new MyTask(assessment, assessment.displayName(), assessment.weight(), s.due(assessment),
-                        p.status(), p.overdue(), p.submittedLate(), p.score(), evaluation.map(e -> e.scoredCount()).orElse(0),
-                        evaluation.map(e -> e.criteriaCount()).orElse(0), p.evaluationId(),
-                        evaluation.map(e -> e.updatedAt()).orElse(p.submittedAt()), p.submittedAt()));
+                tasks.add(new MyTask(
+                        assessment,
+                        assessment.displayName(),
+                        assessment.weight(),
+                        s.due(assessment),
+                        p.status(),
+                        p.overdue(),
+                        p.submittedLate(),
+                        p.score(),
+                        evaluation.map(e -> e.scoredCount()).orElse(0),
+                        evaluation.map(e -> e.criteriaCount()).orElse(0),
+                        p.evaluationId(),
+                        evaluation.map(e -> e.updatedAt()).orElse(p.submittedAt()),
+                        p.submittedAt()));
                 expected++;
                 submitted += p.status() == EvaluationStatus.SUBMITTED ? 1 : 0;
                 drafts += p.status() == EvaluationStatus.DRAFT ? 1 : 0;
                 overdue += p.overdue() ? 1 : 0;
             }
-            mine.add(new MyTeam(TeamRef.of(team), a.getRole(), s.reviewerViews(team.getId()), s.slotView(team.getId()),
-                    tasks));
+            mine.add(new MyTeam(
+                    TeamRef.of(team), a.getRole(), s.reviewerViews(team.getId()), s.slotView(team.getId()), tasks));
         }
         mine.sort(Comparator.comparing((MyTeam t) -> t.tasks().stream()
-                        .filter(x -> x.status() != EvaluationStatus.SUBMITTED).map(MyTask::dueAt)
-                        .filter(Objects::nonNull).min(Instant::compareTo).orElse(Instant.MAX))
+                        .filter(x -> x.status() != EvaluationStatus.SUBMITTED)
+                        .map(MyTask::dueAt)
+                        .filter(Objects::nonNull)
+                        .min(Instant::compareTo)
+                        .orElse(Instant.MAX))
                 .thenComparing(t -> t.team().name()));
         return new MyAssignments(new MySummary(expected, submitted, drafts, overdue), mine);
     }
@@ -235,18 +353,29 @@ public class ReadModel {
         if (admin) {
             visibleTeams = s.teams().stream().map(Team::getId).collect(Collectors.toSet());
         } else if (student) {
-            visibleTeams = s.students().stream().filter(st -> viewer.equals(st.getUserId())).map(Student::getTeamId)
+            visibleTeams = s.students().stream()
+                    .filter(st -> viewer.equals(st.getUserId()))
+                    .map(Student::getTeamId)
                     .collect(Collectors.toSet());
         } else {
-            visibleTeams = s.assignments().stream().filter(a -> a.getReviewerId().equals(viewer))
-                    .map(TeamReviewer::getTeamId).collect(Collectors.toSet());
+            visibleTeams = s.assignments().stream()
+                    .filter(a -> a.getReviewerId().equals(viewer))
+                    .map(TeamReviewer::getTeamId)
+                    .collect(Collectors.toSet());
         }
-        var slots = s.slotViews().stream().filter(v -> visibleTeams.contains(v.team().id())).toList();
-        var conflicts = admin ? s.conflicts() : s.conflicts().stream()
-                .filter(c -> c.teams().stream().anyMatch(t -> visibleTeams.contains(t.id()))).toList();
-        List<LocalDate> days = List.of(s.anchor().minusDays(1), s.anchor(), s.anchor().plusDays(1));
+        var slots = s.slotViews().stream()
+                .filter(v -> visibleTeams.contains(v.team().id()))
+                .toList();
+        var conflicts = admin
+                ? s.conflicts()
+                : s.conflicts().stream()
+                        .filter(c -> c.teams().stream().anyMatch(t -> visibleTeams.contains(t.id())))
+                        .toList();
+        List<LocalDate> days =
+                List.of(s.anchor().minusDays(1), s.anchor(), s.anchor().plusDays(1));
         List<DueDate> due = Arrays.stream(Assessment.values())
-                .map(a -> new DueDate(a, a.displayName(), s.due(a))).toList();
+                .map(a -> new DueDate(a, a.displayName(), s.due(a)))
+                .toList();
         return new Schedule(SeedClock.ZONE.getId(), days, due, slots, conflicts);
     }
 
@@ -254,7 +383,9 @@ public class ReadModel {
 
     public StudentHome studentHome(UUID userId) {
         Snapshot s = snapshot(true);
-        Student me = s.students().stream().filter(st -> userId.equals(st.getUserId())).findFirst()
+        Student me = s.students().stream()
+                .filter(st -> userId.equals(st.getUserId()))
+                .findFirst()
                 .orElseThrow(() -> ApiException.notFound("Your team"));
         Team team = s.team(me.getTeamId()).orElseThrow(() -> ApiException.notFound("Your team"));
         List<TimelineStep> timeline = new ArrayList<>();
@@ -263,16 +394,31 @@ public class ReadModel {
             TeamAssessmentView v = s.assessmentView(team.getId(), a);
             boolean released = v.state() == TeamAssessmentState.RELEASED;
             allReleased &= released;
-            String status = v.state() == TeamAssessmentState.FINAL || released ? "GRADED"
+            String status = v.state() == TeamAssessmentState.FINAL || released
+                    ? "GRADED"
                     : v.submittedCount() > 0 || s.pastDue(a) ? "BEING_GRADED" : "UPCOMING";
-            timeline.add(new TimelineStep(a, a.displayName(), a.weight(), v.dueAt(), status, released, v.releasedAt(),
+            timeline.add(new TimelineStep(
+                    a,
+                    a.displayName(),
+                    a.weight(),
+                    v.dueAt(),
+                    status,
+                    released,
+                    v.releasedAt(),
                     released ? v.grade() : null));
         }
         boolean finalVisible = allReleased && team.getFinalGrade() != null;
-        return new StudentHome(new StudentTeam(team.getId(), team.getName(), team.getProjectTitle(), team.getDescription()),
+        return new StudentHome(
+                new StudentTeam(team.getId(), team.getName(), team.getProjectTitle(), team.getDescription()),
                 StudentView.of(me),
-                s.studentsOf(team.getId()).stream().filter(st -> !st.getId().equals(me.getId())).map(StudentView::of).toList(),
-                s.reviewerViews(team.getId()), s.slotView(team.getId()), timeline, finalVisible,
+                s.studentsOf(team.getId()).stream()
+                        .filter(st -> !st.getId().equals(me.getId()))
+                        .map(StudentView::of)
+                        .toList(),
+                s.reviewerViews(team.getId()),
+                s.slotView(team.getId()),
+                timeline,
+                finalVisible,
                 finalVisible ? GradeMath.display(team.getFinalGrade()) : null);
     }
 }

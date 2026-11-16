@@ -22,8 +22,7 @@ public abstract class AssignedIdEntity implements Persistable<UUID> {
     @Transient
     private boolean fresh = true;
 
-    protected AssignedIdEntity() {
-    }
+    protected AssignedIdEntity() {}
 
     protected AssignedIdEntity(UUID id) {
         this.id = Objects.requireNonNull(id);
@@ -47,8 +46,7 @@ public abstract class AssignedIdEntity implements Persistable<UUID> {
 
     @Override
     public boolean equals(Object other) {
-        return this == other
-                || (other instanceof AssignedIdEntity e && getClass() == e.getClass() && id.equals(e.id));
+        return this == other || (other instanceof AssignedIdEntity e && getClass() == e.getClass() && id.equals(e.id));
     }
 
     @Override

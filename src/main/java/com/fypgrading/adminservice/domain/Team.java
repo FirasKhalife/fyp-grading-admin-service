@@ -32,8 +32,7 @@ public class Team extends AssignedIdEntity {
     @Column(name = "final_computed_at")
     private Instant finalComputedAt;
 
-    protected Team() {
-    }
+    protected Team() {}
 
     public Team(UUID id, String name, String projectTitle, String description) {
         super(id);

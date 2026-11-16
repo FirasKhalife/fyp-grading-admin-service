@@ -1,0 +1,9 @@
+{
+  "eventKey": "grade-final:6c3fc94c-3b70-3a35-9a0c-9dcc8f62264a:FINAL_REPORT",
+  "demoSession": "5f8ea018-a5d9-4241-8ed0-3146ff6c2534",
+  "type": "GRADE_FINAL",
+  "text": "Final report for Team Beta is final: 75.0.",
+  "at": "2026-06-10T08:20:01Z",
+  "link": {"kind": "TEAM", "teamId": "6c3fc94c-3b70-3a35-9a0c-9dcc8f62264a", "assessment": "FINAL_REPORT"},
+  "recipients": ["00000000-0000-4000-a000-000000000001", "00000000-0000-4000-a000-000000000002"]
+}

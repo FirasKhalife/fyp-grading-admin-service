@@ -44,9 +44,15 @@ public class AssessmentCommands {
     private final Events events;
     private final Clock clock;
 
-    public AssessmentCommands(AssessmentScheduleRepository schedules, TeamRepository teams,
-            TeamAssessmentRepository teamAssessments, TeamReviewerRepository assignments, GradeRepository grades,
-            StudentRepository students, Events events, Clock clock) {
+    public AssessmentCommands(
+            AssessmentScheduleRepository schedules,
+            TeamRepository teams,
+            TeamAssessmentRepository teamAssessments,
+            TeamReviewerRepository assignments,
+            GradeRepository grades,
+            StudentRepository students,
+            Events events,
+            Clock clock) {
         this.schedules = schedules;
         this.teams = teams;
         this.teamAssessments = teamAssessments;
@@ -57,15 +63,15 @@ public class AssessmentCommands {
         this.clock = clock;
     }
 
-    public record AssessmentPatch(@NotNull Instant dueAt) {
-    }
+    public record AssessmentPatch(@NotNull Instant dueAt) {}
 
     /** Moves the due date for every team. Never blocks grading; reviewers still owing an evaluation are told. */
     @Transactional
     public void setDueDate(Assessment assessment, AssessmentPatch body) {
-        AssessmentSchedule schedule = schedules.findByAssessment(assessment).orElseGet(() -> schedules.save(
-                new AssessmentSchedule(SeedIds.of(DemoSession.require(), "schedule:" + assessment), assessment,
-                        body.dueAt())));
+        AssessmentSchedule schedule = schedules
+                .findByAssessment(assessment)
+                .orElseGet(() -> schedules.save(new AssessmentSchedule(
+                        SeedIds.of(DemoSession.require(), "schedule:" + assessment), assessment, body.dueAt())));
         schedule.setDueAt(body.dueAt());
         Instant now = clock.instant();
         Set<UUID> pending = assignments.findAll().stream()
@@ -75,12 +81,20 @@ public class AssessmentCommands {
                 .map(a -> a.getReviewerId())
                 .collect(Collectors.toSet());
         String due = Dates.dayAndTime(body.dueAt());
-        events.notify("due:" + assessment + ":" + body.dueAt() + ":" + now, now.isAfter(body.dueAt()) ? "OVERDUE" : "DUE_SOON",
-                "The " + assessment.displayName() + " is now due " + due + ".", now,
-                Events.Link.of("MY_TEAMS", null, assessment), pending);
+        events.notify(
+                "due:" + assessment + ":" + body.dueAt() + ":" + now,
+                now.isAfter(body.dueAt()) ? "OVERDUE" : "DUE_SOON",
+                "The " + assessment.displayName() + " is now due " + due + ".",
+                now,
+                Events.Link.of("MY_TEAMS", null, assessment),
+                pending);
         CurrentUser me = CurrentUser.require();
-        events.activity("SCHEDULE", me.id(), me.displayName(),
-                "set the " + assessment.displayName() + " due date to " + due + ".", now,
+        events.activity(
+                "SCHEDULE",
+                me.id(),
+                me.displayName(),
+                "set the " + assessment.displayName() + " due date to " + due + ".",
+                now,
                 Events.Link.of("SCHEDULE", null, assessment));
     }
 
@@ -97,7 +111,9 @@ public class AssessmentCommands {
         List<UUID> released = new ArrayList<>();
         List<UUID> already = new ArrayList<>();
         List<UUID> notFinal = new ArrayList<>();
-        for (Team team : byId.values().stream().sorted(java.util.Comparator.comparing(Team::getName)).toList()) {
+        for (Team team : byId.values().stream()
+                .sorted(java.util.Comparator.comparing(Team::getName))
+                .toList()) {
             TeamAssessment ta = finals.get(team.getId());
             if (ta == null) {
                 notFinal.add(team.getId());
@@ -109,20 +125,32 @@ public class AssessmentCommands {
             }
         }
         if (released.isEmpty()) {
-            throw ApiException.conflict("nothing-to-release", "No team has a final " + assessment.displayName()
-                    + " grade waiting to be released.");
+            throw ApiException.conflict(
+                    "nothing-to-release",
+                    "No team has a final " + assessment.displayName() + " grade waiting to be released.");
         }
         for (UUID teamId : released) {
             List<UUID> recipients = students.findByTeamIdOrderByLastNameAscFirstNameAsc(teamId).stream()
-                    .map(Student::getUserId).filter(Objects::nonNull).toList();
-            events.notify("released:" + teamId + ":" + assessment, "RESULTS_RELEASED",
-                    "Your " + assessment.displayName() + " results are available.", now,
-                    Events.Link.of("STUDENT_RESULTS", teamId, assessment), recipients);
+                    .map(Student::getUserId)
+                    .filter(Objects::nonNull)
+                    .toList();
+            events.notify(
+                    "released:" + teamId + ":" + assessment,
+                    "RESULTS_RELEASED",
+                    "Your " + assessment.displayName() + " results are available.",
+                    now,
+                    Events.Link.of("STUDENT_RESULTS", teamId, assessment),
+                    recipients);
         }
         CurrentUser me = CurrentUser.require();
-        String names = released.stream().map(id -> "Team " + byId.get(id).getName()).collect(Collectors.joining(", "));
-        events.activity("RELEASED", me.id(), me.displayName(),
-                "released " + assessment.displayName() + " results to " + names + ".", now,
+        String names =
+                released.stream().map(id -> "Team " + byId.get(id).getName()).collect(Collectors.joining(", "));
+        events.activity(
+                "RELEASED",
+                me.id(),
+                me.displayName(),
+                "released " + assessment.displayName() + " results to " + names + ".",
+                now,
                 Events.Link.of("OVERVIEW", null, assessment));
         return new ReleaseResult(assessment, now, released, already, notFinal);
     }

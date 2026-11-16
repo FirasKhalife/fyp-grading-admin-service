@@ -28,8 +28,7 @@ public class TeamReviewer extends AssignedIdEntity {
     @Column(nullable = false, length = 16)
     private ReviewerRole role;
 
-    protected TeamReviewer() {
-    }
+    protected TeamReviewer() {}
 
     public TeamReviewer(UUID id, UUID teamId, UUID reviewerId, ReviewerRole role) {
         super(id);

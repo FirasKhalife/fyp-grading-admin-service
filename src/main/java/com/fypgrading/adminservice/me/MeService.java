@@ -38,7 +38,10 @@ public class MeService {
     private final TeamAssessmentRepository teamAssessments;
     private final EvaluationClient evaluations;
 
-    public MeService(ReviewerRepository reviewers, StudentRepository students, TeamAssessmentRepository teamAssessments,
+    public MeService(
+            ReviewerRepository reviewers,
+            StudentRepository students,
+            TeamAssessmentRepository teamAssessments,
             EvaluationClient evaluations) {
         this.reviewers = reviewers;
         this.students = students;
@@ -54,8 +57,10 @@ public class MeService {
                 roles.add(role);
             }
         }
-        String first = Optional.ofNullable(user.jwt().getClaimAsString("given_name")).orElse("");
-        String last = Optional.ofNullable(user.jwt().getClaimAsString("family_name")).orElse("");
+        String first =
+                Optional.ofNullable(user.jwt().getClaimAsString("given_name")).orElse("");
+        String last =
+                Optional.ofNullable(user.jwt().getClaimAsString("family_name")).orElse("");
         String email = user.jwt().getClaimAsString("email");
         var reviewer = reviewers.findById(user.id());
         if (reviewer.isPresent()) {
@@ -70,37 +75,63 @@ public class MeService {
             email = student.get().getEmail();
         }
         PersonView p = PersonView.of(user.id(), first, last, email);
-        return new Me(user.id(), first, last, p.displayName(), p.initials(), email, roles,
+        return new Me(
+                user.id(),
+                first,
+                last,
+                p.displayName(),
+                p.initials(),
+                email,
+                roles,
                 PERSONA_BY_USERNAME.get(user.jwt().getClaimAsString("preferred_username")),
                 student.map(Student::getTeamId).orElse(null));
     }
 
     /** Levels and comments per reviewer, once the coordinator released this assessment. */
     public ReleasedResults releasedResults(Assessment assessment) {
-        Student me = students.findByUserId(CurrentUser.require().id())
-                .orElseThrow(() -> ApiException.notFound("Your team"));
-        TeamAssessment ta = teamAssessments.findByTeamIdAndAssessment(me.getTeamId(), assessment)
+        Student me =
+                students.findByUserId(CurrentUser.require().id()).orElseThrow(() -> ApiException.notFound("Your team"));
+        TeamAssessment ta = teamAssessments
+                .findByTeamIdAndAssessment(me.getTeamId(), assessment)
                 .filter(TeamAssessment::isReleased)
-                .orElseThrow(() -> new ApiException(org.springframework.http.HttpStatus.NOT_FOUND, "results-not-released",
+                .orElseThrow(() -> new ApiException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "results-not-released",
                         "Results will appear here once the coordinator releases them."));
         List<EvaluationClient.Submitted> submitted = evaluations.submitted(me.getTeamId(), assessment);
         List<ReleasedReviewer> reviewerViews = submitted.stream()
-                .map(e -> new ReleasedReviewer(PersonView.of(e.reviewer().id(), e.reviewer().firstName(),
-                        e.reviewer().lastName(), null), e.score(), e.overallComment()))
+                .map(e -> new ReleasedReviewer(
+                        PersonView.of(
+                                e.reviewer().id(),
+                                e.reviewer().firstName(),
+                                e.reviewer().lastName(),
+                                null),
+                        e.score(),
+                        e.overallComment()))
                 .toList();
         Map<UUID, ReleasedCriterionBuilder> byCriterion = new LinkedHashMap<>();
-        submitted.stream().findFirst().ifPresent(first -> first.criteria().stream()
-                .sorted(Comparator.comparingInt(EvaluationClient.Criterion::position))
-                .forEach(c -> byCriterion.put(c.criterionId(), new ReleasedCriterionBuilder(c))));
+        submitted.stream()
+                .findFirst()
+                .ifPresent(first -> first.criteria().stream()
+                        .sorted(Comparator.comparingInt(EvaluationClient.Criterion::position))
+                        .forEach(c -> byCriterion.put(c.criterionId(), new ReleasedCriterionBuilder(c))));
         for (EvaluationClient.Submitted e : submitted) {
             for (EvaluationClient.Criterion c : e.criteria()) {
-                ReleasedCriterionBuilder b = byCriterion.computeIfAbsent(c.criterionId(), id -> new ReleasedCriterionBuilder(c));
+                ReleasedCriterionBuilder b =
+                        byCriterion.computeIfAbsent(c.criterionId(), id -> new ReleasedCriterionBuilder(c));
                 b.levels.add(new ReleasedLevel(e.reviewer().id(), c.level() == null ? 0 : c.level(), c.comment()));
             }
         }
-        return new ReleasedResults(assessment, assessment.displayName(), assessment.weight(),
-                GradeMath.display(ta.getGrade()), ta.getReleasedAt(), reviewerViews,
-                byCriterion.values().stream().map(ReleasedCriterionBuilder::build).toList());
+        return new ReleasedResults(
+                assessment,
+                assessment.displayName(),
+                assessment.weight(),
+                GradeMath.display(ta.getGrade()),
+                ta.getReleasedAt(),
+                reviewerViews,
+                byCriterion.values().stream()
+                        .map(ReleasedCriterionBuilder::build)
+                        .toList());
     }
 
     private static final class ReleasedCriterionBuilder {
@@ -112,7 +143,8 @@ public class MeService {
         }
 
         ReleasedCriterion build() {
-            return new ReleasedCriterion(criterion.criterionId(), criterion.name(), criterion.weight(), List.copyOf(levels));
+            return new ReleasedCriterion(
+                    criterion.criterionId(), criterion.name(), criterion.weight(), List.copyOf(levels));
         }
     }
 }

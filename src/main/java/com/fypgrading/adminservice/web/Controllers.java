@@ -49,8 +49,7 @@ import org.springframework.web.bind.annotation.RestController;
 /** HTTP entry points of admin-service, grouped by screen. Kept thin: rules live in the services. */
 public final class Controllers {
 
-    private Controllers() {
-    }
+    private Controllers() {}
 
     /** P1/P2: personas and the visitor's private copy. */
     @RestController
@@ -70,8 +69,11 @@ public final class Controllers {
 
         @GetMapping("/session")
         public DemoSessionView get() {
-            return demo.find(DemoSession.require()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
-                    "demo-session-not-found", "Your demo copy was reset. Start a fresh one."));
+            return demo.find(DemoSession.require())
+                    .orElseThrow(() -> new ApiException(
+                            HttpStatus.NOT_FOUND,
+                            "demo-session-not-found",
+                            "Your demo copy was reset. Start a fresh one."));
         }
 
         @PutMapping("/session")
@@ -145,8 +147,8 @@ public final class Controllers {
 
         @PatchMapping("/{assessment}")
         @PreAuthorize("hasRole('ADMIN')")
-        public AssessmentView update(@PathVariable Assessment assessment,
-                @Valid @RequestBody AssessmentCommands.AssessmentPatch body) {
+        public AssessmentView update(
+                @PathVariable Assessment assessment, @Valid @RequestBody AssessmentCommands.AssessmentPatch body) {
             commands.setDueDate(assessment, body);
             return read.assessments(read.snapshot(false)).get(assessment.ordinal());
         }
@@ -179,14 +181,25 @@ public final class Controllers {
         public ResponseEntity<String> export() {
             Views.Overview overview = read.overview();
             StringBuilder csv = new StringBuilder("team,project_title");
-            overview.assessments().forEach(a -> csv.append(',').append(a.name().toLowerCase().replace(' ', '_')));
+            overview.assessments()
+                    .forEach(a -> csv.append(',').append(a.name().toLowerCase().replace(' ', '_')));
             csv.append(",final_grade,final_state\n");
             for (Views.OverviewRow row : overview.teams()) {
-                csv.append(Csv.cell(row.team().name())).append(',').append(Csv.cell(row.team().projectTitle()));
-                row.cells().forEach(c -> csv.append(',').append(c.state() == TeamAssessmentState.FINAL
-                        || c.state() == TeamAssessmentState.RELEASED ? String.format("%.1f", c.grade()) : ""));
-                csv.append(',').append(row.finalGrade() == null ? "" : String.format("%.1f", row.finalGrade()))
-                        .append(',').append(row.finalState()).append('\n');
+                csv.append(Csv.cell(row.team().name()))
+                        .append(',')
+                        .append(Csv.cell(row.team().projectTitle()));
+                row.cells()
+                        .forEach(c -> csv.append(',')
+                                .append(
+                                        c.state() == TeamAssessmentState.FINAL
+                                                        || c.state() == TeamAssessmentState.RELEASED
+                                                ? String.format("%.1f", c.grade())
+                                                : ""));
+                csv.append(',')
+                        .append(row.finalGrade() == null ? "" : String.format("%.1f", row.finalGrade()))
+                        .append(',')
+                        .append(row.finalState())
+                        .append('\n');
             }
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"assay-results.csv\"")
@@ -211,7 +224,8 @@ public final class Controllers {
 
         @GetMapping
         @PreAuthorize("hasRole('ADMIN')")
-        public PageView<Views.TeamSummary> list(@RequestParam(defaultValue = "0") @Min(0) int page,
+        public PageView<Views.TeamSummary> list(
+                @RequestParam(defaultValue = "0") @Min(0) int page,
                 @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
             return PageView.of(read.teamSummaries(), page, size);
         }
@@ -251,15 +265,18 @@ public final class Controllers {
 
         @PostMapping("/{teamId}/students")
         @PreAuthorize("hasRole('ADMIN')")
-        public ResponseEntity<StudentView> addStudent(@PathVariable UUID teamId,
-                @Valid @RequestBody TeamCommands.StudentCreate body) {
+        public ResponseEntity<StudentView> addStudent(
+                @PathVariable UUID teamId, @Valid @RequestBody TeamCommands.StudentCreate body) {
             StudentView student = StudentView.of(commands.addStudent(teamId, body));
-            return ResponseEntity.created(URI.create("/api/teams/" + teamId + "/students/" + student.id())).body(student);
+            return ResponseEntity.created(URI.create("/api/teams/" + teamId + "/students/" + student.id()))
+                    .body(student);
         }
 
         @PatchMapping("/{teamId}/students/{studentId}")
         @PreAuthorize("hasRole('ADMIN')")
-        public StudentView updateStudent(@PathVariable UUID teamId, @PathVariable UUID studentId,
+        public StudentView updateStudent(
+                @PathVariable UUID teamId,
+                @PathVariable UUID studentId,
                 @Valid @RequestBody TeamCommands.StudentPatch body) {
             return StudentView.of(commands.updateStudent(teamId, studentId, body));
         }
@@ -280,8 +297,8 @@ public final class Controllers {
 
         @PutMapping("/{teamId}/reviewers")
         @PreAuthorize("hasRole('ADMIN')")
-        public Views.TeamReviewersView replaceReviewers(@PathVariable UUID teamId,
-                @Valid @RequestBody TeamCommands.ReviewersPut body) {
+        public Views.TeamReviewersView replaceReviewers(
+                @PathVariable UUID teamId, @Valid @RequestBody TeamCommands.ReviewersPut body) {
             commands.replaceReviewers(teamId, body);
             return reviewers(teamId);
         }
@@ -321,14 +338,24 @@ public final class Controllers {
 
         @GetMapping("/api/reviewers")
         @PreAuthorize("hasRole('ADMIN')")
-        public PageView<ReviewerView> reviewers(@RequestParam(defaultValue = "0") @Min(0) int page,
+        public PageView<ReviewerView> reviewers(
+                @RequestParam(defaultValue = "0") @Min(0) int page,
                 @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
             var counts = read.snapshot(false).teamCountByReviewer();
-            List<ReviewerView> all = reviewers.findAllByOrderByLastNameAscFirstNameAsc().stream().map(r -> {
-                Views.PersonView p = Views.PersonView.of(r);
-                return new ReviewerView(p.id(), p.firstName(), p.lastName(), p.displayName(), p.initials(), p.email(),
-                        r.isCoordinator(), counts.getOrDefault(r.getId(), 0L));
-            }).toList();
+            List<ReviewerView> all = reviewers.findAllByOrderByLastNameAscFirstNameAsc().stream()
+                    .map(r -> {
+                        Views.PersonView p = Views.PersonView.of(r);
+                        return new ReviewerView(
+                                p.id(),
+                                p.firstName(),
+                                p.lastName(),
+                                p.displayName(),
+                                p.initials(),
+                                p.email(),
+                                r.isCoordinator(),
+                                counts.getOrDefault(r.getId(), 0L));
+                    })
+                    .toList();
             return PageView.of(all, page, size);
         }
 
@@ -353,18 +380,26 @@ public final class Controllers {
         }
 
         @GetMapping("/assignments/{teamId}/{assessment}")
-        public AssignmentCheck assignment(@PathVariable UUID teamId, @PathVariable Assessment assessment,
-                @RequestParam UUID reviewerId) {
+        public AssignmentCheck assignment(
+                @PathVariable UUID teamId, @PathVariable Assessment assessment, @RequestParam UUID reviewerId) {
             Snapshot s = read.snapshot(false);
             var team = s.team(teamId).orElseThrow(() -> ApiException.notFound("The team"));
             boolean assigned = s.expected(teamId, assessment).contains(reviewerId);
             var reviewer = s.reviewers().get(reviewerId);
             TeamAssessmentView v = s.assessmentView(teamId, assessment);
-            return new AssignmentCheck(teamId, team.getName(), assessment, assessment.role(), assigned,
-                    reviewer == null ? new InternalPerson(reviewerId, "", "")
+            return new AssignmentCheck(
+                    teamId,
+                    team.getName(),
+                    assessment,
+                    assessment.role(),
+                    assigned,
+                    reviewer == null
+                            ? new InternalPerson(reviewerId, "", "")
                             : new InternalPerson(reviewerId, reviewer.getFirstName(), reviewer.getLastName()),
-                    s.due(assessment), v.state() == TeamAssessmentState.FINAL || v.state() == TeamAssessmentState.RELEASED,
-                    v.submittedCount(), v.expectedCount());
+                    s.due(assessment),
+                    v.state() == TeamAssessmentState.FINAL || v.state() == TeamAssessmentState.RELEASED,
+                    v.submittedCount(),
+                    v.expectedCount());
         }
 
         @PostMapping("/grades")
@@ -374,17 +409,19 @@ public final class Controllers {
     }
 
     static final class Csv {
-        private Csv() {
-        }
+        private Csv() {}
 
         static String cell(String value) {
             if (value == null) {
                 return "";
             }
-            String safe = value.startsWith("=") || value.startsWith("+") || value.startsWith("-") || value.startsWith("@")
-                    ? "'" + value : value;
+            String safe =
+                    value.startsWith("=") || value.startsWith("+") || value.startsWith("-") || value.startsWith("@")
+                            ? "'" + value
+                            : value;
             return safe.contains(",") || safe.contains("\"") || safe.contains("\n")
-                    ? "\"" + safe.replace("\"", "\"\"") + "\"" : safe;
+                    ? "\"" + safe.replace("\"", "\"\"") + "\""
+                    : safe;
         }
     }
 }

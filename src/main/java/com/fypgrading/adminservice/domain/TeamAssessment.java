@@ -35,8 +35,7 @@ public class TeamAssessment extends AssignedIdEntity {
     @Column(name = "released_at")
     private Instant releasedAt;
 
-    protected TeamAssessment() {
-    }
+    protected TeamAssessment() {}
 
     public TeamAssessment(UUID id, UUID teamId, Assessment assessment, double grade, Instant finalizedAt) {
         super(id);

@@ -41,10 +41,15 @@ public class Grade extends AssignedIdEntity {
     @Column(name = "submitted_at", nullable = false)
     private Instant submittedAt;
 
-    protected Grade() {
-    }
+    protected Grade() {}
 
-    public Grade(UUID id, UUID evaluationId, UUID teamId, Assessment assessment, UUID reviewerId, double score,
+    public Grade(
+            UUID id,
+            UUID evaluationId,
+            UUID teamId,
+            Assessment assessment,
+            UUID reviewerId,
+            double score,
             Instant submittedAt) {
         super(id);
         this.evaluationId = evaluationId;

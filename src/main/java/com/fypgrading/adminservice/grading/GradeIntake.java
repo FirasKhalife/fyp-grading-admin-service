@@ -32,44 +32,58 @@ public class GradeIntake {
     private final GradeRepository grades;
     private final Events events;
 
-    public GradeIntake(TeamRepository teams, TeamReviewerRepository teamReviewers, GradeRepository grades,
-            Events events) {
+    public GradeIntake(
+            TeamRepository teams, TeamReviewerRepository teamReviewers, GradeRepository grades, Events events) {
         this.teams = teams;
         this.teamReviewers = teamReviewers;
         this.grades = grades;
         this.events = events;
     }
 
-    public record GradeSubmission(@NotNull UUID evaluationId, @NotNull UUID teamId, @NotNull Assessment assessment,
-                                  @NotNull UUID reviewerId, @DecimalMin("0") @DecimalMax("100") double score,
-                                  @NotNull Instant submittedAt) {
-    }
+    public record GradeSubmission(
+            @NotNull UUID evaluationId,
+            @NotNull UUID teamId,
+            @NotNull Assessment assessment,
+            @NotNull UUID reviewerId,
+            @DecimalMin("0") @DecimalMax("100") double score,
+            @NotNull Instant submittedAt) {}
 
-    public record Receipt(int submittedCount, int expectedCount) {
-    }
+    public record Receipt(int submittedCount, int expectedCount) {}
 
     @Transactional
     public Receipt submit(GradeSubmission s) {
         teams.findById(s.teamId()).orElseThrow(() -> ApiException.notFound("The team"));
-        TeamReviewer assignment = teamReviewers.findByTeamIdAndReviewerId(s.teamId(), s.reviewerId())
+        TeamReviewer assignment = teamReviewers
+                .findByTeamIdAndReviewerId(s.teamId(), s.reviewerId())
                 .filter(r -> r.getRole() == s.assessment().role())
-                .orElseThrow(() -> ApiException.forbidden("not-assigned",
+                .orElseThrow(() -> ApiException.forbidden(
+                        "not-assigned",
                         "This reviewer doesn't grade the " + s.assessment().displayName() + " for this team."));
         boolean alreadyStored = grades.findByEvaluationId(s.evaluationId()).isPresent();
         if (!alreadyStored) {
             grades.findByTeamIdAndAssessmentAndReviewerId(s.teamId(), s.assessment(), assignment.getReviewerId())
                     .ifPresent(g -> {
-                        throw ApiException.conflict("grade-exists",
-                                "This reviewer already submitted the " + s.assessment().displayName() + ".");
+                        throw ApiException.conflict(
+                                "grade-exists",
+                                "This reviewer already submitted the "
+                                        + s.assessment().displayName() + ".");
                     });
-            grades.save(new Grade(UUID.randomUUID(), s.evaluationId(), s.teamId(), s.assessment(), s.reviewerId(),
-                    s.score(), s.submittedAt()));
+            grades.save(new Grade(
+                    UUID.randomUUID(),
+                    s.evaluationId(),
+                    s.teamId(),
+                    s.assessment(),
+                    s.reviewerId(),
+                    s.score(),
+                    s.submittedAt()));
         }
         // Published even on a retry: aggregation is idempotent and this heals a lost message.
         events.gradeSubmitted(s.teamId(), s.assessment());
         long expected = teamReviewers.findByTeamId(s.teamId()).stream()
-                .filter(r -> r.getRole() == s.assessment().role()).count();
-        int submitted = grades.findByTeamIdAndAssessment(s.teamId(), s.assessment()).size();
+                .filter(r -> r.getRole() == s.assessment().role())
+                .count();
+        int submitted =
+                grades.findByTeamIdAndAssessment(s.teamId(), s.assessment()).size();
         return new Receipt(submitted, (int) expected);
     }
 
@@ -79,7 +93,8 @@ public class GradeIntake {
 
         @Bean
         Consumer<Events.GradeSubmitted> aggregate(GradeAggregator aggregator) {
-            return event -> DemoSession.runAs(UUID.fromString(event.demoSession()),
+            return event -> DemoSession.runAs(
+                    UUID.fromString(event.demoSession()),
                     () -> aggregator.aggregate(UUID.fromString(event.teamId()), event.assessment(), true));
         }
     }

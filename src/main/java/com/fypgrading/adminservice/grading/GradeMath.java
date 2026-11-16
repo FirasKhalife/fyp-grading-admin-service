@@ -18,8 +18,7 @@ import java.util.Optional;
  */
 public final class GradeMath {
 
-    private GradeMath() {
-    }
+    private GradeMath() {}
 
     public static double average(Collection<Double> scores) {
         if (scores.isEmpty()) {
@@ -52,6 +51,8 @@ public final class GradeMath {
     }
 
     public static Double display(Double score) {
-        return score == null ? null : BigDecimal.valueOf(score).setScale(1, RoundingMode.HALF_UP).doubleValue();
+        return score == null
+                ? null
+                : BigDecimal.valueOf(score).setScale(1, RoundingMode.HALF_UP).doubleValue();
     }
 }
