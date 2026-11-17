@@ -96,7 +96,14 @@ public class DemoService {
                     "Nour Khoury",
                     "Student",
                     List.of("STUDENT"),
-                    List.of("Read the jury's comments on your final presentation", "Follow your team's timeline")));
+                    List.of("Read the jury's comments on your final presentation", "Follow your team's timeline")),
+            new Persona(
+                    "student-waiting",
+                    "ahmad.fares",
+                    "Ahmad Fares",
+                    "Student",
+                    List.of("STUDENT"),
+                    List.of("See what a student sees before results are released", "Check tomorrow's defense")));
 
     private final DemoCopyRepository copies;
     private final AssessmentScheduleRepository schedules;

@@ -31,7 +31,11 @@ import org.springframework.stereotype.Service;
 public class MeService {
 
     private static final Map<String, String> PERSONA_BY_USERNAME = Map.of(
-            "rania.haddad", "coordinator", "jane.smith", "jury", "karim.nassar", "advisor", "nour.khoury", "student");
+            "rania.haddad", "coordinator",
+            "jane.smith", "jury",
+            "karim.nassar", "advisor",
+            "nour.khoury", "student",
+            "ahmad.fares", "student-waiting");
 
     private final ReviewerRepository reviewers;
     private final StudentRepository students;

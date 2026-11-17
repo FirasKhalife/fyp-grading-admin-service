@@ -47,7 +47,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeamCommands {
 
     /** The student persona keeps a team, so the student demo always works. */
-    static final UUID PERSONA_STUDENT = UUID.fromString("00000000-0000-4000-a000-000000000101");
+    /** The student demo personas (Nour Khoury, Team Alpha; Ahmad Fares, Team Beta): they always keep a team. */
+    static final Set<UUID> PERSONA_STUDENTS = Set.of(
+            UUID.fromString("00000000-0000-4000-a000-000000000101"),
+            UUID.fromString("00000000-0000-4000-a000-000000000102"));
 
     private final TeamRepository teams;
     private final StudentRepository students;
@@ -173,8 +176,8 @@ public class TeamCommands {
                     "Team " + team.getName() + " has submitted evaluations, which are permanent.");
         }
         if (students.findByTeamIdOrderByLastNameAscFirstNameAsc(teamId).stream()
-                .anyMatch(s -> PERSONA_STUDENT.equals(s.getUserId()))) {
-            throw ApiException.conflict("student-is-demo-persona", "This team holds the student demo persona.");
+                .anyMatch(s -> s.getUserId() != null && PERSONA_STUDENTS.contains(s.getUserId()))) {
+            throw ApiException.conflict("student-is-demo-persona", "This team holds a student demo persona.");
         }
         students.deleteByTeamId(teamId);
         assignments.deleteByTeamId(teamId);
@@ -230,11 +233,11 @@ public class TeamCommands {
     public void removeStudent(UUID teamId, UUID studentId) {
         Student student =
                 students.findByIdAndTeamId(studentId, teamId).orElseThrow(() -> ApiException.notFound("The student"));
-        if (PERSONA_STUDENT.equals(student.getUserId())) {
+        if (student.getUserId() != null && PERSONA_STUDENTS.contains(student.getUserId())) {
             throw ApiException.conflict(
                     "student-is-demo-persona",
                     student.getFirstName() + " " + student.getLastName()
-                            + " is the student demo persona and stays on a team.");
+                            + " is a student demo persona and stays on a team.");
         }
         students.delete(student);
     }

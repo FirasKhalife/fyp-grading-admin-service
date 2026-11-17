@@ -68,6 +68,7 @@ class GradingPipelineTest {
     static final UUID EMILY = UUID.fromString("00000000-0000-4000-a000-000000000005");
     static final UUID KARIM = UUID.fromString("00000000-0000-4000-a000-000000000007");
     static final UUID NOUR = UUID.fromString("00000000-0000-4000-a000-000000000101");
+    static final UUID AHMAD = UUID.fromString("00000000-0000-4000-a000-000000000102");
 
     @Autowired
     MockMvc mvc;
@@ -248,7 +249,8 @@ class GradingPipelineTest {
     void theSeedMatchesTheDesignAndTheReleaseFlowReachesStudents() throws Exception {
         mvc.perform(get("/api/demo/personas"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(4));
+                .andExpect(jsonPath("$.length()").value(5))
+                .andExpect(jsonPath("$[4].username").value("ahmad.fares"));
         mvc.perform(put("/api/demo/session").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
                 .andExpect(status().isCreated());
         mvc.perform(put("/api/demo/session").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
@@ -335,6 +337,25 @@ class GradingPipelineTest {
         mvc.perform(get("/api/schedule").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
                 .andExpect(jsonPath("$.slots.length()").value(6))
                 .andExpect(jsonPath("$.conflicts[0].reviewer.displayName").value("John Doe"));
+    }
+
+    @Test
+    void theSecondStudentPersonaSeesTheWaitingState() throws Exception {
+        mvc.perform(put("/api/demo/session").header("X-Demo-Session", session).with(as(AHMAD, "STUDENT")))
+                .andExpect(status().isCreated());
+        // The second student persona, Team Beta: only the proposal and progress report are out.
+        mvc.perform(get("/api/me/team").header("X-Demo-Session", session).with(as(AHMAD, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.team.name").value("Beta"))
+                .andExpect(jsonPath("$.finalGradeVisible").value(false))
+                .andExpect(jsonPath("$.timeline[0].released").value(true))
+                .andExpect(jsonPath("$.timeline[1].released").value(true))
+                .andExpect(jsonPath("$.timeline[3].released").value(false));
+        mvc.perform(get("/api/me/team/results/FINAL_REPORT")
+                        .header("X-Demo-Session", session)
+                        .with(as(AHMAD, "STUDENT")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("results-not-released"));
     }
 
     @Test
