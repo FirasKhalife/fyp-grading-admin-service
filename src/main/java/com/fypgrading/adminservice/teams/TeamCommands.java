@@ -1,0 +1,443 @@
+package com.fypgrading.adminservice.teams;
+
+import com.fypgrading.adminservice.common.security.CurrentUser;
+import com.fypgrading.adminservice.common.web.ApiException;
+import com.fypgrading.adminservice.domain.Assessment;
+import com.fypgrading.adminservice.domain.DefenseSlot;
+import com.fypgrading.adminservice.domain.DefenseSlotRepository;
+import com.fypgrading.adminservice.domain.GradeRepository;
+import com.fypgrading.adminservice.domain.Reviewer;
+import com.fypgrading.adminservice.domain.ReviewerRepository;
+import com.fypgrading.adminservice.domain.ReviewerRole;
+import com.fypgrading.adminservice.domain.Student;
+import com.fypgrading.adminservice.domain.StudentRepository;
+import com.fypgrading.adminservice.domain.Team;
+import com.fypgrading.adminservice.domain.TeamAssessmentRepository;
+import com.fypgrading.adminservice.domain.TeamRepository;
+import com.fypgrading.adminservice.domain.TeamReviewer;
+import com.fypgrading.adminservice.domain.TeamReviewerRepository;
+import com.fypgrading.adminservice.events.Events;
+import com.fypgrading.adminservice.grading.GradeAggregator;
+import com.fypgrading.adminservice.schedule.Dates;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** P8 and P9 changes made by the coordinator: teams, students, reviewer assignment and defense slots. */
+@Service
+public class TeamCommands {
+
+    /** The student persona keeps a team, so the student demo always works. */
+    /** The student demo personas (Nour Khoury, Team Alpha; Ahmad Fares, Team Beta): they always keep a team. */
+    static final Set<UUID> PERSONA_STUDENTS = Set.of(
+            UUID.fromString("00000000-0000-4000-a000-000000000101"),
+            UUID.fromString("00000000-0000-4000-a000-000000000102"));
+
+    private final TeamRepository teams;
+    private final StudentRepository students;
+    private final TeamReviewerRepository assignments;
+    private final GradeRepository grades;
+    private final TeamAssessmentRepository teamAssessments;
+    private final DefenseSlotRepository slots;
+    private final ReviewerRepository reviewers;
+    private final GradeAggregator aggregator;
+    private final Events events;
+    private final Clock clock;
+
+    public TeamCommands(
+            TeamRepository teams,
+            StudentRepository students,
+            TeamReviewerRepository assignments,
+            GradeRepository grades,
+            TeamAssessmentRepository teamAssessments,
+            DefenseSlotRepository slots,
+            ReviewerRepository reviewers,
+            GradeAggregator aggregator,
+            Events events,
+            Clock clock) {
+        this.teams = teams;
+        this.students = students;
+        this.assignments = assignments;
+        this.grades = grades;
+        this.teamAssessments = teamAssessments;
+        this.slots = slots;
+        this.reviewers = reviewers;
+        this.aggregator = aggregator;
+        this.events = events;
+        this.clock = clock;
+    }
+
+    public record TeamCreate(
+            @NotBlank @Size(max = 60) String name,
+            @NotBlank @Size(max = 200) String projectTitle,
+            @Size(max = 2000) String description) {}
+
+    /** Present but blank text is refused. */
+    static final String NOT_BLANK = "(?s).*\\S.*";
+
+    /** Absent fields are left alone; an empty {@code description} clears it. */
+    public record TeamPatch(
+            @Size(min = 1, max = 60) @Pattern(regexp = NOT_BLANK, message = "must not be blank")
+            String name,
+
+            @Size(min = 1, max = 200) @Pattern(regexp = NOT_BLANK, message = "must not be blank")
+            String projectTitle,
+
+            @Size(max = 2000) String description) {}
+
+    public record StudentCreate(
+            @NotBlank @Size(max = 80) String firstName,
+            @NotBlank @Size(max = 80) String lastName,
+            @NotBlank @Email @Size(max = 200) String email) {}
+
+    public record StudentPatch(
+            @Size(min = 1, max = 80) @Pattern(regexp = NOT_BLANK, message = "must not be blank")
+            String firstName,
+
+            @Size(min = 1, max = 80) @Pattern(regexp = NOT_BLANK, message = "must not be blank")
+            String lastName,
+
+            @Email @Size(max = 200) String email,
+            UUID teamId) {}
+
+    public record AssignmentInput(
+            @NotNull UUID reviewerId, @NotNull ReviewerRole role) {}
+
+    public record ReviewersPut(@NotNull @Size(max = 10) List<@Valid @NotNull AssignmentInput> assignments) {}
+
+    public record SlotPut(
+            @NotNull Instant startsAt,
+            @Min(10) @Max(240) Integer durationMinutes,
+            @NotBlank @Size(max = 60) String room) {}
+
+    // ------------------------------------------------------------------ teams
+
+    @Transactional
+    public UUID create(TeamCreate body) {
+        String name = body.name().strip();
+        if (teams.existsByNameIgnoreCase(name)) {
+            throw ApiException.conflict("team-name-taken", "A team called " + name + " already exists.");
+        }
+        Team team = flushed(
+                () -> teams.saveAndFlush(
+                        new Team(UUID.randomUUID(), name, body.projectTitle().strip(), body.description())),
+                "team-name-taken",
+                "A team called " + name + " already exists.");
+        return team.getId();
+    }
+
+    @Transactional
+    public void update(UUID teamId, TeamPatch body) {
+        if (body.name() == null && body.projectTitle() == null && body.description() == null) {
+            throw ApiException.badRequest("validation-failed", "Send at least one field to change.");
+        }
+        Team team = team(teamId);
+        if (body.name() != null && !body.name().strip().equalsIgnoreCase(team.getName())) {
+            if (teams.existsByNameIgnoreCase(body.name().strip())) {
+                throw ApiException.conflict(
+                        "team-name-taken", "A team called " + body.name().strip() + " already exists.");
+            }
+            team.rename(body.name().strip());
+        }
+        if (body.projectTitle() != null) {
+            team.setProjectTitle(body.projectTitle().strip());
+        }
+        if (body.description() != null) {
+            team.setDescription(body.description().isBlank() ? null : body.description());
+        }
+        flushed(() -> teams.saveAndFlush(team), "team-name-taken", "A team with that name already exists.");
+    }
+
+    @Transactional
+    public void delete(UUID teamId) {
+        Team team = team(teamId);
+        if (grades.existsByTeamId(teamId)) {
+            throw ApiException.conflict(
+                    "team-has-submissions",
+                    "Team " + team.getName() + " has submitted evaluations, which are permanent.");
+        }
+        if (students.findByTeamIdOrderByLastNameAscFirstNameAsc(teamId).stream()
+                .anyMatch(s -> s.getUserId() != null && PERSONA_STUDENTS.contains(s.getUserId()))) {
+            throw ApiException.conflict("student-is-demo-persona", "This team holds a student demo persona.");
+        }
+        students.deleteByTeamId(teamId);
+        assignments.deleteByTeamId(teamId);
+        slots.deleteByTeamId(teamId);
+        teamAssessments.deleteByTeamId(teamId);
+        teams.delete(team);
+    }
+
+    // ------------------------------------------------------------------ students
+
+    @Transactional
+    public Student addStudent(UUID teamId, StudentCreate body) {
+        team(teamId);
+        String email = body.email().strip().toLowerCase();
+        if (students.existsByEmailIgnoreCase(email)) {
+            throw ApiException.conflict("student-email-taken", email + " is already on a team.");
+        }
+        return flushed(
+                () -> students.saveAndFlush(new Student(
+                        UUID.randomUUID(),
+                        teamId,
+                        body.firstName().strip(),
+                        body.lastName().strip(),
+                        email,
+                        null)),
+                "student-email-taken",
+                email + " is already on a team.");
+    }
+
+    @Transactional
+    public Student updateStudent(UUID teamId, UUID studentId, StudentPatch body) {
+        if (body.firstName() == null && body.lastName() == null && body.email() == null && body.teamId() == null) {
+            throw ApiException.badRequest("validation-failed", "Send at least one field to change.");
+        }
+        Student student =
+                students.findByIdAndTeamId(studentId, teamId).orElseThrow(() -> ApiException.notFound("The student"));
+        String email = body.email() == null ? null : body.email().strip().toLowerCase();
+        if (email != null && !email.equalsIgnoreCase(student.getEmail()) && students.existsByEmailIgnoreCase(email)) {
+            throw ApiException.conflict("student-email-taken", email + " is already on a team.");
+        }
+        if (body.teamId() != null) {
+            team(body.teamId());
+        }
+        student.update(
+                body.firstName() == null ? null : body.firstName().strip(),
+                body.lastName() == null ? null : body.lastName().strip(),
+                email,
+                body.teamId());
+        return flushed(() -> students.saveAndFlush(student), "student-email-taken", email + " is already on a team.");
+    }
+
+    @Transactional
+    public void removeStudent(UUID teamId, UUID studentId) {
+        Student student =
+                students.findByIdAndTeamId(studentId, teamId).orElseThrow(() -> ApiException.notFound("The student"));
+        if (student.getUserId() != null && PERSONA_STUDENTS.contains(student.getUserId())) {
+            throw ApiException.conflict(
+                    "student-is-demo-persona",
+                    student.getFirstName() + " " + student.getLastName()
+                            + " is a student demo persona and stays on a team.");
+        }
+        students.delete(student);
+    }
+
+    // ------------------------------------------------------------------ 3.1 reviewer assignment
+
+    /**
+     * Replaces the team's reviewers. The new set must satisfy the composition rules, and nobody who already
+     * submitted for this team can be removed or change role (submissions are permanent).
+     */
+    @Transactional
+    public void replaceReviewers(UUID teamId, ReviewersPut body) {
+        Team team = team(teamId);
+        Map<UUID, Reviewer> known =
+                reviewers.findAll().stream().collect(Collectors.toMap(Reviewer::getId, Function.identity()));
+        List<Composition.Assignment> wanted = body.assignments().stream()
+                .map(a -> new Composition.Assignment(a.reviewerId(), a.role()))
+                .toList();
+        Composition.Result result = Composition.check(wanted, known.keySet());
+        if (!result.valid()) {
+            throw ApiException.unprocessable(
+                            "composition-invalid",
+                            result.problems().stream()
+                                    .map(Composition.Problem::message)
+                                    .collect(Collectors.joining(" ")))
+                    .with("problems", result.problems());
+        }
+        // Serialises with grade intake, which takes the same lock.
+        teams.lockById(teamId);
+        List<TeamReviewer> current = assignments.findByTeamId(teamId);
+        Map<UUID, ReviewerRole> next = wanted.stream()
+                .collect(Collectors.toMap(Composition.Assignment::reviewerId, Composition.Assignment::role));
+        // Review H1: no reopening, ever. Once an assessment's team grade is final, the set of reviewers it averages
+        // can't change: adding one would reopen it, removing one would change a grade students may have seen.
+        for (Assessment a : Assessment.values()) {
+            if (teamAssessments.findByTeamIdAndAssessment(teamId, a).isEmpty()) {
+                continue;
+            }
+            Set<UUID> before = current.stream()
+                    .filter(r -> r.getRole() == a.role())
+                    .map(TeamReviewer::getReviewerId)
+                    .collect(Collectors.toSet());
+            Set<UUID> after = next.entrySet().stream()
+                    .filter(e -> e.getValue() == a.role())
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
+            if (!before.equals(after)) {
+                throw ApiException.conflict(
+                        "assessment-final",
+                        "The " + a.displayName() + " grade for Team " + team.getName() + " is final, so its "
+                                + label(a.role()) + "s can't change.");
+            }
+        }
+        for (TeamReviewer existing : current) {
+            ReviewerRole role = next.get(existing.getReviewerId());
+            if ((role == null || role != existing.getRole())
+                    && grades.existsByTeamIdAndReviewerId(teamId, existing.getReviewerId())) {
+                throw ApiException.conflict(
+                        "reviewer-has-submissions",
+                        known.get(existing.getReviewerId()).displayName() + " already submitted for Team "
+                                + team.getName() + ", so they stay on it with the same role.");
+            }
+        }
+        Instant now = clock.instant();
+        for (TeamReviewer existing : current) {
+            ReviewerRole role = next.remove(existing.getReviewerId());
+            if (role == null) {
+                assignments.delete(existing);
+            } else if (role != existing.getRole()) {
+                existing.changeRole(role);
+                events.notify(
+                        "role:" + teamId + ":" + existing.getReviewerId() + ":" + role + ":" + now,
+                        "ROLE_CHANGED",
+                        "Your role on Team " + team.getName() + " is now " + label(role) + ".",
+                        now,
+                        Events.Link.of("MY_TEAMS", teamId, null),
+                        List.of(existing.getReviewerId()));
+            }
+        }
+        next.forEach((reviewerId, role) -> {
+            assignments.save(new TeamReviewer(UUID.randomUUID(), teamId, reviewerId, role));
+            events.notify(
+                    "assigned:" + teamId + ":" + reviewerId + ":" + now,
+                    "ASSIGNED",
+                    "You were assigned to Team " + team.getName() + " as " + article(role) + ".",
+                    now,
+                    Events.Link.of("MY_TEAMS", teamId, null),
+                    List.of(reviewerId));
+        });
+        CurrentUser me = CurrentUser.require();
+        events.activity(
+                "ASSIGNMENT",
+                me.id(),
+                me.displayName(),
+                "updated the reviewers of Team " + team.getName() + ": "
+                        + result.reviewerCount() + " reviewers, " + result.juryCount() + " jury, "
+                        + result.advisorCount()
+                        + " advisor" + (result.advisorCount() == 1 ? "" : "s") + ".",
+                now,
+                Events.Link.team(teamId, null));
+        // A changed set can complete an assessment (e.g. a reviewer who never graded was removed).
+        assignments.flush();
+        for (Assessment a : Assessment.values()) {
+            aggregator.aggregate(teamId, a, true);
+        }
+    }
+
+    // ------------------------------------------------------------------ P9 defense slot
+
+    @Transactional
+    public void setSlot(UUID teamId, SlotPut body) {
+        Team team = team(teamId);
+        int minutes = body.durationMinutes() == null ? 40 : body.durationMinutes();
+        Instant ends = body.startsAt().plus(Duration.ofMinutes(minutes));
+        Optional<DefenseSlot> existing = slots.findByTeamId(teamId);
+        boolean moved = existing.isPresent();
+        existing.ifPresentOrElse(
+                s -> s.move(body.startsAt(), ends, body.room().strip()),
+                () -> slots.save(new DefenseSlot(
+                        UUID.randomUUID(),
+                        teamId,
+                        body.startsAt(),
+                        ends,
+                        body.room().strip())));
+        slots.flush();
+
+        Instant now = clock.instant();
+        String when = Dates.dayAndTime(body.startsAt()) + ", " + body.room().strip();
+        List<UUID> recipients = new ArrayList<>();
+        reviewers.findByCoordinatorTrue().forEach(r -> recipients.add(r.getId()));
+        assignments.findByTeamId(teamId).stream()
+                .filter(a -> a.getRole() == ReviewerRole.JURY)
+                .forEach(a -> recipients.add(a.getReviewerId()));
+        students.findByTeamIdOrderByLastNameAscFirstNameAsc(teamId).stream()
+                .map(Student::getUserId)
+                .filter(java.util.Objects::nonNull)
+                .forEach(recipients::add);
+        events.notify(
+                "defense:" + teamId + ":" + body.startsAt() + ":" + now,
+                "DEFENSE_SCHEDULED",
+                (moved ? "Defense moved: Team " : "Defense scheduled: Team ") + team.getName() + ", " + when + ".",
+                now,
+                Events.Link.of("SCHEDULE", teamId, null),
+                recipients);
+        events.activity(
+                "SCHEDULE",
+                null,
+                "Schedule",
+                "Team " + team.getName() + (moved ? " moved to " : " scheduled for ") + when + "."
+                        + conflictNote(teamId),
+                now,
+                Events.Link.of("SCHEDULE", teamId, null));
+    }
+
+    @Transactional
+    public void clearSlot(UUID teamId) {
+        team(teamId);
+        slots.deleteByTeamId(teamId);
+    }
+
+    private String conflictNote(UUID teamId) {
+        DefenseSlot mine = slots.findByTeamId(teamId).orElseThrow();
+        Set<UUID> jury = assignments.findByTeamId(teamId).stream()
+                .filter(a -> a.getRole() == ReviewerRole.JURY)
+                .map(TeamReviewer::getReviewerId)
+                .collect(Collectors.toSet());
+        Set<String> clashes = new LinkedHashSet<>();
+        for (DefenseSlot other : slots.findAll()) {
+            if (other.getTeamId().equals(teamId) || !other.overlaps(mine)) {
+                continue;
+            }
+            assignments.findByTeamId(other.getTeamId()).stream()
+                    .filter(a -> a.getRole() == ReviewerRole.JURY && jury.contains(a.getReviewerId()))
+                    .forEach(a -> reviewers.findById(a.getReviewerId()).ifPresent(r -> clashes.add(r.displayName())));
+        }
+        if (clashes.isEmpty()) {
+            return "";
+        }
+        return " " + String.join(" and ", clashes) + (clashes.size() == 1 ? " is" : " are") + " now in two defenses at "
+                + Dates.time(mine.getStartsAt()) + ".";
+    }
+
+    /** Turns a unique-constraint race (two clicks, two tabs) into the same 409 the pre-check gives (review M2). */
+    private static <T> T flushed(java.util.function.Supplier<T> write, String code, String detail) {
+        try {
+            return write.get();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw ApiException.conflict(code, detail);
+        }
+    }
+
+    private Team team(UUID id) {
+        return teams.findById(id).orElseThrow(() -> ApiException.notFound("The team"));
+    }
+
+    private static String label(ReviewerRole role) {
+        return role == ReviewerRole.JURY ? "jury member" : "advisor";
+    }
+
+    private static String article(ReviewerRole role) {
+        return role == ReviewerRole.JURY ? "a jury member" : "an advisor";
+    }
+}

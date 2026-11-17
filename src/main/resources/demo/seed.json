@@ -1,0 +1,888 @@
+{
+  "assessments": [
+    {
+      "code": "PROPOSAL_PRESENTATION",
+      "dueAt": "D-110 23:59"
+    },
+    {
+      "code": "PROGRESS_REPORT",
+      "dueAt": "D-75 23:59"
+    },
+    {
+      "code": "ADVISOR_ASSESSMENT",
+      "dueAt": "D-5 23:59"
+    },
+    {
+      "code": "FINAL_REPORT",
+      "dueAt": "D+2 23:59"
+    },
+    {
+      "code": "FINAL_PRESENTATION",
+      "dueAt": "D+2 23:59"
+    }
+  ],
+  "teams": [
+    {
+      "key": "team:alpha",
+      "name": "Alpha",
+      "projectTitle": "Smart irrigation controller with soil-moisture forecasting",
+      "description": "A solar-powered field node that reads soil-moisture probes and forecasts the next 48 hours, so crops are watered only when they need it.",
+      "students": [
+        {
+          "key": "student:alpha:nour-khoury",
+          "firstName": "Nour",
+          "lastName": "Khoury",
+          "email": "nour.khoury@usj.edu.lb",
+          "userId": "00000000-0000-4000-a000-000000000101"
+        },
+        {
+          "key": "student:alpha:rami-saade",
+          "firstName": "Rami",
+          "lastName": "Saade",
+          "email": "rami.saade@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:alpha:maya-aoun",
+          "firstName": "Maya",
+          "lastName": "Aoun",
+          "email": "maya.aoun@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:alpha:joe-karam",
+          "firstName": "Joe",
+          "lastName": "Karam",
+          "email": "joe.karam@usj.edu.lb",
+          "userId": null
+        }
+      ],
+      "reviewers": [
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "role": "ADVISOR"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "role": "JURY"
+        }
+      ],
+      "defenseSlot": {
+        "startsAt": "D-1 09:00",
+        "durationMinutes": 40,
+        "room": "Amphi A"
+      },
+      "grades": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "evaluationKey": "evaluation:alpha:PROPOSAL_PRESENTATION:jane.smith",
+          "score": 88.75,
+          "submittedAt": "D-113 10:35"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:alpha:PROPOSAL_PRESENTATION:john.doe",
+          "score": 85.0,
+          "submittedAt": "D-113 10:52"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:alpha:PROPOSAL_PRESENTATION:lea.mansour",
+          "score": 86.25,
+          "submittedAt": "D-113 11:20"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "evaluationKey": "evaluation:alpha:PROGRESS_REPORT:jane.smith",
+          "score": 85.0,
+          "submittedAt": "D-79 18:20"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:alpha:PROGRESS_REPORT:john.doe",
+          "score": 85.0,
+          "submittedAt": "D-78 09:10"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:alpha:PROGRESS_REPORT:lea.mansour",
+          "score": 80.0,
+          "submittedAt": "D-77 21:05"
+        },
+        {
+          "assessment": "ADVISOR_ASSESSMENT",
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "evaluationKey": "evaluation:alpha:ADVISOR_ASSESSMENT:emily.clark",
+          "score": 90.0,
+          "submittedAt": "D-7 16:30"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "evaluationKey": "evaluation:alpha:FINAL_REPORT:jane.smith",
+          "score": 87.5,
+          "submittedAt": "D-6 20:15"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:alpha:FINAL_REPORT:john.doe",
+          "score": 86.25,
+          "submittedAt": "D-5 17:40"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:alpha:FINAL_REPORT:lea.mansour",
+          "score": 88.75,
+          "submittedAt": "D-4 09:30"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "evaluationKey": "evaluation:alpha:FINAL_PRESENTATION:jane.smith",
+          "score": 87.5,
+          "submittedAt": "D-1 10:05"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:alpha:FINAL_PRESENTATION:john.doe",
+          "score": 85.0,
+          "submittedAt": "D-1 10:50"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:alpha:FINAL_PRESENTATION:lea.mansour",
+          "score": 90.0,
+          "submittedAt": "D-1 11:40"
+        }
+      ],
+      "releases": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "releasedAt": "D-99 10:00"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "releasedAt": "D-63 10:00"
+        },
+        {
+          "assessment": "ADVISOR_ASSESSMENT",
+          "releasedAt": "D-4 10:00"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "releasedAt": "D-2 10:00"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "releasedAt": "D-1 12:05"
+        }
+      ]
+    },
+    {
+      "key": "team:beta",
+      "name": "Beta",
+      "projectTitle": "Clinic queue management with SMS notifications",
+      "description": "A web queue for outpatient clinics that texts patients when their turn is near, so they can wait outside the crowded waiting room.",
+      "students": [
+        {
+          "key": "student:beta:ahmad-fares",
+          "firstName": "Ahmad",
+          "lastName": "Fares",
+          "email": "ahmad.fares@usj.edu.lb",
+          "userId": "00000000-0000-4000-a000-000000000102"
+        },
+        {
+          "key": "student:beta:christelle-nader",
+          "firstName": "Christelle",
+          "lastName": "Nader",
+          "email": "christelle.nader@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:beta:georges-hanna",
+          "firstName": "Georges",
+          "lastName": "Hanna",
+          "email": "georges.hanna@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:beta:yara-saliba",
+          "firstName": "Yara",
+          "lastName": "Saliba",
+          "email": "yara.saliba@usj.edu.lb",
+          "userId": null
+        }
+      ],
+      "reviewers": [
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "role": "ADVISOR"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "role": "JURY"
+        }
+      ],
+      "defenseSlot": {
+        "startsAt": "D+1 09:00",
+        "durationMinutes": 40,
+        "room": "Amphi A"
+      },
+      "grades": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "evaluationKey": "evaluation:beta:PROPOSAL_PRESENTATION:jane.smith",
+          "score": 73.75,
+          "submittedAt": "D-113 16:05"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:beta:PROPOSAL_PRESENTATION:john.doe",
+          "score": 85.0,
+          "submittedAt": "D-113 14:48"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "evaluationKey": "evaluation:beta:PROPOSAL_PRESENTATION:michael.johnson",
+          "score": 63.75,
+          "submittedAt": "D-113 15:10"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "evaluationKey": "evaluation:beta:PROGRESS_REPORT:jane.smith",
+          "score": 70.0,
+          "submittedAt": "D-76 22:10"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:beta:PROGRESS_REPORT:john.doe",
+          "score": 75.0,
+          "submittedAt": "D-78 17:45"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "evaluationKey": "evaluation:beta:PROGRESS_REPORT:michael.johnson",
+          "score": 65.0,
+          "submittedAt": "D-77 11:30"
+        },
+        {
+          "assessment": "ADVISOR_ASSESSMENT",
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "evaluationKey": "evaluation:beta:ADVISOR_ASSESSMENT:emily.clark",
+          "score": 80.0,
+          "submittedAt": "D-6 11:20"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:beta:FINAL_REPORT:john.doe",
+          "score": 77.5,
+          "submittedAt": "D-2 17:20"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "evaluationKey": "evaluation:beta:FINAL_REPORT:michael.johnson",
+          "score": 75.0,
+          "submittedAt": "D-1 19:05"
+        }
+      ],
+      "releases": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "releasedAt": "D-99 10:00"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "releasedAt": "D-63 10:00"
+        }
+      ]
+    },
+    {
+      "key": "team:gamma",
+      "name": "Gamma",
+      "projectTitle": "Arabic handwriting OCR for archived documents",
+      "description": "A recognition pipeline that turns scanned, handwritten Arabic registry pages into searchable text for a municipal archive.",
+      "students": [
+        {
+          "key": "student:gamma:hadi-chamoun",
+          "firstName": "Hadi",
+          "lastName": "Chamoun",
+          "email": "hadi.chamoun@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:gamma:lara-rizk",
+          "firstName": "Lara",
+          "lastName": "Rizk",
+          "email": "lara.rizk@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:gamma:elie-tannous",
+          "firstName": "Elie",
+          "lastName": "Tannous",
+          "email": "elie.tannous@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:gamma:tala-sfeir",
+          "firstName": "Tala",
+          "lastName": "Sfeir",
+          "email": "tala.sfeir@usj.edu.lb",
+          "userId": null
+        }
+      ],
+      "reviewers": [
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "role": "ADVISOR"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000001",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "role": "JURY"
+        }
+      ],
+      "defenseSlot": {
+        "startsAt": "D-1 11:00",
+        "durationMinutes": 40,
+        "room": "Amphi A"
+      },
+      "grades": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000001",
+          "evaluationKey": "evaluation:gamma:PROPOSAL_PRESENTATION:rania.haddad",
+          "score": 92.5,
+          "submittedAt": "D-112 10:40"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "evaluationKey": "evaluation:gamma:PROPOSAL_PRESENTATION:karim.nassar",
+          "score": 87.5,
+          "submittedAt": "D-112 11:05"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "evaluationKey": "evaluation:gamma:PROPOSAL_PRESENTATION:michael.johnson",
+          "score": 88.75,
+          "submittedAt": "D-112 10:58"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000001",
+          "evaluationKey": "evaluation:gamma:PROGRESS_REPORT:rania.haddad",
+          "score": 90.0,
+          "submittedAt": "D-80 16:00"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "evaluationKey": "evaluation:gamma:PROGRESS_REPORT:karim.nassar",
+          "score": 85.0,
+          "submittedAt": "D-79 10:25"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "evaluationKey": "evaluation:gamma:PROGRESS_REPORT:michael.johnson",
+          "score": 90.0,
+          "submittedAt": "D-78 14:40"
+        },
+        {
+          "assessment": "ADVISOR_ASSESSMENT",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:gamma:ADVISOR_ASSESSMENT:lea.mansour",
+          "score": 95.0,
+          "submittedAt": "D-8 09:45"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000001",
+          "evaluationKey": "evaluation:gamma:FINAL_REPORT:rania.haddad",
+          "score": 93.75,
+          "submittedAt": "D-5 15:20"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "evaluationKey": "evaluation:gamma:FINAL_REPORT:karim.nassar",
+          "score": 90.0,
+          "submittedAt": "D-4 22:05"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "evaluationKey": "evaluation:gamma:FINAL_REPORT:michael.johnson",
+          "score": 91.25,
+          "submittedAt": "D-3 18:45"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000001",
+          "evaluationKey": "evaluation:gamma:FINAL_PRESENTATION:rania.haddad",
+          "score": 92.5,
+          "submittedAt": "D-1 12:15"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "evaluationKey": "evaluation:gamma:FINAL_PRESENTATION:karim.nassar",
+          "score": 90.0,
+          "submittedAt": "D-1 13:30"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "evaluationKey": "evaluation:gamma:FINAL_PRESENTATION:michael.johnson",
+          "score": 92.5,
+          "submittedAt": "D-1 16:20"
+        }
+      ],
+      "releases": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "releasedAt": "D-99 10:00"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "releasedAt": "D-63 10:00"
+        },
+        {
+          "assessment": "ADVISOR_ASSESSMENT",
+          "releasedAt": "D-4 10:00"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "releasedAt": "D-2 10:00"
+        }
+      ]
+    },
+    {
+      "key": "team:delta",
+      "name": "Delta",
+      "projectTitle": "Campus carpool matching app",
+      "description": "A mobile app that matches students and staff who drive to campus at similar times from nearby neighbourhoods.",
+      "students": [
+        {
+          "key": "student:delta:karl-mouawad",
+          "firstName": "Karl",
+          "lastName": "Mouawad",
+          "email": "karl.mouawad@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:delta:rita-khalil",
+          "firstName": "Rita",
+          "lastName": "Khalil",
+          "email": "rita.khalil@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:delta:fadi-azar",
+          "firstName": "Fadi",
+          "lastName": "Azar",
+          "email": "fadi.azar@usj.edu.lb",
+          "userId": null
+        }
+      ],
+      "reviewers": [
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "role": "ADVISOR"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "role": "JURY"
+        }
+      ],
+      "defenseSlot": {
+        "startsAt": "D+1 09:00",
+        "durationMinutes": 40,
+        "room": "Room B-204"
+      },
+      "grades": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:delta:PROPOSAL_PRESENTATION:john.doe",
+          "score": 66.25,
+          "submittedAt": "D-112 14:55"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "evaluationKey": "evaluation:delta:PROPOSAL_PRESENTATION:emily.clark",
+          "score": 58.75,
+          "submittedAt": "D-112 15:30"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:delta:PROGRESS_REPORT:john.doe",
+          "score": 85.0,
+          "submittedAt": "D-77 20:15"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "evaluationKey": "evaluation:delta:PROGRESS_REPORT:emily.clark",
+          "score": 35.0,
+          "submittedAt": "D-76 08:50"
+        }
+      ],
+      "releases": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "releasedAt": "D-99 10:00"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "releasedAt": "D-63 10:00"
+        }
+      ]
+    },
+    {
+      "key": "team:epsilon",
+      "name": "Epsilon",
+      "projectTitle": "Energy monitoring dashboard for university buildings",
+      "description": "A dashboard that collects meter readings from campus buildings over Modbus and flags abnormal consumption to facility managers.",
+      "students": [
+        {
+          "key": "student:epsilon:jad-frem",
+          "firstName": "Jad",
+          "lastName": "Frem",
+          "email": "jad.frem@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:epsilon:nadine-moussa",
+          "firstName": "Nadine",
+          "lastName": "Moussa",
+          "email": "nadine.moussa@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:epsilon:charbel-daou",
+          "firstName": "Charbel",
+          "lastName": "Daou",
+          "email": "charbel.daou@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:epsilon:lynn-harb",
+          "firstName": "Lynn",
+          "lastName": "Harb",
+          "email": "lynn.harb@usj.edu.lb",
+          "userId": null
+        }
+      ],
+      "reviewers": [
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "role": "ADVISOR"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "role": "JURY"
+        }
+      ],
+      "defenseSlot": {
+        "startsAt": "D+0 09:00",
+        "durationMinutes": 40,
+        "room": "Amphi A"
+      },
+      "grades": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "evaluationKey": "evaluation:epsilon:PROPOSAL_PRESENTATION:jane.smith",
+          "score": 80.0,
+          "submittedAt": "D-111 10:20"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:epsilon:PROPOSAL_PRESENTATION:lea.mansour",
+          "score": 76.25,
+          "submittedAt": "D-111 10:45"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "evaluationKey": "evaluation:epsilon:PROPOSAL_PRESENTATION:karim.nassar",
+          "score": 82.5,
+          "submittedAt": "D-111 12:10"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "evaluationKey": "evaluation:epsilon:PROGRESS_REPORT:jane.smith",
+          "score": 75.0,
+          "submittedAt": "D-79 19:30"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:epsilon:PROGRESS_REPORT:lea.mansour",
+          "score": 70.0,
+          "submittedAt": "D-77 16:10"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "evaluationKey": "evaluation:epsilon:PROGRESS_REPORT:karim.nassar",
+          "score": 80.0,
+          "submittedAt": "D-76 09:40"
+        },
+        {
+          "assessment": "ADVISOR_ASSESSMENT",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:epsilon:ADVISOR_ASSESSMENT:john.doe",
+          "score": 85.0,
+          "submittedAt": "D-5 21:40"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000002",
+          "evaluationKey": "evaluation:epsilon:FINAL_REPORT:jane.smith",
+          "score": 78.75,
+          "submittedAt": "D-4 21:30"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:epsilon:FINAL_REPORT:lea.mansour",
+          "score": 76.25,
+          "submittedAt": "D-3 16:45"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000006",
+          "evaluationKey": "evaluation:epsilon:FINAL_REPORT:karim.nassar",
+          "score": 78.75,
+          "submittedAt": "D-2 18:30"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:epsilon:FINAL_PRESENTATION:lea.mansour",
+          "score": 82.5,
+          "submittedAt": "N-40m"
+        }
+      ],
+      "releases": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "releasedAt": "D-99 10:00"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "releasedAt": "D-63 10:00"
+        }
+      ]
+    },
+    {
+      "key": "team:zeta",
+      "name": "Zeta",
+      "projectTitle": "Sign-language gesture recognition on a microcontroller",
+      "description": "A sensor glove whose microcontroller recognises Arabic sign-language letters on-device and speaks them through a paired phone.",
+      "students": [
+        {
+          "key": "student:zeta:marc-chidiac",
+          "firstName": "Marc",
+          "lastName": "Chidiac",
+          "email": "marc.chidiac@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:zeta:celine-eid",
+          "firstName": "Celine",
+          "lastName": "Eid",
+          "email": "celine.eid@usj.edu.lb",
+          "userId": null
+        },
+        {
+          "key": "student:zeta:omar-itani",
+          "firstName": "Omar",
+          "lastName": "Itani",
+          "email": "omar.itani@usj.edu.lb",
+          "userId": null
+        }
+      ],
+      "reviewers": [
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000004",
+          "role": "ADVISOR"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "role": "JURY"
+        },
+        {
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "role": "JURY"
+        }
+      ],
+      "defenseSlot": {
+        "startsAt": "D-1 14:00",
+        "durationMinutes": 40,
+        "room": "Room B-204"
+      },
+      "grades": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "evaluationKey": "evaluation:zeta:PROPOSAL_PRESENTATION:emily.clark",
+          "score": 82.5,
+          "submittedAt": "D-111 15:05"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:zeta:PROPOSAL_PRESENTATION:lea.mansour",
+          "score": 78.75,
+          "submittedAt": "D-111 15:40"
+        },
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:zeta:PROPOSAL_PRESENTATION:john.doe",
+          "score": 82.5,
+          "submittedAt": "D-111 14:50"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "evaluationKey": "evaluation:zeta:PROGRESS_REPORT:emily.clark",
+          "score": 80.0,
+          "submittedAt": "D-78 12:05"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:zeta:PROGRESS_REPORT:lea.mansour",
+          "score": 75.0,
+          "submittedAt": "D-76 18:35"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:zeta:PROGRESS_REPORT:john.doe",
+          "score": 80.0,
+          "submittedAt": "D-75 21:50"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "evaluationKey": "evaluation:zeta:FINAL_REPORT:emily.clark",
+          "score": 82.5,
+          "submittedAt": "D-6 11:15"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:zeta:FINAL_REPORT:lea.mansour",
+          "score": 77.5,
+          "submittedAt": "D-5 20:40"
+        },
+        {
+          "assessment": "FINAL_REPORT",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:zeta:FINAL_REPORT:john.doe",
+          "score": 81.25,
+          "submittedAt": "D-3 08:55"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000005",
+          "evaluationKey": "evaluation:zeta:FINAL_PRESENTATION:emily.clark",
+          "score": 85.0,
+          "submittedAt": "D-1 15:05"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000007",
+          "evaluationKey": "evaluation:zeta:FINAL_PRESENTATION:lea.mansour",
+          "score": 80.0,
+          "submittedAt": "D-1 16:30"
+        },
+        {
+          "assessment": "FINAL_PRESENTATION",
+          "reviewerId": "00000000-0000-4000-a000-000000000003",
+          "evaluationKey": "evaluation:zeta:FINAL_PRESENTATION:john.doe",
+          "score": 85.0,
+          "submittedAt": "D-1 17:15"
+        }
+      ],
+      "releases": [
+        {
+          "assessment": "PROPOSAL_PRESENTATION",
+          "releasedAt": "D-99 10:00"
+        },
+        {
+          "assessment": "PROGRESS_REPORT",
+          "releasedAt": "D-63 10:00"
+        }
+      ]
+    }
+  ]
+}
