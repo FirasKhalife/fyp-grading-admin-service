@@ -92,4 +92,12 @@ Unit tests cover the grade maths and the composition rules.
 - **GitHub Actions** (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `master`:
   - the lint
   - `verify`, including the Testcontainers tests
-  - a build of the Docker image
+  - the Docker image: built, then scanned with Trivy (the report goes to GitHub code scanning; a HIGH or CRITICAL
+    finding with a fix fails the build). From `master` it is pushed to `ghcr.io/firaskhalife/fyp-grading-admin-service`
+    (tags `latest` and the short commit SHA) with an SBOM and build provenance, and signed with cosign
+- **Dependabot** proposes weekly updates for Maven, the Dockerfile's base images and the GitHub Actions, all pinned
+  (base images by digest, actions by commit SHA).
+
+The `Dockerfile` (the same in every service repo) builds a small Java 25 runtime with `jlink` on Alpine, runs as
+an unprivileged user, and ships an AOT cache made by a training run at build time, so the service starts in
+about half the time. Accepted unfixable scan findings, if any, are listed in `.trivyignore` with a reason.
