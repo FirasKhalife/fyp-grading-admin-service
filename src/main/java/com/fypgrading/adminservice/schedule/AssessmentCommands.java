@@ -7,14 +7,12 @@ import com.fypgrading.adminservice.common.web.ApiException;
 import com.fypgrading.adminservice.domain.Assessment;
 import com.fypgrading.adminservice.domain.AssessmentSchedule;
 import com.fypgrading.adminservice.domain.AssessmentScheduleRepository;
-import com.fypgrading.adminservice.domain.GradeRepository;
 import com.fypgrading.adminservice.domain.Student;
 import com.fypgrading.adminservice.domain.StudentRepository;
 import com.fypgrading.adminservice.domain.Team;
 import com.fypgrading.adminservice.domain.TeamAssessment;
 import com.fypgrading.adminservice.domain.TeamAssessmentRepository;
 import com.fypgrading.adminservice.domain.TeamRepository;
-import com.fypgrading.adminservice.domain.TeamReviewerRepository;
 import com.fypgrading.adminservice.events.Events;
 import com.fypgrading.adminservice.views.Views.ReleaseResult;
 import jakarta.validation.constraints.NotNull;
@@ -24,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,34 +35,31 @@ public class AssessmentCommands {
     private final AssessmentScheduleRepository schedules;
     private final TeamRepository teams;
     private final TeamAssessmentRepository teamAssessments;
-    private final TeamReviewerRepository assignments;
-    private final GradeRepository grades;
     private final StudentRepository students;
     private final Events events;
+    private final DueReminders reminders;
     private final Clock clock;
 
     public AssessmentCommands(
             AssessmentScheduleRepository schedules,
             TeamRepository teams,
             TeamAssessmentRepository teamAssessments,
-            TeamReviewerRepository assignments,
-            GradeRepository grades,
             StudentRepository students,
             Events events,
+            DueReminders reminders,
             Clock clock) {
         this.schedules = schedules;
         this.teams = teams;
         this.teamAssessments = teamAssessments;
-        this.assignments = assignments;
-        this.grades = grades;
         this.students = students;
         this.events = events;
+        this.reminders = reminders;
         this.clock = clock;
     }
 
     public record AssessmentPatch(@NotNull Instant dueAt) {}
 
-    /** Moves the due date for every team. Never blocks grading; reviewers still owing an evaluation are told. */
+    /** Moves the due date for every team. Never blocks grading; see {@link DueReminders} for who is told. */
     @Transactional
     public void setDueDate(Assessment assessment, AssessmentPatch body) {
         AssessmentSchedule schedule = schedules
@@ -74,20 +68,9 @@ public class AssessmentCommands {
                         SeedIds.of(DemoSession.require(), "schedule:" + assessment), assessment, body.dueAt())));
         schedule.setDueAt(body.dueAt());
         Instant now = clock.instant();
-        Set<UUID> pending = assignments.findAll().stream()
-                .filter(a -> a.getRole() == assessment.role())
-                .filter(a -> grades.findByTeamIdAndAssessmentAndReviewerId(a.getTeamId(), assessment, a.getReviewerId())
-                        .isEmpty())
-                .map(a -> a.getReviewerId())
-                .collect(Collectors.toSet());
+        // Within three days or past it: the reviewers still owing an evaluation and the coordinator are reminded.
+        reminders.remind(assessment, body.dueAt(), now);
         String due = Dates.dayAndTime(body.dueAt());
-        events.notify(
-                "due:" + assessment + ":" + body.dueAt() + ":" + now,
-                now.isAfter(body.dueAt()) ? "OVERDUE" : "DUE_SOON",
-                "The " + assessment.displayName() + " is now due " + due + ".",
-                now,
-                Events.Link.of("MY_TEAMS", null, assessment),
-                pending);
         CurrentUser me = CurrentUser.require();
         events.activity(
                 "SCHEDULE",

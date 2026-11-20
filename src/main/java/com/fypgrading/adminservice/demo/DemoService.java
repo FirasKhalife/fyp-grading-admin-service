@@ -23,6 +23,7 @@ import com.fypgrading.adminservice.domain.TeamRepository;
 import com.fypgrading.adminservice.domain.TeamReviewer;
 import com.fypgrading.adminservice.domain.TeamReviewerRepository;
 import com.fypgrading.adminservice.grading.GradeAggregator;
+import com.fypgrading.adminservice.schedule.DueReminders;
 import com.fypgrading.adminservice.views.Views.DemoSessionView;
 import com.fypgrading.adminservice.views.Views.Persona;
 import java.io.IOException;
@@ -115,6 +116,7 @@ public class DemoService {
     private final TeamAssessmentRepository teamAssessments;
     private final GradeAggregator aggregator;
     private final DemoCopyClient remote;
+    private final DueReminders reminders;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final Clock clock;
@@ -135,6 +137,7 @@ public class DemoService {
             TeamAssessmentRepository teamAssessments,
             GradeAggregator aggregator,
             DemoCopyClient remote,
+            DueReminders reminders,
             JdbcTemplate jdbc,
             TransactionTemplate tx,
             Clock clock,
@@ -151,6 +154,7 @@ public class DemoService {
         this.teamAssessments = teamAssessments;
         this.aggregator = aggregator;
         this.remote = remote;
+        this.reminders = reminders;
         this.jdbc = jdbc;
         this.tx = tx;
         this.clock = clock;
@@ -206,6 +210,8 @@ public class DemoService {
             }
         }
         build(session, at);
+        // The copy's reminder run (due soon, overdue): a copy lives one day, so this is the only one it needs.
+        DemoSession.runAs(session, () -> tx.executeWithoutResult(s -> reminders.remindAll()));
         tx.executeWithoutResult(s -> copies.findById(session).ifPresent(c -> c.ready(at.now(), at.anchor())));
         return new Ensured(view(copies.findById(session).orElseThrow()), true);
     }
