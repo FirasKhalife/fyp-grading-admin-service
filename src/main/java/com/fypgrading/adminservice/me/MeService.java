@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -123,7 +124,11 @@ public class MeService {
             for (EvaluationClient.Criterion c : e.criteria()) {
                 ReleasedCriterionBuilder b =
                         byCriterion.computeIfAbsent(c.criterionId(), id -> new ReleasedCriterionBuilder(c));
-                b.levels.add(new ReleasedLevel(e.reviewer().id(), c.level() == null ? 0 : c.level(), c.comment()));
+                // Never null: submit refuses while a level is missing, each evaluation keeps the rubric it was
+                // started with (a later rubric edit can't add an unscored criterion to it), and the demo seed is
+                // checked for the same in evaluation-service (SeedInvariantTest). Fail loudly rather than show 0.
+                int level = Objects.requireNonNull(c.level(), "submitted evaluation without a level");
+                b.levels.add(new ReleasedLevel(e.reviewer().id(), level, c.comment()));
             }
         }
         return new ReleasedResults(
