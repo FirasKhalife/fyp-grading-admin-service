@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fypgrading.adminservice.clients.DemoCopyClient;
 import com.fypgrading.adminservice.clients.EvaluationClient;
+import com.fypgrading.adminservice.common.security.TestTokens;
 import com.jayway.jsonpath.JsonPath;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -36,8 +37,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -234,15 +238,35 @@ class GradingPipelineTest {
 
         finalGradesCantChange(team);
 
-        List<String> sent = drainNotifications(7); // 1 overdue + 5 grades final + the final grade
+        List<String> sent = drainNotifications(8); // 2 overdue (Emily, coordinator) + 5 grades final + the final grade
         assertThat(sent.stream().filter(n -> n.contains("\"GRADE_FINAL\""))).hasSize(5);
         assertThat(sent.stream().filter(n -> n.contains("\"FINAL_GRADE_COMPUTED\"")))
                 .hasSize(1);
         assertThat(sent).anyMatch(n -> n.contains("Team Omega's final grade is computed: 81.3."));
         assertThat(sent.stream().filter(n -> n.contains("GRADE_FINAL") || n.contains("FINAL_GRADE_COMPUTED")))
                 .allMatch(n -> n.contains(RANIA.toString()) && n.contains(JANE.toString()));
-        // The past due date told the one reviewer still owing an evaluation at that moment (Emily) it's overdue.
+        // The past due date reminded the one reviewer still owing an evaluation at that moment (Emily): overdue.
         assertThat(sent).anyMatch(n -> n.contains("\"OVERDUE\"") && n.contains(EMILY.toString()));
+    }
+
+    /**
+     * Brief 4.5: the copy's reminder run, once, when it's created (the second call reuses the copy). Final report
+     * and presentation are due in 2 days (3 and 7 evaluations open), the advisor assessment is overdue (2 open): one
+     * notification per pending reviewer and team, plus one summary per assessment for Rania.
+     */
+    private void copyCreationSentTodaysReminders() throws Exception {
+        List<String> reminders = drainNotifications(15);
+        Thread.sleep(1000);
+        assertThat(rabbitTemplate.receive(notifications.getName())).isNull();
+        assertThat(reminders).hasSize(15);
+        assertThat(reminders)
+                .anyMatch(n -> n.contains("\"DUE_SOON\"")
+                        && n.contains("Final report for Team Beta is due in 2 days.")
+                        && n.contains(JANE.toString()))
+                .anyMatch(n -> n.contains("Final report is due in 2 days: 3 evaluations still open.")
+                        && n.contains(RANIA.toString()))
+                .anyMatch(n -> n.contains("\"OVERDUE\"") && n.contains("Advisor assessment for Team Delta is overdue."))
+                .anyMatch(n -> n.contains("Advisor assessment is overdue: 2 evaluations still open."));
     }
 
     @Test
@@ -255,6 +279,8 @@ class GradingPipelineTest {
                 .andExpect(status().isCreated());
         mvc.perform(put("/api/demo/session").header("X-Demo-Session", session).with(as(JANE, "REVIEWER")))
                 .andExpect(status().isOk());
+
+        copyCreationSentTodaysReminders();
 
         String overview = mvc.perform(
                         get("/api/overview").header("X-Demo-Session", session).with(as(RANIA, "ADMIN")))
@@ -450,5 +476,39 @@ class GradingPipelineTest {
                                  "score": 10, "submittedAt": "2026-06-10T08:00:00Z", "submittedLate": false}""".formatted(UUID.randomUUID(), team, JANE)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("not-your-grade"));
+    }
+
+    @DynamicPropertySource
+    static void realTokenKeys(DynamicPropertyRegistry registry) {
+        registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", TestTokens::jwkSetUri);
+    }
+
+    /** A signed token through the real decoder (not the jwt() shortcut), as the gateway forwards it. */
+    private ResultActions withToken(String token) throws Exception {
+        return mvc.perform(
+                get("/api/schedule").header("X-Demo-Session", session).header("Authorization", "Bearer " + token));
+    }
+
+    @Test
+    void aSignedTokenFromOurIssuerToOurClientIsAccepted() throws Exception {
+        int status = withToken(TestTokens.token(TestTokens.ISSUER, TestTokens.CLIENT, "ADMIN"))
+                .andReturn()
+                .getResponse()
+                .getStatus();
+        assertThat(status).isNotIn(401, 403);
+    }
+
+    @Test
+    void aTokenFromAnotherIssuerIsRejected() throws Exception {
+        withToken(TestTokens.token("http://elsewhere.test/realms/assay", TestTokens.CLIENT, "ADMIN"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("unauthenticated"));
+    }
+
+    @Test
+    void aTokenIssuedToAnotherClientIsRejected() throws Exception {
+        withToken(TestTokens.token(TestTokens.ISSUER, "admin-cli", "ADMIN"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("unauthenticated"));
     }
 }
